@@ -25,19 +25,19 @@ workflows:
   test-deploy:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
-      - chiubaka/lint
+      - chiubaka/lint:
           name: chiubaka-lint-job
           <<: *test-parameters
           filters: *filters
-      - chiubaka/build
+      - chiubaka/build:
           name: chiubaka-build-job
           <<: *test-parameters
           filters: *filters
-      - chiubaka/test
+      - chiubaka/test:
           name: chiubaka-test-job
           <<: *test-parameters
           filters: *filters
-      - chiubaka/publish
+      - chiubaka/publish:
           name: chiubaka-publish-job
           context: npm-publishing
           <<: *test-parameters
