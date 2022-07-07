@@ -2,6 +2,10 @@ description: >
   This command sets up the CI environment for the repository
 
 parameters:
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
   yarn-install-dir:
     type: string
     default: '.'
@@ -9,6 +13,12 @@ parameters:
 
 steps:
   - checkout
+  - when:
+      condition: << parameters.init-submodules >>
+      steps:
+        - run:
+            name: Initialize submodules
+            command: git submodule update --init --recursive
   - run:
       name: Use Yarn Berry
       command: yarn set version berry
