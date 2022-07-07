@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  circleci-orb: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
+  chiubaka: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
   orb-tools: circleci/orb-tools@11.1
 
 filters: &filters
@@ -11,11 +11,10 @@ jobs:
   # Create a job to test the commands of your orbs.
   # You may want to add additional validation steps to ensure the commands are working as expected.
   command-tests:
-    docker:
-      - image: cimg/base:current
+    executor: chiubaka/docker-node
     steps:
       # Run your orb's commands to validate them.
-      - circleci-orb/setup
+      - chiubaka/setup
 
 workflows:
   test-deploy:
