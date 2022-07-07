@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  .: chiubaka/.@dev:<<pipeline.git.revision>>
+  circleci-orb: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
   orb-tools: circleci/orb-tools@11.1
 
 filters: &filters
@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       # Run your orb's commands to validate them.
-      - ./greet
+      - circleci-orb/greet
 workflows:
   test-deploy:
     jobs:
@@ -26,7 +26,7 @@ workflows:
       - orb-tools/pack:
           filters: *filters
       - orb-tools/publish:
-          orb-name: chiubaka/.
+          orb-name: chiubaka/circleci-orb
           vcs-type: << pipeline.project.type >>
           pub-type: production
           requires:
