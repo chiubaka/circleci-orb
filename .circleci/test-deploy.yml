@@ -14,7 +14,8 @@ jobs:
     executor: chiubaka/docker-node
     steps:
       # Run your orb's commands to validate them.
-      - chiubaka/setup
+      - chiubaka/setup:
+          yarn-install-dir: "~/project/samples/generated-typescript-package"
 
 workflows:
   test-deploy:
