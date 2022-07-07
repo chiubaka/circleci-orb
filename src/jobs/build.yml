@@ -3,8 +3,21 @@ description: >
 
 executor: docker-node
 
+parameters:
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  app-dir:
+    type: string
+    default: '.'
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+
 steps:
-  - setup
+  - setup:
+      init-submodules: <<parameters.init-submodules>>
+      app-dir: <<parameters.app-dir>>
   - run:
       name: Build code
+      working_directory: <<parameters.app-dir>>
       command: yarn run build

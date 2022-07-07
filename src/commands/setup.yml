@@ -6,10 +6,10 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to initialize submodules included in this repository.
-  yarn-install-dir:
+  app-dir:
     type: string
     default: '.'
-    description: Path to run install scripts on. Should contain a package.json file.
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
 
 steps:
   - checkout
@@ -20,11 +20,11 @@ steps:
             name: Initialize submodules
             command: git submodule update --init --recursive
   - run:
-      working_directory: <<parameters.yarn-install-dir>>
       name: Use Yarn Berry
+      working_directory: <<parameters.app-dir>>
       command: yarn set version berry
   - node/install-packages:
       check-cache: always
       pkg-manager: yarn-berry
       with-cache: false
-      app-dir: <<parameters.yarn-install-dir>>
+      app-dir: <<parameters.app-dir>>
