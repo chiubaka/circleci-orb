@@ -20,6 +20,7 @@ steps:
             name: Initialize submodules
             command: git submodule update --init --recursive
   - run:
+      working_directory: <<parameters.yarn-install-dir>>
       name: Use Yarn Berry
       command: yarn set version berry
   - node/install-packages:
