@@ -19,8 +19,7 @@ jobs:
     steps:
       # Run your orb's commands to validate them.
       - chiubaka/setup:
-          init-submodules: true
-          yarn-install-dir: ~/project/samples/generated-typescript-package
+          <<: *test-parameters
 
 workflows:
   test-deploy:
@@ -29,16 +28,20 @@ workflows:
       - chiubaka/lint
           name: chiubaka-lint-job
           <<: *test-parameters
+          filters: *filters
       - chiubaka/build
           name: chiubaka-build-job
           <<: *test-parameters
+          filters: *filters
       - chiubaka/test
           name: chiubaka-test-job
           <<: *test-parameters
+          filters: *filters
       - chiubaka/publish
           name: chiubaka-publish-job
           context: npm-publishing
           <<: *test-parameters
+          filters: *filters
       - command-tests:
           filters: *filters
       - orb-tools/pack:
