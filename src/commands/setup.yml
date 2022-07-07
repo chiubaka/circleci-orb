@@ -1,0 +1,12 @@
+description: >
+  This command sets up the CI environment for the repository
+
+steps:
+  - checkout
+  - run:
+      name: Use Yarn Berry
+      command: yarn set version berry
+  - node/install-packages:
+      check-cache: always
+      pkg-manager: yarn-berry
+      with-cache: false

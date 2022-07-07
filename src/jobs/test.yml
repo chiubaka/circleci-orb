@@ -1,0 +1,10 @@
+description: >
+  Tests the project code using the test script provided by package.json
+
+executor: docker-node
+
+steps:
+  - setup
+  - run:
+      name: Run tests
+      command: yarn run test:ci

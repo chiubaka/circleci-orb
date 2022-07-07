@@ -1,0 +1,10 @@
+description: >
+  Lints the project code using the lint script provided by package.json
+
+executor: docker-node
+
+steps:
+  - setup
+  - run:
+      name: Lint code
+      command: yarn run lint

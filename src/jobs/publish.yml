@@ -1,0 +1,10 @@
+description: >
+  Publishes this project to NPM. NPM_TOKEN environment variable must be set.
+
+executor: docker-node
+
+steps:
+  - setup
+  - run:
+      name: Publish to NPM
+      command: yarn run publish

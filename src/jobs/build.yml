@@ -1,0 +1,10 @@
+description: >
+  Builds the project code using the build script provided by package.json
+
+executor: docker-node
+
+steps:
+  - setup
+  - run:
+      name: Build code
+      command: yarn run build
