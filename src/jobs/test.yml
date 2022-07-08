@@ -10,7 +10,7 @@ parameters:
     description: Whether or not to initialize submodules included in this repository.
   app-dir:
     type: string
-    default: '.'
+    default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
 
 steps:
@@ -22,7 +22,7 @@ steps:
       working_directory: <<parameters.app-dir>>
       command: yarn run test:ci
   - codecov/upload:
-      file: <<parameters.app-dir>>/reports/coverage
+      file: <<parameters.app-dir>>/reports/coverage/coverage-final.json
       xtra_args: --rootDir <<parameters.app-dir>>
   - store_test_results:
       working_directory: <<parameters.app-dir>>
