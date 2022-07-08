@@ -23,8 +23,6 @@ steps:
       command: yarn run test:ci
   - codecov/upload
   - store_test_results:
-      working_directory: <<parameters.app-dir>>
-      path: ./reports/
+      path: <<parameters.app-dir>>/reports/
   - store_artifacts:
-      working_directory: <<parameters.app-dir>>
-      path: ./reports/
+      path: <<parameters.app-dir>>/reports/
