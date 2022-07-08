@@ -10,7 +10,7 @@ parameters:
     description: Whether or not to initialize submodules included in this repository.
   app-dir:
     type: string
-    default: '.'
+    default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
 
 steps:
