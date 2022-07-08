@@ -8,4 +8,5 @@ display:
   source_url: "https://github.com/chiubaka/circleci-orb"
 
 orbs:
+  codecov: codecov/codecov@3.2.3
   node: circleci/node@5.0.2

@@ -21,3 +21,12 @@ steps:
       name: Run tests
       working_directory: <<parameters.app-dir>>
       command: yarn run test:ci
+  - codecov/upload:
+      file: <<parameters.app-dir>>/reports/coverage
+      xtra_args: --rootDir <<parameters.app-dir>>
+  - store_test_results:
+      working_directory: <<parameters.app-dir>>
+      path: ./reports/
+  - store_artifacts:
+      working_directory: <<parameters.app-dir>>
+      path: ./reports/
