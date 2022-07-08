@@ -21,9 +21,7 @@ steps:
       name: Run tests
       working_directory: <<parameters.app-dir>>
       command: yarn run test:ci
-  - codecov/upload:
-      file: ./reports/coverage/clover.xml
-      xtra_args: --rootDir <<parameters.app-dir>>
+  - codecov/upload
   - store_test_results:
       working_directory: <<parameters.app-dir>>
       path: ./reports/
