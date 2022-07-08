@@ -1,7 +1,11 @@
 version: 2.1
 orbs:
-  circleci-orb: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
+  chiubaka: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
   orb-tools: circleci/orb-tools@11.1
+
+test-parameters: &test-parameters
+  init-submodules: true
+  app-dir: ~/project/samples/generated-typescript-package
 
 filters: &filters
   tags:
@@ -11,16 +15,33 @@ jobs:
   # Create a job to test the commands of your orbs.
   # You may want to add additional validation steps to ensure the commands are working as expected.
   command-tests:
-    docker:
-      - image: cimg/base:current
+    executor: chiubaka/docker-node
     steps:
-      - checkout
       # Run your orb's commands to validate them.
-      - circleci-orb/greet
+      - chiubaka/setup:
+          <<: *test-parameters
+
 workflows:
   test-deploy:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
+      - chiubaka/lint:
+          name: chiubaka-lint-job
+          <<: *test-parameters
+          filters: *filters
+      - chiubaka/build:
+          name: chiubaka-build-job
+          <<: *test-parameters
+          filters: *filters
+      - chiubaka/test:
+          name: chiubaka-test-job
+          <<: *test-parameters
+          filters: *filters
+      - chiubaka/publish:
+          name: chiubaka-publish-job
+          context: npm-publishing
+          <<: *test-parameters
+          filters: *filters
       - command-tests:
           filters: *filters
       - orb-tools/pack:
@@ -31,6 +52,10 @@ workflows:
           pub-type: production
           requires:
             - orb-tools/pack
+            - chiubaka-lint-job
+            - chiubaka-build-job
+            - chiubaka-test-job
+            - chiubaka-publish-job
             - command-tests
           context: orb-publishing
           filters:
