@@ -41,6 +41,7 @@ workflows:
       - chiubaka/publish:
           name: chiubaka-publish-job
           context: npm-publishing
+          dry-run: true
           <<: *test-parameters
           filters: *filters
       - command-tests:
