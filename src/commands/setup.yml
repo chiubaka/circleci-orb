@@ -14,6 +14,10 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
 
 steps:
   - checkout
@@ -23,8 +27,18 @@ steps:
         - run:
             name: Initialize submodules
             command: git submodule update --init --recursive
-  - nx/set-shas:
-      main-branch-name: master
+  - when:
+      condition: << parameters.nx-affected >>
+      steps:
+        - nx/set-shas:
+            main-branch-name: master
+  - when:
+      condition: << parameters.nx-affected >>
+      steps:
+        - run:
+            name: Clean-up Nx set SHAs
+            working_directory: << parameters.app-dir >>
+            command: rm index.js
   - when:
       condition: << parameters.yarn-berry >>
       steps:
