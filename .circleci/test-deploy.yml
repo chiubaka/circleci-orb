@@ -6,6 +6,7 @@ orbs:
 test-parameters: &test-parameters
   init-submodules: true
   app-dir: ~/project/samples/generated-typescript-package
+  yarn-berry: true
 
 filters: &filters
   tags:
