@@ -12,12 +12,17 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - setup:
       init-submodules: <<parameters.init-submodules>>
       app-dir: <<parameters.app-dir>>
+      yarn-berry: <<parameters.yarn-berry>>
   - run:
       name: Build code
       working_directory: <<parameters.app-dir>>
-      command: yarn run build
+      command: yarn run build:ci
