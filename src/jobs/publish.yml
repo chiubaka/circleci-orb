@@ -16,6 +16,10 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
   dry-run:
     type: boolean
     default: false
@@ -26,6 +30,7 @@ steps:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
+      nx-affected: << parameters.nx-affected >>
   - run:
       name: Authenticate with NPM
       command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
