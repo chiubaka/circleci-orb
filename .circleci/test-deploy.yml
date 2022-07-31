@@ -6,6 +6,7 @@ orbs:
 test-parameters: &test-parameters
   init-submodules: true
   app-dir: ~/project/samples/generated-typescript-package
+  yarn-berry: true
 
 filters: &filters
   tags:
@@ -40,6 +41,7 @@ workflows:
       - chiubaka/publish:
           name: chiubaka-publish-job
           context: npm-publishing
+          dry-run: true
           <<: *test-parameters
           filters: *filters
       - command-tests:

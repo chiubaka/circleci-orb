@@ -10,3 +10,5 @@ parameters:
       Pick a specific cimg/node image variant:
       https://hub.docker.com/r/cimg/node/tags
     type: string
+environment:
+  MAIN_BRANCH_NAME: master

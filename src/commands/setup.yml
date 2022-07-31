@@ -10,6 +10,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - checkout
@@ -19,12 +23,27 @@ steps:
         - run:
             name: Initialize submodules
             command: git submodule update --init --recursive
-  - run:
-      name: Use Yarn Berry
-      working_directory: <<parameters.app-dir>>
-      command: yarn set version berry
-  - node/install-packages:
-      check-cache: always
-      pkg-manager: yarn-berry
-      with-cache: false
-      app-dir: <<parameters.app-dir>>
+  - when:
+      condition: << parameters.yarn-berry >>
+      steps:
+        - run:
+            name: Use Yarn berry
+            working_directory: << parameters.app-dir >>
+            command: yarn set version berry
+  - when:
+      condition: << parameters.yarn-berry >>
+      steps:
+        - node/install-packages:
+            check-cache: always
+            pkg-manager: yarn-berry
+            with-cache: false
+            app-dir: << parameters.app-dir >>
+  - when:
+      condition:
+        not: << parameters.yarn-berry >>
+      steps:
+        - node/install-packages:
+            check-cache: always
+            pkg-manager: yarn
+            with-cache: false
+            app-dir: << parameters.app-dir >>
