@@ -36,7 +36,7 @@ steps:
             name: Publish to NPM (Dry Run)
             working_directory: << parameters.app-dir >>
             command: yarn run deploy:ci --dry-run
-  - whhen:
+  - when:
       condition:
         not: << parameters.dry-run >>
       steps:
