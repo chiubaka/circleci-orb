@@ -40,7 +40,7 @@ steps:
             app-dir: << parameters.app-dir >>
   - when:
       condition:
-        not: << parameters.yarn-berry>
+        not: << parameters.yarn-berry >>
       steps:
         - node/install-packages:
             check-cache: always
