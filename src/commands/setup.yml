@@ -1,6 +1,9 @@
 description: >
   This command sets up the CI environment for the repository
 
+environment:
+  MAIN_BRANCH_NAME: master
+
 parameters:
   init-submodules:
     type: boolean
@@ -23,6 +26,8 @@ steps:
         - run:
             name: Initialize submodules
             command: git submodule update --init --recursive
+  - nx/set-shas:
+      main-branch-name: master
   - when:
       condition: << parameters.yarn-berry >>
       steps:
