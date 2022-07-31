@@ -1,9 +1,6 @@
 description: >
   This command sets up the CI environment for the repository
 
-environment:
-  MAIN_BRANCH_NAME: master
-
 parameters:
   init-submodules:
     type: boolean
