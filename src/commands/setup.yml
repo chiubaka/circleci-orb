@@ -23,6 +23,8 @@ steps:
         - run:
             name: Initialize submodules
             command: git submodule update --init --recursive
+  - nx/set-shas:
+      main-branch-name: master
   - when:
       condition: << parameters.yarn-berry >>
       steps:
