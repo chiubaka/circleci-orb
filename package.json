@@ -7,8 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "circleci local execute --job orb-tools/lint && circleci local execute --job shellcheck/check",
+    "lint": "yarn lint:yml && yarn lint:scripts",
+    "lint:yml": "circleci local execute --job orb-tools/lint",
+    "lint:scripts": "circleci local execute --job shellcheck/check",
     "build": "circleci local execute --job orb-tools/pack",
+    "prepare": "husky install",
     "test": "bats test"
   },
   "repository": {
@@ -27,6 +30,7 @@
   },
   "homepage": "https://github.com/chiubaka/circleci-orb#readme",
   "devDependencies": {
-    "bats": "^1.7.0"
+    "bats": "^1.7.0",
+    "husky": "^8.0.1"
   }
 }

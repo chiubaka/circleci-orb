@@ -6,3 +6,8 @@ bats@^1.7.0:
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/bats/-/bats-1.7.0.tgz#caae958b1d211eda6b1322ac7792515de40165a2"
   integrity sha512-pt5zjJQUB4+JI8Si+z/IAWc8yhMyhdZs6IXMCKgzF768dUIyW5xyBstWtDI5uGSa80v7UQOhh+w0GA4p4+01Bg==
+
+husky@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.yarnpkg.com/husky/-/husky-8.0.1.tgz#511cb3e57de3e3190514ae49ed50f6bc3f50b3e9"
+  integrity sha512-xs7/chUH/CKdOCs7Zy0Aev9e/dKOMZf3K1Az1nar3tzlv0jfqnYtu235bstsWTmXOR0EfINrPa97yy4Lz6RiKw==
