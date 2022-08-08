@@ -1,0 +1,32 @@
+{
+  "name": "@chiubaka/circleci-orb",
+  "version": "0.0.1",
+  "description": "CircleCI Orb for common Chiubaka Technologies CI/CD tasks",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "lint": "circleci local execute --job orb-tools/lint && circleci local execute --job shellcheck/check",
+    "build": "circleci local execute --job orb-tools/pack",
+    "test": "bats test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiubaka/circleci-orb.git"
+  },
+  "keywords": [
+    "circleci",
+    "circleci-orb",
+    "chiubaka"
+  ],
+  "author": "Daniel Chiu",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/chiubaka/circleci-orb/issues"
+  },
+  "homepage": "https://github.com/chiubaka/circleci-orb#readme",
+  "devDependencies": {
+    "bats": "^1.7.0"
+  }
+}
