@@ -49,7 +49,7 @@ steps:
         - run:
             name: Configure git user
             working_directory: << parameters.app-dir >>
-            command: git config --local user.name << parameters.git-user-name >> && git config --local user.email << parameters.git-user-email >>
+            command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
   - run:
       name: Authenticate with NPM
       command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
