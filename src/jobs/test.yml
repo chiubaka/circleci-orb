@@ -20,6 +20,18 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  configure-git-user:
+    type: boolean
+    default: false
+    description: Whether or not to ensure that a git user is set before running this job.
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Name of the git user to configure
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Email of the git user to configure
 
 steps:
   - setup:
@@ -27,6 +39,13 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+  - when:
+      condition: << parameters.configure-git-user >>
+      steps:
+        - run:
+            name: Configure git user
+            working_directory: << parameters.app-dir >>
+            command: git config --local user.name << parameters.git-user-name >> && git config --local user.email << parameters.git-user-email >>
   - run:
       name: Run tests
       working_directory: << parameters.app-dir >>

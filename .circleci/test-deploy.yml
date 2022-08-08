@@ -38,12 +38,16 @@ workflows:
       - chiubaka/test:
           name: chiubaka-test-job
           <<: *test-parameters
+          configure-git-user: true
           filters: *filters
       - chiubaka/publish:
           name: chiubaka-publish-job
           context: npm-publishing
           dry-run: true
           <<: *test-parameters
+          configure-git-user: true
+          git-user-name: Daniel Chiu
+          git-user-email: daniel@chiubaka.com
           filters: *filters
       - command-tests:
           filters: *filters
