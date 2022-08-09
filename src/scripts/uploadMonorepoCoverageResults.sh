@@ -6,10 +6,8 @@ unset NODE_OPTIONS
 # shellcheck source=/dev/null
 source "$BASH_ENV"
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
 # shellcheck disable=1090,1091
-source "$SCRIPT_DIR"/parseNxProjects.sh
+source "$PARSE_NX_PROJECTS"
 
 declare -A projects
 parse_nx_projects "$WORKSPACE_JSON" projects

@@ -34,12 +34,10 @@ steps:
             environment:
               VERSION: << parameters.version >>
   - run:
-      name: Load Project Parsing Helpers
-      command: << include(scripts/parseNxProjects.sh) >>
-  - run:
       name: Upload Monorepo Coverage Results
       command: << include(scripts/uploadMonorepoCoverageResults.sh) >>
       environment:
         WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
         COVERAGE_DIR: << parameters.app-dir >>/coverage
         XTRA_ARGS: << parameters.xtra_args >>
+        PARSE_NX_PROJECTS: << include(scripts/parseNxProjects.sh) >>
