@@ -62,9 +62,9 @@ steps:
   - when:
       condition: << parameters.monorepo >>
       steps:
-        - upload-monorepo-coverage
+        - upload-monorepo-coverage:
             app-dir: << parameters.app-dir >>
-            
+
   - store_test_results:
       path: << parameters.app-dir >>/reports/
   - store_artifacts:
