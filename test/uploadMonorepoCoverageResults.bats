@@ -9,7 +9,10 @@ setup() {
   CODECOV_BINARY="${mock}" \
   CODECOV_TOKEN=test-token \
   CIRCLE_BUILD_NUM=32 \
-  run uploadMonorepoCoverageResults.sh $TEST_DIR/examples/workspace.json coverage --extra extra-arg
+  WORKSPACE_JSON=$TEST_DIR/examples/workspace.json \
+  COVERAGE_DIR=coverage \
+  XTRA_ARGS="--extra extra-arg" \
+  run uploadMonorepoCoverageResults.sh
 
   assert_success
   assert_equal "$(mock_get_call_num ${mock})" 2

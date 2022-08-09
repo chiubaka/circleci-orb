@@ -18,19 +18,21 @@ parameters:
 steps:
   - run:
       name: Download Codecov Uploader
-      command: << include(scripts/downloadCodecovUploader.sh) >> << parameters.version >>
+      command: << include(scripts/downloadCodecovUploader.sh) >>
+      environment:
+        VERSION: << parameters.version >>
   - when:
       condition: << parameters.validate >>
       steps:
         - run:
             name: Validate Codecov Uploader
-            command: |
-              << include(scripts/validateCodecovUploader.sh) >>
-              << parameters.version >>
+            command: << include(scripts/validateCodecovUploader.sh) >>
+            environment:
+              VERSION: << parameters.version >>
   - run:
       name: Upload Monorepo Coverage Results
-      command: |
-        << include(scripts/uploadMonorepoCoverageResults.sh) >>
-        << parameters.app-dir >>/workspace.json
-        << parameters.app-dir >>/coverage
-        << parameters.xtra_args >>
+      command: << include(scripts/uploadMonorepoCoverageResults.sh) >>
+      environment:
+        WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
+        COVERAGE_DIR: << parameters.app-dir >>/coverage
+        XTRA_ARGS: << parameters.xtra_args >>

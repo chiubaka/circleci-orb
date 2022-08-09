@@ -6,15 +6,13 @@ unset NODE_OPTIONS
 # shellcheck source=/dev/null
 source "$BASH_ENV"
 
-WORKSPACE_JSON=$1
-COVERAGE_DIR=$2
-
-shift 2
-
 # shellcheck disable=SC1091
 source parseNxProjects.sh
 declare -A projects
 parse_nx_projects "$WORKSPACE_JSON" projects
+
+[ -n "$XTRA_ARGS" ] && \
+  set - "${@}" "$XTRA_ARGS"
 
 for project_name in "${!projects[@]}"
 do

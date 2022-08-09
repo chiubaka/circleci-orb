@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-VERSION=$1
-
 # shellcheck source=/dev/null
 source "$BASH_ENV"
 

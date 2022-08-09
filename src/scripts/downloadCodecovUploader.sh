@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-VERSION=$1
-
 family=$(uname -s | tr '[:upper:]' '[:lower:]')
 os="windows"
 [[ $family == "darwin" ]] && os="macos"

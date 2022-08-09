@@ -2,7 +2,7 @@ setup_file() {
   load "helpers/setup"
   _setup
 
-  BASH_ENV=$TEST_DIR/.bash_env run downloadCodeCovUploader.sh latest
+  VERSION=latest BASH_ENV=$TEST_DIR/.bash_env run downloadCodeCovUploader.sh
 }
 
 setup() {
@@ -21,6 +21,6 @@ teardown_file() {
 }
 
 @test "validates the SHA hash of the downloaded codecov uploader" {
-  BASH_ENV=$TEST_DIR/.bash_env run validateCodecovUploader.sh latest
+  VERSION=latest BASH_ENV=$TEST_DIR/.bash_env run validateCodecovUploader.sh
   assert_success
 }
