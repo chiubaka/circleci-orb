@@ -2,7 +2,7 @@ setup_file() {
   load "helpers/setup"
   _setup
 
-  VERSION=latest BASH_ENV="$TEST_DIR"/.bash_env run downloadCodeCovUploader.sh
+  VERSION=latest BASH_ENV="$TEST_DIR"/.bash_env run downloadCodecovUploader.sh
 }
 
 setup() {
