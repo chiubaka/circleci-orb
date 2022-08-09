@@ -29,7 +29,6 @@ workflows:
                 pkg-manager: yarn
       - shellcheck/check:
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
-          pattern: "(*.sh|*.bash|*.bats)"
           filters: *filters
       - orb-tools/publish:
           orb-name: chiubaka/circleci-orb
