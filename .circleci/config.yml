@@ -19,7 +19,7 @@ workflows:
       - orb-tools/review:
           filters: *filters
       - bats/run:
-          filter: *filters
+          filters: *filters
           path: ./test
       - shellcheck/check:
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
