@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "yarn lint:yml && yarn lint:scripts",
     "lint:yml": "circleci local execute --job orb-tools/lint",
-    "lint:scripts": "circleci local execute --job shellcheck/check",
+    "lint:scripts": "shellcheck src/scripts/*.sh",
     "build": "circleci local execute --job orb-tools/pack",
     "prepare": "husky install",
     "test": "bats test"
@@ -35,6 +35,7 @@
     "bats-file": "bats-core/bats-file#c7df56c",
     "bats-mock": "grayhemp/bats-mock#48fce74",
     "bats-support": "^0.3.0",
-    "husky": "^8.0.1"
+    "husky": "^8.0.1",
+    "shellcheck": "^1.1.0"
   }
 }
