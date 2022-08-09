@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "yarn lint:scripts && yarn lint:yml",
     "lint:yml": "circleci local execute --job orb-tools/lint",
-    "lint:scripts": "shellcheck src/scripts/*.sh",
+    "lint:scripts": "shellcheck src/scripts/*.sh test/*.bats test/helpers/*.bash",
     "build": "circleci local execute --job orb-tools/pack",
     "prepare": "husky install",
     "test": "bats test"
