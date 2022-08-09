@@ -7,6 +7,14 @@ bats-assert@^2.0.0:
   resolved "https://registry.yarnpkg.com/bats-assert/-/bats-assert-2.0.0.tgz#ba1b4eeee2c7848f1a25948b623790dd41a2b94b"
   integrity sha512-qO3kNilWxW8iCONu9NDUfvsCiC6JzL6DPOc/DGq9z3bZ9/A7wURJ+FnFMxGbofOmWbCoy7pVhofn0o47A95qkQ==
 
+bats-file@bats-core/bats-file#c7df56c:
+  version "0.2.0"
+  resolved "https://codeload.github.com/bats-core/bats-file/tar.gz/c7df56ce2ffbd08d3e85c9d91f67981b7f317bf8"
+
+bats-mock@grayhemp/bats-mock#48fce74:
+  version "0.0.0"
+  resolved "https://codeload.github.com/grayhemp/bats-mock/tar.gz/48fce74482a4d2bb879b904ccab31b6bc98e3224"
+
 bats-support@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/bats-support/-/bats-support-0.3.0.tgz#a1f6b8878d2a51837911fdffa0750036f60701ef"

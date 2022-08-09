@@ -32,6 +32,8 @@
   "devDependencies": {
     "bats": "^1.7.0",
     "bats-assert": "^2.0.0",
+    "bats-file": "bats-core/bats-file#c7df56c",
+    "bats-mock": "grayhemp/bats-mock#48fce74",
     "bats-support": "^0.3.0",
     "husky": "^8.0.1"
   }
