@@ -10,6 +10,7 @@ parse_nx_projects() {
   IFS=" " read -r -a project_paths <<< "$(parse_nx_project_paths "$JSON_FILE")"
 
   for (( i=0; i<${#project_names[@]}; i++ )); do
+    # shellcheck disable=SC2034
     _projects[${project_names[$i]}]=${project_paths[$i]}
   done
 }
