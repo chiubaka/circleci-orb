@@ -8,7 +8,7 @@ source "$BASH_ENV"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# shellcheck disable=SC1091
+# shellcheck disable=1090,1091
 source "$SCRIPT_DIR"/parseNxProjects.sh
 
 declare -A projects
