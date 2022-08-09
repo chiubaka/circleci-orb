@@ -1,0 +1,30 @@
+description: >
+  This command uploads coverage reports for monorepos to Codecov
+
+parameters:
+  validate:
+    type: boolean
+    default: true
+    description: Validate the uploader before uploading the codecov result.
+  version:
+    type: string
+    default: latest
+    description: Version of the Codecov uploader to use
+  xtra_args:
+    type: string
+    default: ""
+    description: Any extra flags as provided by the bash uploader (e.g. `-v -Z`).
+
+steps:
+  - run:
+      name: Download Codecov Uploader
+      command: << include(scripts/downloadCodecovUploader.sh) >> << parameters.version >>
+  - when:
+      condition: << parameters.validate >>
+      steps:
+        - run:
+            name: Validate Codecov Uploader
+            command: << include(scripts/validateCodecovUploader.sh) >> << parameters.version >>
+  - run:
+      name: Upload Monorepo Coverage Results
+      command: << include(scripts/uploadMonorepoCoverageResults.sh) >> << parameters.app-dir >>/workspace.json << parameters.app-dir >>/coverage << parameters.xtra_args >>
