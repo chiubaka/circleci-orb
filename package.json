@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "yarn lint:yml && yarn lint:scripts",
+    "lint": "yarn lint:scripts && yarn lint:yml",
     "lint:yml": "circleci local execute --job orb-tools/lint",
     "lint:scripts": "shellcheck src/scripts/*.sh",
     "build": "circleci local execute --job orb-tools/pack",
