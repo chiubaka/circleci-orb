@@ -23,7 +23,7 @@ do
   $CODECOV_BINARY \
     -t "$CODECOV_TOKEN" \
     -n "$CIRCLE_BUILD_NUM" \
-    -f "$project_coverage_dir" \
+    --dir "$project_coverage_dir" \
     -F "$project_name" \
     "$@"
 done
