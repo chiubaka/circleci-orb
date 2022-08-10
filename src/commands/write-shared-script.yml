@@ -16,6 +16,8 @@ parameters:
 steps:
   - run:
       name: Write << parameters.script-name >> to disc
-      command: mkdir -p << parameters.script-dir >> echo "$SCRIPT" > << parameters.script-dir >>/<< parameters.script-name >>
+      command: << include(scripts/writeSharedScript.sh) >>
       environment:
         SCRIPT: << parameters.script >>
+        SCRIPT_DIR: << parameters.script-dir >>
+        SCRIPT_NAME: << parameters.script-name >>
