@@ -21,7 +21,7 @@ do
   project_path=${projects[$project_name]}
   project_coverage_dir="$COVERAGE_DIR/$project_path"
 
-  if [ ! -d $project_coverage_dir ]
+  if [ ! -d "$project_coverage_dir" ]
   then
     echo "Skipping coverage upload for $project_name because $project_coverage_dir does not exist"
     continue
