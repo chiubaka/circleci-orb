@@ -20,6 +20,9 @@ parameters:
     description: Any extra flags as provided by the bash uploader (e.g. `-v -Z`).
 
 steps:
+  - write-shared-script:
+      script-name: parseNxProjects.sh
+      script: << include(scripts/parseNxProjects.sh) >>
   - run:
       name: Download Codecov Uploader
       command: << include(scripts/downloadCodecovUploader.sh) >>
@@ -40,4 +43,4 @@ steps:
         WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
         COVERAGE_DIR: << parameters.app-dir >>/coverage
         XTRA_ARGS: << parameters.xtra_args >>
-        PARSE_NX_PROJECTS_SCRIPT: << include(scripts/parseNxProjects.sh) >>
+        PARSE_NX_PROJECTS_SCRIPT: ~/@chiubaka/circleci-orb/scripts/parseNxProjects.sh
