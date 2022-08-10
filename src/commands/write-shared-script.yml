@@ -1,5 +1,5 @@
 description: >
-  This command writes shared scripts to disc so they can be consumed by other scripts
+  This command writes shared scripts to disk so they can be consumed by other scripts
 
 parameters:
   script-dir:
@@ -15,7 +15,7 @@ parameters:
 
 steps:
   - run:
-      name: Write << parameters.script-name >> to disc
+      name: Write << parameters.script-name >> to disk
       command: << include(scripts/writeSharedScript.sh) >>
       environment:
         SCRIPT: << parameters.script >>
