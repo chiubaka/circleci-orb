@@ -6,6 +6,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  coverage-dir:
+    type: string
+    default: reports/coverage
+    description: Path relative to app-dir where coverage reports can be found
   validate:
     type: boolean
     default: true
@@ -41,6 +45,6 @@ steps:
       command: << include(scripts/uploadMonorepoCoverageResults.sh) >>
       environment:
         WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
-        COVERAGE_DIR: << parameters.app-dir >>/coverage
+        COVERAGE_DIR: << parameters.app-dir >>/<< parameters.coverage-dir >>
         XTRA_ARGS: << parameters.xtra_args >>
         PARSE_NX_PROJECTS_SCRIPT: ~/@chiubaka/circleci-orb/scripts/parseNxProjects.sh
