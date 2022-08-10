@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+set -e
 
 # See https://github.com/codecov/uploader/issues/475
 unset NODE_OPTIONS
@@ -19,6 +20,12 @@ for project_name in "${!projects[@]}"
 do
   project_path=${projects[$project_name]}
   project_coverage_dir="$COVERAGE_DIR/$project_path"
+
+  if [ ! -d $project_coverage_dir ]
+  then
+    echo "Skipping coverage upload for $project_name because $project_coverage_dir does not exist"
+    continue
+  fi
 
   $CODECOV_BINARY \
     -t "$CODECOV_TOKEN" \
