@@ -12,7 +12,7 @@ setup() {
   WORKSPACE_JSON="$TEST_DIR"/examples/workspace.json \
   COVERAGE_DIR=coverage \
   XTRA_ARGS="--extra extra-arg" \
-  PARSE_NX_PROJECTS="$PROJECT_ROOT/src/scripts/parseNxProjects.sh" \
+  PARSE_NX_PROJECTS_SCRIPT="$(cat "$PROJECT_ROOT"/src/scripts/parseNxProjects.sh)" \
   run uploadMonorepoCoverageResults.sh
 
   assert_success
