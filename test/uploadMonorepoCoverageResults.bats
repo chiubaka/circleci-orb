@@ -52,6 +52,7 @@ teardown() {
 @test "exits with an error if Codecov upload fails" {
   mock=$(mock_create)
   mock_set_status "${mock}" 1 2
+
   BASH_ENV=$TEST_DIR/examples/.bash_env \
   CODECOV_BINARY="${mock}" \
   CODECOV_TOKEN=test-token \
