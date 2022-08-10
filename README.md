@@ -37,3 +37,10 @@ We welcome [issues](https://github.com/chiubaka/circleci-orb/issues) to and [pul
 5. Now ensure the version tag selected is semantically accurate based on the changes included.
 6. Click _"Publish Release"_.
     - This will push a new tag and trigger your publishing pipeline on CircleCI.
+
+## Development
+
+### Project Setup
+1. Clone this repository
+2. Run `yarn install` in the project root
+3. Run `brew install expect` (needed for the `unbuffer` command)

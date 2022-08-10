@@ -32,6 +32,10 @@ parameters:
     type: string
     default: circleci@chiubaka.com
     description: Email of the git user to configure
+  monorepo:
+    type: boolean
+    default: true
+    description: Whether or not this repo is a monorepo
 
 steps:
   - setup:
@@ -50,7 +54,17 @@ steps:
       name: Run tests
       working_directory: << parameters.app-dir >>
       command: yarn run test:ci
-  - codecov/upload
+  - when:
+      condition:
+        not: << parameters.monorepo >>
+      steps:
+        - codecov/upload
+  - when:
+      condition: << parameters.monorepo >>
+      steps:
+        - upload-monorepo-coverage:
+            app-dir: << parameters.app-dir >>
+
   - store_test_results:
       path: << parameters.app-dir >>/reports/
   - store_artifacts:

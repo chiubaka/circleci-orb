@@ -39,6 +39,7 @@ workflows:
           name: chiubaka-test-job
           <<: *test-parameters
           configure-git-user: true
+          monorepo: false
           filters: *filters
       - chiubaka/publish:
           name: chiubaka-publish-job

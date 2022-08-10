@@ -1,0 +1,23 @@
+description: >
+  This command writes shared scripts to disc so they can be consumed by other scripts
+
+parameters:
+  script-dir:
+    type: string
+    default: ~/@chiubaka/circleci-orb/scripts
+    description: Path to the directory to write shared scripts to.
+  script-name:
+    type: string
+    description: Name of the script to write
+  script:
+    type: string
+    description: The script to write. Should be included here using the include directive.
+
+steps:
+  - run:
+      name: Write << parameters.script-name >> to disc
+      command: << include(scripts/writeSharedScript.sh) >>
+      environment:
+        SCRIPT: << parameters.script >>
+        SCRIPT_DIR: << parameters.script-dir >>
+        SCRIPT_NAME: << parameters.script-name >>

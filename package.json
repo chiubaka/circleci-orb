@@ -1,0 +1,41 @@
+{
+  "name": "@chiubaka/circleci-orb",
+  "version": "0.0.1",
+  "description": "CircleCI Orb for common Chiubaka Technologies CI/CD tasks",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "lint": "yarn lint:scripts && yarn lint:yml",
+    "lint:yml": "circleci local execute --job orb-tools/lint",
+    "lint:scripts": "shellcheck src/scripts/*.sh test/*.bats test/helpers/*.bash",
+    "build": "circleci local execute --job orb-tools/pack",
+    "prepare": "husky install",
+    "test": "bats test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiubaka/circleci-orb.git"
+  },
+  "keywords": [
+    "circleci",
+    "circleci-orb",
+    "chiubaka"
+  ],
+  "author": "Daniel Chiu",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/chiubaka/circleci-orb/issues"
+  },
+  "homepage": "https://github.com/chiubaka/circleci-orb#readme",
+  "devDependencies": {
+    "bats": "^1.7.0",
+    "bats-assert": "^2.0.0",
+    "bats-file": "bats-core/bats-file#c7df56c",
+    "bats-mock": "grayhemp/bats-mock#48fce74",
+    "bats-support": "^0.3.0",
+    "husky": "^8.0.1",
+    "shellcheck": "^1.1.0"
+  }
+}
