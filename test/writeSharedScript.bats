@@ -2,15 +2,15 @@ setup() {
   load "helpers/setup"
   _setup
 
-  SCRIPT_DIR="$TEST_DIR"/@chiubaka/circleci-orb/scripts
-  SCRIPT_PATH="$TEST_DIR"/@chiubaka/circleci-orb/scripts/test.sh
+  SCRIPT_DIR="$TEST_DIR"/examples/@chiubaka/circleci-orb/scripts
+  SCRIPT_PATH="$SCRIPT_DIR"/test.sh
 
   SCRIPT="echo foobar" SCRIPT_DIR=$SCRIPT_DIR SCRIPT_NAME=test.sh run writeSharedScript.sh
 }
 
 teardown() {
   rm "$SCRIPT_PATH"
-  rm -r "$SCRIPT_DIR"
+  rm -d "$SCRIPT_DIR"
 }
 
 @test "writes the shared script to disc at the specified location" {
