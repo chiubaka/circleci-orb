@@ -11,7 +11,7 @@ parameters:
     description: Name of the script to write
   script:
     type: string
-    description: The script to write. Should be included here using the << include(...) >> directive.
+    description: The script to write. Should be included here using the include directive.
 
 steps:
   - run:
