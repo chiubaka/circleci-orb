@@ -40,4 +40,4 @@ steps:
         WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
         COVERAGE_DIR: << parameters.app-dir >>/coverage
         XTRA_ARGS: << parameters.xtra_args >>
-        PARSE_NX_PROJECTS: << include(scripts/parseNxProjects.sh) >>
+        PARSE_NX_PROJECTS_SCRIPT: << include(scripts/parseNxProjects.sh) >>
