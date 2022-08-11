@@ -26,7 +26,7 @@ steps:
             script-name: parseMonorepoDeployTag.sh
             script: << include(scripts/parseMonorepoDeployTag.sh) >>
         - run:
-            name: "[Monorepo] << parameters.task-name >> DRY_RUN=<< parameters.dry-run >>)"
+            name: "[Monorepo] << parameters.task-name >> (DRY_RUN=<< parameters.dry-run >>)"
             working_directory: << parameters.app-dir >>
             command: << include(scripts/deployMonorepoPackage.sh) >>
             environment:
