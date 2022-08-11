@@ -41,8 +41,8 @@ workflows:
           configure-git-user: true
           monorepo: false
           filters: *filters
-      - chiubaka/publish:
-          name: chiubaka-publish-job
+      - chiubaka/deploy:
+          name: chiubaka-deploy-job
           context: npm-publishing
           dry-run: true
           <<: *test-parameters
@@ -50,6 +50,7 @@ workflows:
           git-user-name: Daniel Chiu
           git-user-email: daniel@chiubaka.com
           monorepo: false
+          task-name: Publish to NPM
           filters: *filters
       - command-tests:
           filters: *filters
@@ -64,7 +65,7 @@ workflows:
             - chiubaka-lint-job
             - chiubaka-build-job
             - chiubaka-test-job
-            - chiubaka-publish-job
+            - chiubaka-deploy-job
             - command-tests
           context: orb-publishing
           filters:

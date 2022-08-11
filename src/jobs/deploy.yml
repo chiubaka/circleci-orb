@@ -1,33 +1,21 @@
 description: >
-  Publishes this project to NPM. NPM_TOKEN environment variable must be set.
+  Deploys the project (or a subset of packages in a monorepo).
 
 executor: docker-node
 
 parameters:
-  init-submodules:
-    type: boolean
-    default: false
-    description: Whether or not to initialize submodules included in this repository.
   app-dir:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
-  dry-run:
-    type: boolean
-    default: false
-    description: Whether or not to run a real publish or just a dry run
   configure-git-user:
     type: boolean
     default: false
     description: Whether or not to ensure that a git user is set before running this job.
+  dry-run:
+    type: boolean
+    default: false
+    description: Whether or not to run a real deploy or just a dry run
   git-user-name:
     type: string
     default: CircleCI
@@ -36,17 +24,32 @@ parameters:
     type: string
     default: circleci@chiubaka.com
     description: Email of the git user to configure
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
   monorepo:
     type: boolean
     default: true
     description: Whether or not this is a monorepo
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  task-name:
+    type: string
+    description: The name of this deploy task to display in the CircleCI UI
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - setup:
-      init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
+      init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.configure-git-user >>
       steps:
@@ -64,4 +67,4 @@ steps:
       app-dir: << parameters.app-dir >>
       dry-run: << parameters.dry-run >>
       monorepo: << parameters.monorepo >>
-      task-name: Publish to NPM
+      task-name: << parameters.task-name >>

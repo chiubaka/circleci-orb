@@ -9,7 +9,7 @@ parameters:
   dry-run:
     type: boolean
     default: false
-    description: Whether or not to run a real publish or just a dry run
+    description: Whether or not to run a real deploy or just a dry run
   monorepo:
     type: boolean
     default: true
