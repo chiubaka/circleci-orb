@@ -30,7 +30,7 @@ steps:
             working_directory: << parameters.app-dir >>
             command: << include(scripts/deployMonorepoPackage.sh) >>
             environment:
-              PARSE_MONOREPO_DEPLOY_TAG_SCRIPT: ~/@chiubaka/circleci-orb/scripts/parseMonorepoDeployTag.sh
+              PARSE_MONOREPO_DEPLOY_TAG_SCRIPT: ../@chiubaka/circleci-orb/scripts/parseMonorepoDeployTag.sh
               DRY_RUN: << parameters.dry-run >>
   - when:
       condition:
