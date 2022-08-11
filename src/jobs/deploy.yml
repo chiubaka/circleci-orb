@@ -38,6 +38,7 @@ parameters:
     description: Whether or not to set up environment variables for `nx affected`.
   task-name:
     type: string
+    default: Deploy
     description: The name of this deploy task to display in the CircleCI UI
   yarn-berry:
     type: boolean
