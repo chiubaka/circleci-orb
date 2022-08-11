@@ -4,8 +4,8 @@ description: >
 parameters:
   script-dir:
     type: string
-    default: ~/@chiubaka/circleci-orb/scripts
-    description: Path to the directory to write shared scripts to.
+    default: ../@chiubaka/circleci-orb/scripts
+    description: Path to the directory to write shared scripts to. Relative to project root.
   script-name:
     type: string
     description: Name of the script to write
