@@ -13,6 +13,7 @@ teardown() {
 
 @test "uploads one coverage report to Codecov per monorepo package" {
   mock=$(mock_create)
+
   BASH_ENV=$TEST_DIR/examples/.bash_env \
   CODECOV_BINARY="${mock}" \
   CODECOV_TOKEN=test-token \
@@ -33,6 +34,7 @@ teardown() {
   rm -d "$COVERAGE_DIR"/e2e/nx-plugin-e2e
 
   mock=$(mock_create)
+
   BASH_ENV=$TEST_DIR/examples/.bash_env \
   CODECOV_BINARY="${mock}" \
   CODECOV_TOKEN=test-token \

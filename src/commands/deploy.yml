@@ -1,0 +1,53 @@
+description: >
+  This command triggers the deploy script for the repo.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  dry-run:
+    type: boolean
+    default: false
+    description: Whether or not to run a real publish or just a dry run
+  monorepo:
+    type: boolean
+    default: true
+    description: Whether or not this is a monorepo
+  task-name:
+    type: string
+    description: The name of this task to display in the CircleCI UI
+
+steps:
+  - when:
+      condition: << parameters.monorepo >>
+      steps:
+        - write-shared-script:
+            script-name: parseMonorepoDeployTag.sh
+            script: << include(scripts/parseMonorepoDeployTag.sh) >>
+        - run:
+            name: "[Monorepo] << parameters.task-name >> DRY_RUN=<< parameters.dry-run >>)"
+            working_directory: << parameters.app-dir >>
+            command: << include(scripts/deployMonorepoPackage.sh) >>
+            environment:
+              PARSE_MONOREPO_DEPLOY_TAG_SCRIPT: ~/@chiubaka/circleci-orb/scripts/parseMonorepoDeployTag.sh
+              DRY_RUN: << parameters.dry-run >>
+  - when:
+      condition:
+        not: << parameters.monorepo >>
+      steps:
+        - when:
+            condition: << parameters.dry-run >>
+            steps:
+              - run:
+                  name: << parameters.task-name >> (Dry Run)
+                  working_directory: << parameters.app-dir >>
+                  command: yarn deploy:ci --dry-run
+        - when:
+            condition:
+              not: << parameters.dry-run >>
+            steps:
+              - run:
+                  name: << parameters.task-name >>
+                  working_directory: << parameters.app-dir >>
+                  command: yarn deploy:ci
