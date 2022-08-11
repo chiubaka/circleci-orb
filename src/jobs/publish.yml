@@ -56,7 +56,10 @@ steps:
             command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
   - run:
       name: Authenticate with NPM
-      command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      command: << include(scripts/authenticateWithNpm.sh) >>
+  - run:
+      name: Authenticate with Yarn
+      command: << include(scripts/authenticateWithYarn.sh) >>
   - deploy:
       app-dir: << parameters.app-dir >>
       dry-run: << parameters.dry-run >>
