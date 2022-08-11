@@ -49,6 +49,7 @@ workflows:
           configure-git-user: true
           git-user-name: Daniel Chiu
           git-user-email: daniel@chiubaka.com
+          monorepo: false
           filters: *filters
       - command-tests:
           filters: *filters

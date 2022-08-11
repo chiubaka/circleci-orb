@@ -36,6 +36,10 @@ parameters:
     type: string
     default: circleci@chiubaka.com
     description: Email of the git user to configure
+  monorepo:
+    type: boolean
+    default: true
+    description: Whether or not this is a monorepo
 
 steps:
   - setup:
@@ -53,18 +57,8 @@ steps:
   - run:
       name: Authenticate with NPM
       command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-  - when:
-      condition: << parameters.dry-run >>
-      steps:
-        - run:
-            name: Publish to NPM (Dry Run)
-            working_directory: << parameters.app-dir >>
-            command: yarn run deploy:ci --dry-run
-  - when:
-      condition:
-        not: << parameters.dry-run >>
-      steps:
-        - run:
-            name: Publish to NPM
-            working_directory: << parameters.app-dir >>
-            command: yarn run deploy:ci
+  - deploy:
+      app-dir: << parameters.app-dir >>
+      dry-run: << parameters.dry-run >>
+      monorepo: << parameters.monorepo >>
+      task-name: Publish to NPM
