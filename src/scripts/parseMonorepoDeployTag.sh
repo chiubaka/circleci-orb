@@ -3,7 +3,7 @@
 parse_package_name() {
   TAG=$1
   match="$(echo "$TAG" | grep -oE "^(\w+-)+")"
-  semver="${TAG#$match}"
+  semver="${TAG#"$match"}"
 
   echo "${match%"-"}"
 }
@@ -11,7 +11,7 @@ parse_package_name() {
 parse_semver() {
   TAG=$1
   match="$(echo "$TAG" | grep -oE "^(\w+-)+")"
-  semver="${TAG#$match}"
+  semver="${TAG#"$match"}"
 
   echo "${semver#v}"
 }
