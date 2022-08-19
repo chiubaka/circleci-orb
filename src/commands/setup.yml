@@ -21,6 +21,9 @@ parameters:
 
 steps:
   - checkout
+  - run:
+      name: Set default git branch
+      command: git config --global init.defaultBranch master
   - when:
       condition: << parameters.init-submodules >>
       steps:
