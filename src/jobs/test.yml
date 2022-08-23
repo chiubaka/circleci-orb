@@ -43,7 +43,7 @@ parameters:
   wait-for-docker-services:
     type: steps
     default: []
-    description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service.
+    description: Steps to run to verify that docker services are all ready.
 
 steps:
   - setup:

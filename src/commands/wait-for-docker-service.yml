@@ -20,5 +20,9 @@ parameters:
 steps:
   - run:
       name: Wait for << parameters.service-name >> to be ready
-      command: |
-        docker container run --network container:<< parameters.container-name >> docker.io/jwilder/dockerize -wait << parameters.url >> -wait-retry-interval << parameters.retry-interval >> -timeout << parameters.timeout >>
+      command: << include(scripts/waitForDockerService.sh) >>
+      environment:
+        CONTAINER_NAME: << parameters.container-name >>
+        URL: << parameters.url >>
+        RETRY_INTERVAL: << parameters.retry-interval >>
+        TIMEOUT: << parameters.timeout >>
