@@ -9,5 +9,6 @@ display:
 
 orbs:
   codecov: codecov/codecov@3.2.3
+  docker: circleci/docker@2.1.3
   node: circleci/node@5.0.2
   nx: nrwl/nx@1.5.1

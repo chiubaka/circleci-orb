@@ -1,0 +1,24 @@
+description: >
+  Waits for a particular docker service to be up and running
+
+parameters:
+  container-name:
+    type: string
+    description: Name of the container to wait for
+  url:
+    type: string
+    description: URL to check to determine whether or not service is ready
+  retry-interval:
+    type: string
+    default: 2s
+    description: Interval at which to check whether or not the service is ready
+  timeout:
+    type: string
+    default: 20s
+    description: Total time to wait for the service to be ready
+
+steps:
+  - run:
+      name: Wait for << parameters.service-name >> to be ready
+      command: |
+        docker container run --network container:<< parameters.container-name >> docker.io/jwilder/dockerize -wait << parameters.url >> -wait-retry-interval << parameters.retry-interval >> -timeout << parameters.timeout >>
