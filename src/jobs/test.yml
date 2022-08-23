@@ -36,6 +36,14 @@ parameters:
     type: boolean
     default: true
     description: Whether or not this repo is a monorepo
+  docker-compose:
+    type: boolean
+    default: false
+    description: Whether or not to run docker-compose as part of testing setup
+  wait-for-docker-services:
+    type: steps
+    default: []
+    description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
 
 steps:
   - setup:
@@ -43,6 +51,11 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+  - when:
+      condition: << parameters.docker-compose >>
+      steps:
+        - compose-docker:
+            wait-for-services: << parameters.wait-for-docker-services >>
   - when:
       condition: << parameters.configure-git-user >>
       steps:
