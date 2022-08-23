@@ -10,7 +10,6 @@ parameters:
 steps:
   - docker/install-docker
   - docker/install-docker-compose
-  - setup_remote_docker
   - run:
       name: Build images of services declared in docker-compose.yml
       command: docker-compose build
