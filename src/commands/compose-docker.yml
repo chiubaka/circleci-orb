@@ -5,7 +5,7 @@ parameters:
   wait-for-services:
     type: steps
     default: []
-    description: Runs a set of steps to wait until all required docker services are up and running
+    description: Runs a set of steps to wait until all required docker services are up and running. Pair with wait-for-docker-service command.
 
 steps:
   - docker/install-docker

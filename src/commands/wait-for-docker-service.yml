@@ -19,7 +19,7 @@ parameters:
 
 steps:
   - run:
-      name: Wait for << parameters.service-name >> to be ready
+      name: Wait for << parameters.container-name >> to be ready
       command: << include(scripts/waitForDockerService.sh) >>
       environment:
         CONTAINER_NAME: << parameters.container-name >>
