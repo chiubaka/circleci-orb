@@ -1,7 +1,7 @@
 description: >
   Tests the project code using the test script provided by package.json
 
-executor: machine
+executor: << parameters.executor >>
 
 parameters:
   executor:

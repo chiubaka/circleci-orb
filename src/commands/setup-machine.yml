@@ -5,6 +5,7 @@ parameters:
   node-version:
     type: string
     description: The full version tag of the NodeJS version to install.
+    default: ""
 
 steps:
   - node/install:
