@@ -1,0 +1,19 @@
+description: >
+  Installs additional required dependencies for machine executor like Node.js and Dockerize
+
+parameters:
+  node-version:
+    type: string
+    description: Full version tag of the version of node to use.
+    default: ""
+
+steps:
+  - run:
+      name: Update NVM
+      command: << include(scripts/updateNvm.sh) >>
+  - node/install:
+      install-yarn: true
+      node-version: << parameters.node-version >>
+  - docker/install-docker
+  - docker/install-docker-compose
+  - docker/install-dockerize
