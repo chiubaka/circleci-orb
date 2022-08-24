@@ -2,6 +2,9 @@ description: >
   Waits for a particular docker service to be up and running
 
 parameters:
+  container-name:
+    type: string
+    description: Name of the container to wait for
   url:
     type: string
     description: URL to check to determine whether or not service is ready
@@ -16,9 +19,10 @@ parameters:
 
 steps:
   - run:
-      name: Wait for << parameters.url >> to be ready
+      name: Wait for << parameters.container-name >> to be ready
       command: << include(scripts/waitForDockerService.sh) >>
       environment:
+        CONTAINER_NAME: << parameters.container-name >>
         URL: << parameters.url >>
         RETRY_INTERVAL: << parameters.retry-interval >>
         TIMEOUT: << parameters.timeout >>
