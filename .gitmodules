@@ -1,3 +1,6 @@
 [submodule "samples/generated-typescript-package"]
 	path = samples/generated-typescript-package
 	url = git@github.com:chiubaka/generated-typescript-package.git
+[submodule "samples/genesis"]
+	path = samples/genesis
+	url = git@github.com:chiubaka/genesis.git
