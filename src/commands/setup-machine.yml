@@ -8,6 +8,9 @@ parameters:
     default: ""
 
 steps:
+  - run:
+      name: Update NVM
+      command: << include(scripts/updateNvm.sh) >>
   - node/install:
       install-yarn: true
       node-version: << parameters.node-version >>
