@@ -64,6 +64,7 @@ steps:
       condition: << parameters.docker-compose >>
       steps:
         - compose-docker:
+            app-dir: << parameters.app-dir >>
             wait-for-services: << parameters.wait-for-docker-services >>
   - when:
       condition: << parameters.configure-git-user >>
