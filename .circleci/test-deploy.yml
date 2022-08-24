@@ -29,12 +29,6 @@ jobs:
           <<: *generated-typescript-package-test-parameters
       - chiubaka/setup:
           <<: *genesis-test-parameters
-      - chiubaka/compose-docker:
-          app-dir: ~/project/samples/genesis
-          wait-for-services:
-            - chiubaka/wait-for-docker-service:
-                container-name: genesis_registry
-                url: http://localhost:4873/healthcheck
 
 workflows:
   test-deploy:
@@ -56,6 +50,7 @@ workflows:
           filters: *filters
       - chiubaka/test:
           name: genesis-test
+          executor: docker-verdaccio
           <<: *genesis-test-parameters
           configure-git-user: true
           filters: *filters

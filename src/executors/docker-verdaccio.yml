@@ -1,7 +1,8 @@
 description: >
-  Runs node on docker
+  Runs node and verdaccio on docker
 docker:
   - image: cimg/node:<<parameters.tag>>
+  - image: verdaccio/verdaccio
 parameters:
   tag:
     default: lts
