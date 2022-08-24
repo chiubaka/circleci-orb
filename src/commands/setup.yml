@@ -41,7 +41,7 @@ steps:
         - run:
             name: Clean-up Nx set SHAs
             working_directory: << parameters.app-dir >>
-            command: rm index.js
+            command: rm -f index.js
   - when:
       condition: << parameters.yarn-berry >>
       steps:
