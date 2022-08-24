@@ -16,7 +16,7 @@ parameters:
 
 steps:
   - run:
-      name: Wait for << parameters.container-name >> to be ready
+      name: Wait for << parameters.url >> to be ready
       command: << include(scripts/waitForDockerService.sh) >>
       environment:
         URL: << parameters.url >>
