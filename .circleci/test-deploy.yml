@@ -13,8 +13,6 @@ test-parameters:
     init-submodules: true
     app-dir: ~/project/samples/genesis
     yarn-berry: true
-    # No way to run the nx/set-shas command in submodule
-    nx-affected: false
 
 filters: &filters
   tags:
