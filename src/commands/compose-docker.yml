@@ -19,6 +19,6 @@ steps:
       working_directory: << parameters.app-dir >>
   - run:
       name: Start all services declared in docker-compose.yml
-      command: docker-compose up -d
+      command: docker-compose up --wait
       working_directory: << parameters.app-dir >>
   - steps: << parameters.wait-for-services >>

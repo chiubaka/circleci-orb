@@ -1,10 +1,9 @@
 #! /usr/bin/env bash
 set -e
 
-DOCKER_BINARY=${DOCKER_BINARY:-docker}
+DOCKERIZE_BINARY=${DOCKERIZE_BINARY:-dockerize}
 
-$DOCKER_BINARY container run --network container:"$CONTAINER_NAME" \
-  docker.io/jwilder/dockerize \
+$DOCKERIZE_BINARY \
   -wait "$URL" \
   -wait-retry-interval "$RETRY_INTERVAL" \
   -timeout "$TIMEOUT"

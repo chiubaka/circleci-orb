@@ -6,8 +6,7 @@ setup() {
 @test "invokes docker with the correct arguments" {
   mock=$(mock_create)
 
-  DOCKER_BINARY="${mock}" \
-  CONTAINER_NAME="genesis_registry_1" \
+  DOCKERIZE_BINARY="${mock}" \
   URL="http://localhost:4873/healthcheck" \
   RETRY_INTERVAL="2s" \
   TIMEOUT="20s" \
