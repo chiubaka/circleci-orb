@@ -17,4 +17,3 @@ steps:
   - docker/install-docker
   - docker/install-docker-compose
   - docker/install-dockerize
-
