@@ -30,7 +30,7 @@ jobs:
       - chiubaka/setup:
           <<: *genesis-test-parameters
       - chiubaka/compose-docker:
-          <<: *genesis-test-parameters
+          app-dir: ~/project/samples/genesis
           wait-for-services:
             - chiubaka/wait-for-docker-service:
                 container-name: genesis_registry_1
