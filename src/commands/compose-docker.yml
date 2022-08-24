@@ -15,6 +15,7 @@ steps:
   - run:
       name: Build images of services declared in docker-compose.yml
       command: docker-compose build
+      working_directory: << parameters.app-dir >>
   - run:
       name: Start all services declared in docker-compose.yml
       command: docker-compose up -d
