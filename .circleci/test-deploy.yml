@@ -72,7 +72,6 @@ workflows:
             - chiubaka-lint-job
             - chiubaka-build-job
             - generated-typescript-package-test
-            - genesis-test
             - chiubaka-deploy-job
             - command-tests
           context: orb-publishing
