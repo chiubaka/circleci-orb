@@ -48,12 +48,6 @@ workflows:
           configure-git-user: true
           monorepo: false
           filters: *filters
-      - chiubaka/test:
-          name: genesis-test
-          executor: chiubaka/docker-verdaccio
-          <<: *genesis-test-parameters
-          configure-git-user: true
-          filters: *filters
       - chiubaka/deploy:
           name: chiubaka-deploy-job
           context: npm-publishing
