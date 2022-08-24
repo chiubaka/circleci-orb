@@ -48,6 +48,13 @@ workflows:
           configure-git-user: true
           monorepo: false
           filters: *filters
+      - chiubaka/test:
+          name: genesis-test
+          executor: chiubaka/machine
+          <<: *genesis-test-parameters
+          docker-compose: true
+          configure-git-user: true
+          filters: *filters
       - chiubaka/deploy:
           name: chiubaka-deploy-job
           context: npm-publishing
@@ -72,6 +79,7 @@ workflows:
             - chiubaka-lint-job
             - chiubaka-build-job
             - generated-typescript-package-test
+            - genesis-test
             - chiubaka-deploy-job
             - command-tests
           context: orb-publishing

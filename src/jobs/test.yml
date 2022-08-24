@@ -1,7 +1,7 @@
 description: >
   Tests the project code using the test script provided by package.json
 
-executor: docker-node
+executor: machine
 
 parameters:
   executor:
@@ -50,6 +50,11 @@ parameters:
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
 
 steps:
+  - when:
+      condition:
+        equal: [ machine, << parameters.executor >> ]
+      steps:
+        - setup-machine
   - setup:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
