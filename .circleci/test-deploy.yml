@@ -50,7 +50,7 @@ workflows:
           filters: *filters
       - chiubaka/test:
           name: genesis-test
-          executor: docker-verdaccio
+          executor: chiubaka/docker-verdaccio
           <<: *genesis-test-parameters
           configure-git-user: true
           filters: *filters
