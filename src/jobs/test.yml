@@ -50,6 +50,10 @@ parameters:
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
 
 steps:
+  - when:
+      condition: << parameters.docker-compose >>
+      steps:
+        - setup-machine
   - setup:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>

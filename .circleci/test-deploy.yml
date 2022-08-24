@@ -49,17 +49,17 @@ workflows:
           monorepo: false
           filters: *filters
       # Requires https://github.com/chiubaka/circleci-orb/issues/45 to uncomment
-      # - chiubaka/test:
-      #     name: genesis-test
-      #     executor: chiubaka/machine
-      #     <<: *genesis-test-parameters
-      #     configure-git-user: true
-      #     docker-compose: true
-      #     wait-for-docker-services:
-      #       - chiubaka/wait-for-docker-service:
-      #           container-name: genesis_registry
-      #           url: http://localhost:4873/healthcheck
-      #     filters: *filters
+      - chiubaka/test:
+          name: genesis-test
+          executor: chiubaka/machine
+          <<: *genesis-test-parameters
+          configure-git-user: true
+          docker-compose: true
+          wait-for-docker-services:
+            - chiubaka/wait-for-docker-service:
+                container-name: genesis_registry
+                url: http://localhost:4873/healthcheck
+          filters: *filters
       - chiubaka/deploy:
           name: chiubaka-deploy-job
           context: npm-publishing
