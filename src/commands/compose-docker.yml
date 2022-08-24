@@ -1,17 +1,25 @@
 description: >
-  Installs and runs docker-compose in the project directory. Useful for testing support.
+  Installs and runs docker-compose in the project directory. Useful for testing support. Will generally be used with the included machine executor.
 
 parameters:
   app-dir:
     type: string
     default: "."
     description: Path to the directory containing docker-compose.yml.
+  remote-docker:
+    type: boolean
+    default: false
+    description: Whether or not to set up remote docker. Cannot be used with machine executor.
   wait-for-services:
     type: steps
     default: []
     description: Runs a set of steps to wait until all required docker services are up and running. Pair with wait-for-docker-service command.
 
 steps:
+  - when:
+      condition: << parameters.remote-docker >>
+      steps:
+        - setup_remote_docker
   - run:
       name: Build images of services declared in docker-compose.yml
       command: docker-compose build
