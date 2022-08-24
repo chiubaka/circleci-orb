@@ -2,18 +2,23 @@ description: >
   Installs and runs docker-compose in the project directory. Useful for testing support.
 
 parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing docker-compose.yml.
   wait-for-services:
     type: steps
     default: []
     description: Runs a set of steps to wait until all required docker services are up and running. Pair with wait-for-docker-service command.
 
 steps:
-  - docker/install-docker
-  - docker/install-docker-compose
+  - setup_remote_docker
   - run:
       name: Build images of services declared in docker-compose.yml
       command: docker-compose build
+      working_directory: << parameters.app-dir >>
   - run:
       name: Start all services declared in docker-compose.yml
-      command: docker-compose up -d
+      command: docker-compose up --wait
+      working_directory: << parameters.app-dir >>
   - steps: << parameters.wait-for-services >>

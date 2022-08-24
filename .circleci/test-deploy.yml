@@ -3,11 +3,16 @@ orbs:
   chiubaka: chiubaka/circleci-orb@dev:<<pipeline.git.revision>>
   orb-tools: circleci/orb-tools@11.1
 
-test-parameters: &test-parameters
-  init-submodules: true
-  app-dir: ~/project/samples/generated-typescript-package
-  yarn-berry: true
-  nx-affected: false
+test-parameters:
+  generated-typescript-package: &generated-typescript-package-test-parameters
+    init-submodules: true
+    app-dir: ~/project/samples/generated-typescript-package
+    yarn-berry: true
+    nx-affected: false
+  genesis: &genesis-test-parameters
+    init-submodules: true
+    app-dir: ~/project/samples/genesis
+    yarn-berry: true
 
 filters: &filters
   tags:
@@ -21,7 +26,9 @@ jobs:
     steps:
       # Run your orb's commands to validate them.
       - chiubaka/setup:
-          <<: *test-parameters
+          <<: *generated-typescript-package-test-parameters
+      - chiubaka/setup:
+          <<: *genesis-test-parameters
 
 workflows:
   test-deploy:
@@ -29,15 +36,15 @@ workflows:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
       - chiubaka/lint:
           name: chiubaka-lint-job
-          <<: *test-parameters
+          <<: *generated-typescript-package-test-parameters
           filters: *filters
       - chiubaka/build:
           name: chiubaka-build-job
-          <<: *test-parameters
+          <<: *generated-typescript-package-test-parameters
           filters: *filters
       - chiubaka/test:
-          name: chiubaka-test-job
-          <<: *test-parameters
+          name: generated-typescript-package-test
+          <<: *generated-typescript-package-test-parameters
           configure-git-user: true
           monorepo: false
           filters: *filters
@@ -45,7 +52,7 @@ workflows:
           name: chiubaka-deploy-job
           context: npm-publishing
           dry-run: true
-          <<: *test-parameters
+          <<: *generated-typescript-package-test-parameters
           configure-git-user: true
           git-user-name: Daniel Chiu
           git-user-email: daniel@chiubaka.com
@@ -64,7 +71,7 @@ workflows:
             - orb-tools/pack
             - chiubaka-lint-job
             - chiubaka-build-job
-            - chiubaka-test-job
+            - generated-typescript-package-test
             - chiubaka-deploy-job
             - command-tests
           context: orb-publishing
