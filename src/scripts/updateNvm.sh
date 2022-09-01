@@ -8,3 +8,5 @@ export NVM_DIR="/opt/circleci/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 # shellcheck disable=1090,1091
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+echo "nvm use default &>/dev/null" >> ~/.bashrc
