@@ -57,6 +57,9 @@ steps:
             pkg-manager: yarn-berry
             with-cache: false
             app-dir: << parameters.app-dir >>
+  - run:
+      name: Check Node version
+      command: node -v
   - when:
       condition:
         not: << parameters.yarn-berry >>
