@@ -17,8 +17,8 @@ workflows:
           filters: *filters
       - orb-tools/pack:
           filters: *filters
-      # - orb-tools/review:
-          # filters: *filters
+      - orb-tools/review:
+          filters: *filters
       - bats/run:
           filters: *filters
           path: ./test
@@ -35,7 +35,7 @@ workflows:
           vcs-type: << pipeline.project.type >>
           requires:
             - orb-tools/lint
-            # - orb-tools/review
+            - orb-tools/review
             - orb-tools/pack
             - shellcheck/check
             - bats/run
