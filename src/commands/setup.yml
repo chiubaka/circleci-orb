@@ -45,13 +45,6 @@ steps:
   - when:
       condition: << parameters.yarn-berry >>
       steps:
-        - run:
-            name: Use Yarn berry
-            working_directory: << parameters.app-dir >>
-            command: yarn set version berry
-  - when:
-      condition: << parameters.yarn-berry >>
-      steps:
         - node/install-packages:
             check-cache: always
             pkg-manager: yarn-berry
