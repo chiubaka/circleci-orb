@@ -3,8 +3,6 @@ set -e
 
 DOCKER_BINARY=${DOCKER_BINARY:-docker}
 
-sleep 100
-
 $DOCKER_BINARY container run --network "container:$CONTAINER_NAME" \
   docker.io/jwilder/dockerize \
   -wait "$URL" \
