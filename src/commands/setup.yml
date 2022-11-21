@@ -35,13 +35,13 @@ steps:
       steps:
         - nx/set-shas:
             main-branch-name: master
-  - when:
-      condition: << parameters.nx-affected >>
-      steps:
-        - run:
-            name: Clean-up Nx set SHAs
-            working_directory: << parameters.app-dir >>
-            command: rm -f index.js
+  # - when:
+  #     condition: << parameters.nx-affected >>
+  #     steps:
+  #       - run:
+  #           name: Clean-up Nx set SHAs
+  #           working_directory: << parameters.app-dir >>
+  #           command: rm -f index.js
   - when:
       condition: << parameters.yarn-berry >>
       steps:
