@@ -44,6 +44,14 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
 
 steps:
   - setup:
@@ -58,6 +66,7 @@ steps:
             name: Configure git user
             working_directory: << parameters.app-dir >>
             command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
+  - steps: << parameters.setup-steps >>
   - run:
       name: Authenticate with NPM
       command: << include(scripts/authenticateWithNpm.sh) >>
@@ -69,3 +78,4 @@ steps:
       dry-run: << parameters.dry-run >>
       monorepo: << parameters.monorepo >>
       task-name: << parameters.task-name >>
+  - steps: << parameters.cleanup-steps >>

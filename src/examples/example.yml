@@ -6,8 +6,70 @@ description: >
 usage:
   version: 2.1
   orbs:
-    <orb-name>: <namespace>/<orb-name>@1.2.3
+    chiubaka: chiubaka/circleci-orb@1.2.3
   workflows:
-    use-my-orb:
+    react-native-build-test-deploy:
       jobs:
-        - <orb-name>/<job-name>
+        - lint
+        - build
+        - test
+        - chiubaka/android-build:
+            name: android-build
+            setup-steps:
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app2
+            requires:
+              - lint
+              - build
+              - test
+        - chiubaka/android-test:
+            name: android-test
+            setup-steps:
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app2
+            requires:
+              - lint
+              - build
+              - test
+        - chiubaka/android-deploy:
+            setup-steps:
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-android-package:
+                  app-dir: packages/app2
+            requires:
+              - android-build
+              - android-test
+        - chiubaka/ios-build:
+            name: ios-build
+            setup-steps:
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app2
+            requires:
+              - lint
+              - build
+              - test
+        - chiubaka/ios-test:
+            name: ios-test
+            setup-steps:
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app2
+            requires:
+              - ios-build
+        - chiubaka/ios-deploy:
+            setup-steps:
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app1
+              - chiubaka/setup-ios-package:
+                  app-dir: packages/app2
+            requires:
+              - ios-build
+              - ios-test

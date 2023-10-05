@@ -48,6 +48,14 @@ parameters:
     type: steps
     default: []
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
 
 steps:
   - when:
@@ -59,6 +67,7 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+  - steps: << parameters.setup-steps >>
   - when:
       condition: << parameters.docker-compose >>
       steps:
@@ -91,3 +100,4 @@ steps:
       path: << parameters.app-dir >>/reports/
   - store_artifacts:
       path: << parameters.app-dir >>/reports/
+  - steps: << parameters.cleanup-steps >>
