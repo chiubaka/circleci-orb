@@ -1,3 +1,6 @@
+description: >
+  Sets up a single iOS app. Must be used once per app in a monorepo.
+
 parameters:
   app-dir:
     description: The directory containing the app project (and Gemfile)

@@ -26,8 +26,10 @@ steps:
               - '{{ .Environment.CACHE_VERSION }}-cache-pods'
   - run:
       name: Install CocoaPods
-      command: bundle exec pod install --project-directory=./<< parameters.pod-install-directory >>
+      command: << include(scripts/podInstall.sh) >>
       working_directory: << parameters.app-dir >>
+      environment:
+        POD_INSTALL_DIRECTORY: << parameters.pod-install-directory >>
   - when:
       condition: << parameters.cache >>
       steps:
