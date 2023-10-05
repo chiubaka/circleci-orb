@@ -48,7 +48,7 @@ steps:
         - node/install-packages:
             check-cache: always
             pkg-manager: yarn-berry
-            with-cache: false
+            with-cache: true
             app-dir: << parameters.app-dir >>
   - when:
       condition:
@@ -57,5 +57,5 @@ steps:
         - node/install-packages:
             check-cache: always
             pkg-manager: yarn
-            with-cache: false
+            with-cache: true
             app-dir: << parameters.app-dir >>
