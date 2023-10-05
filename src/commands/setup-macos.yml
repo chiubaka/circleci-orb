@@ -50,10 +50,21 @@ steps:
       environment:
         NODE_VERSION: << parameters.node-version >>
   - when:
-      condition: << parameters.homebrew-cache >>
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - not: << parameters.install-simulator-tools >>
       steps:
         - restore_cache:
-            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-sim-tools-{{ parameters.install-simulator-tools }}
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - << parameters.install-simulator-tools >>
+      steps:
+        - restore_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
   - run:
       command: << include(scripts/installNodeVersion.sh) >>
       name: Install node@<< parameters.node-version  >>
@@ -84,10 +95,23 @@ steps:
             name: Install Xcodes
             command: brew install xcodesorg/made/xcodes
   - when:
-      condition: << parameters.homebrew-cache >>
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - not: << parameters.install-simulator-tools >>
       steps:
         - save_cache:
-            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-sim-tools-{{ parameters.install-simulator-tools }}
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
+            paths:
+              - ~/Library/Caches/Homebrew
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - << parameters.install-simulator-tools >>
+      steps:
+        - save_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
             paths:
               - ~/Library/Caches/Homebrew
   - setup-react-native:
