@@ -3,6 +3,7 @@ description: >
 
 docker:
   - image: cimg/node:<< parameters.tag >>
+resource_class: << parameters.resource-class >>
 
 parameters:
   tag:
@@ -10,4 +11,8 @@ parameters:
     description: >
       Pick a specific cimg/node image variant:
       https://hub.docker.com/r/cimg/node/tags
+    type: string
+  resource-class:
+    default: medium
+    description: Resource class to use for Docker
     type: string
