@@ -1,0 +1,16 @@
+description: >
+  MacOS executor for running Apple-specific React Native tasks
+
+parameters:
+  resource-class:
+    description: MacOS executor resource class to use.
+    type: string
+    default: macos.m1.medium.gen1
+  xcode-version:
+    description: XCode version to use.
+    type: string
+    default: 14.3.1
+
+macos:
+  xcode: << parameters.xcode-version >>
+resource_class: << parameters.resource-class >>

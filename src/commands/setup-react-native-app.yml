@@ -1,0 +1,21 @@
+description: >
+  Runs common setup steps for a single React Native app. This command needs to be
+  run once per React Native app included in the project.
+
+parameters:
+  app-dir:
+    description: The directory containing the app project (and Gemfile)
+    type: string
+  cache:
+    description: Whether or not to enable automatic caching of Gemfile dependencies for increased speed.
+    type: boolean
+    default: true
+
+steps:
+  - ruby/install-deps:
+      app-dir: << parameters.app-dir >>
+      with-cache: << parameters.cache >>
+  - run:
+      name: Install Fastlane plugins
+      command: bundle exec fastlane install_plugins
+      working_directory: << parameters.app-dir >>

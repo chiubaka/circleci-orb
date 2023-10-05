@@ -1,0 +1,39 @@
+description: >
+  Installs CocoaPods and caches the resulting dependencies
+
+parameters:
+  cache:
+    default: true
+    description: Save and restore the cache? Defaults to true
+    type: boolean
+  app-dir:
+    description: The directory containing the app project (and Gemfile)
+    type: string
+  pod-install-directory:
+    default: ios
+    description: The location of the "ios" directory relative to app-dir
+    type: string
+
+steps:
+  - when:
+      condition: << parameters.cache >>
+      steps:
+        - restore_cache:
+            keys:
+              - >-
+                {{ .Environment.CACHE_VERSION }}-cache-pods-{{ checksum
+                "<< parameters.app-dir>>/<< parameters.pod-install-directory >>/Podfile.lock" }}
+              - '{{ .Environment.CACHE_VERSION }}-cache-pods'
+  - run:
+      name: Install CocoaPods
+      command: bundle exec pod install --project-directory=./<< parameters.pod-install-directory >>
+      working_directory: << parameters.app-dir >>
+  - when:
+      condition: << parameters.cache >>
+      steps:
+        - save_cache:
+            key: >-
+              {{ .Environment.CACHE_VERSION }}-cache-pods-{{ checksum
+              "<< parameters.app-dir >>/<< parameters.pod-install-directory >>/Podfile.lock" }}
+            paths:
+              - << parameters.app-dir >>/<< parameters.pod-install-directory >>/Pods

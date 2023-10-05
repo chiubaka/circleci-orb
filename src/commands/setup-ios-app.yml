@@ -1,0 +1,28 @@
+parameters:
+  app-dir:
+    description: The directory containing the app project (and Gemfile)
+    type: string
+  cache:
+    description: Whether or not to cache dependencies (CocoaPods, Ruby)
+    type: boolean
+    default: true
+  install-pods:
+    description: Whether or not to install Cocoapods for this app.
+    type: boolean
+    default: true
+  pod-install-directory:
+    description: The location of the "ios" directory relative to app-dir
+    type: string
+    default: ios
+
+steps:
+  - setup-react-native-app:
+      app-dir: << parameters.app-dir >>
+      cache: << parameters.cache >>
+  - when:
+      condition: << parameters.install-pods >>
+      steps:
+        - pod-install:
+            app-dir: << parameters.app-dir >>
+            cache: << parameters.cache >>
+            pod-install-directory: << parameters.pod-install-directory >>

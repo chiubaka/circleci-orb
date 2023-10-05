@@ -28,12 +28,9 @@ filters: &filters
     only: /.*/
 
 jobs:
-  # Create a job to test the commands of your orbs.
-  # You may want to add additional validation steps to ensure the commands are working as expected.
   command-tests:
     executor: chiubaka/docker-node
     steps:
-      # Run your orb's commands to validate them.
       - chiubaka/setup:
           <<: *generated-typescript-package-test-parameters
       - chiubaka/setup:
@@ -79,8 +76,8 @@ workflows:
           <<: *generated-typescript-package-test-parameters
           <<: *setup-and-cleanup-test-parameters
           configure-git-user: true
-          git-user-name: Daniel Chiu
-          git-user-email: daniel@chiubaka.com
+          git-user-name: CircleCI
+          git-user-email: circleci@chiubaka.com
           monorepo: false
           task-name: Publish to NPM
           filters: *filters
