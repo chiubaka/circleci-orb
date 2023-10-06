@@ -2,7 +2,7 @@ description: >
   An executor for running Android-specific React Native tasks
 
 docker:
-  - image: reactnativecommunity/react-native-android:<< parameters.tags >>
+  - image: reactnativecommunity/react-native-android:<< parameters.tag >>
 
 parameters:
   tag:
