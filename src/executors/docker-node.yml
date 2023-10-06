@@ -1,7 +1,9 @@
 description: >
   Runs node on docker
+
 docker:
-  - image: cimg/node:<<parameters.tag>>
+  - image: cimg/node:<< parameters.tag >>
+
 parameters:
   tag:
     default: lts

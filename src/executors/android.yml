@@ -1,0 +1,11 @@
+description: >
+  An executor for running Android-specific React Native tasks
+
+docker:
+  - image: reactnativecommunity/react-native-android:<< parameters.tags >>
+
+parameters:
+  tag:
+    default: v12.0
+    description: Tag for the reactnativecommunity/react-native-android:v12.0
+    type: string
