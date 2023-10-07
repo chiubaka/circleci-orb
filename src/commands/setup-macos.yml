@@ -116,6 +116,7 @@ steps:
               - ~/Library/Caches/Homebrew
   - setup-react-native:
       app-dir: << parameters.app-dir >>
+      checkout: false
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
       yarn-berry: << parameters.yarn-berry >>

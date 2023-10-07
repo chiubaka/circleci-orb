@@ -8,6 +8,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  checkout:
+    description: Whether or not to checkout as the first step of this command
+    type: boolean
+    default: true
   init-submodules:
     type: boolean
     default: false
@@ -23,7 +27,7 @@ parameters:
 
 steps:
   - setup:
-      checkout: false
+      checkout: << parameters.checkout >>
       app-dir: << parameters.app-dir >>
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
