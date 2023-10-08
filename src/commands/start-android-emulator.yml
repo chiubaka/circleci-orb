@@ -14,7 +14,7 @@ parameters:
 steps:
   - android/create-avd:
       avd-name: << parameters.device-name >>
-      system-image: system-images;<< parameters.platform-version >>;default;x86_64
+      system-image: system-images;<< parameters.platform-version >>;default;x86
       install: true
   - android/start-emulator:
       avd-name: << parameters.device-name >>
