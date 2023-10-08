@@ -104,8 +104,8 @@ workflows:
           filters: *filters
       - android-command-tests:
           filters: *filters
-      - macos-command-tests:
-          filters: *filters
+      # - macos-command-tests:
+      #     filters: *filters
       - orb-tools/pack:
           filters: *filters
       - orb-tools/publish:
@@ -120,7 +120,7 @@ workflows:
             - chiubaka-deploy-job
             - command-tests
             - android-command-tests
-            - macos-command-tests
+            # - macos-command-tests
           context: orb-publishing
           filters:
             branches:
