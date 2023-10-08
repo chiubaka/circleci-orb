@@ -33,6 +33,7 @@ jobs:
     steps:
       - chiubaka/setup-android:
           with-emulator: true
+          avd-name: Detox AVD
           platform-version: android-34
           << : *genesis-test-parameters
   macos-command-tests:
@@ -53,7 +54,7 @@ jobs:
           <<: *genesis-test-parameters
 
 workflows:
-  test-deploy:
+  test-publish:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
       - chiubaka/lint:
@@ -116,6 +117,8 @@ workflows:
             - generated-typescript-package-test
             - chiubaka-deploy-job
             - command-tests
+            - android-command-tests
+            - macos-command-tests
           context: orb-publishing
           filters:
             branches:

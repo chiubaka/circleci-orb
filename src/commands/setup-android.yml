@@ -9,7 +9,7 @@ parameters:
   avd-name:
     description: Name of the AVD to create.
     type: string
-    default: ""
+    default: Detox AVD
   init-submodules:
     type: boolean
     default: false
@@ -21,7 +21,7 @@ parameters:
   platform-version:
     description: The platform version to use for the AVD
     type: string
-    default: ""
+    default: android-34
   with-emulator:
     description: Whether or not to setup this Android executor with an emulator for UI testing
     type: boolean
