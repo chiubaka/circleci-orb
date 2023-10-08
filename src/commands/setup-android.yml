@@ -6,8 +6,8 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  avd-name:
-    description: Name of the AVD to create.
+  device-name:
+    description: The name of the AVD device to create
     type: string
     default: detox
   init-submodules:
@@ -40,15 +40,9 @@ steps:
   - when:
       condition: << parameters.with-emulator >>
       steps:
-        - android/accept-licenses
-        - android/create-avd:
-            avd-name: << parameters.avd-name >>
-            system-image: system-images;<< parameters.platform-version >>;default;x86_64
-            install: true
-        - android/start-emulator:
-            avd-name: << parameters.avd-name >>
-            no-window: true
-            post-emulator-launch-assemble-command: ""
+        - start-android-emulator:
+            device-name: << parameters.device-name >>
+            platform-version: << parameters.platform-version >>
   - setup-react-native:
       app-dir: << parameters.app-dir >>
       checkout: false
@@ -59,4 +53,4 @@ steps:
   - when:
       condition: << parameters.with-emulator >>
       steps:
-        - android/wait-for-emulator
+        - wait-for-android-emulator

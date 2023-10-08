@@ -1,0 +1,22 @@
+description: >
+  Create and start an Android emulator
+
+parameters:
+  device-name:
+    description: The name of the AVD device to create
+    type: string
+    default: detox
+  platform-version:
+    description: The platform version to use for the AVD
+    type: string
+    default: android-34
+
+steps:
+  - android/create-avd:
+      avd-name: << parameters.devicename >>
+      system-image: system-images;<< parameters.platform-version >>;default;x86_64
+      install: true
+  - android/start-emulator:
+      avd-name: << parameters.device-name >>
+      no-window: true
+      post-emulator-launch-assemble-command: ""
