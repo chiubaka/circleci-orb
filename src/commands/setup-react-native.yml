@@ -20,6 +20,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
   yarn-berry:
     type: boolean
     default: false
@@ -32,9 +36,12 @@ steps:
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
       yarn-berry: << parameters.yarn-berry >>
-  - run:
-      name: Ensure Symlink
-      command: yarn nx run-many --target=ensure-symlink
-  - run:
-      name: Sync Deps
-      command: yarn nx run-many --target=sync-deps
+  - when:
+      condition: << parameters.setup-nx >>
+      steps:
+        - run:
+            name: Ensure Symlink
+            command: yarn nx run-many --target=ensure-symlink
+        - run:
+            name: Sync Deps
+            command: yarn nx run-many --target=sync-deps

@@ -33,6 +33,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
   simulator-device:
     description: The simulator device name to use (e.g. iPhone 14)
     type: string
@@ -133,6 +137,7 @@ steps:
       checkout: false
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      setup-nx: << parameters.setup-nx >>
       yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.with-simulator >>

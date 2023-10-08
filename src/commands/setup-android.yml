@@ -22,6 +22,10 @@ parameters:
     description: The platform version to use for the AVD
     type: string
     default: android-34
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
   with-emulator:
     description: Whether or not to setup this Android executor with an emulator for UI testing
     type: boolean
@@ -49,6 +53,7 @@ steps:
       checkout: false
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      setup-nx: << parameters.setup-nx >>
       yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.with-emulator >>
