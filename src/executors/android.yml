@@ -1,11 +1,16 @@
 description: >
   An executor for running Android-specific React Native tasks
 
-docker:
-  - image: reactnativecommunity/react-native-android:<< parameters.tag >>
+name: android/android-docker
+resource-class: << parameters.resource-class >>
+tag: << parameters.tag >>
 
 parameters:
-  tag:
-    default: v12.0
-    description: Tag for the reactnativecommunity/react-native-android:v12.0
+  resource-class:
+    description: The resource class to use for the docker executor
     type: string
+    default: medium
+  tag:
+    description: The Android image tag to use. Choose a tag from https://circleci.com/developer/images/image/cimg/android#image-tags.
+    type: string
+    default: 2023.09.1-node
