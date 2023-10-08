@@ -9,7 +9,7 @@ parameters:
   avd-name:
     description: Name of the AVD to create.
     type: string
-    default: Detox AVD
+    default: detox
   init-submodules:
     type: boolean
     default: false

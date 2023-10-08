@@ -33,13 +33,10 @@ jobs:
     steps:
       - chiubaka/setup-android:
           with-emulator: true
-          avd-name: Detox AVD
-          platform-version: android-34
           << : *genesis-test-parameters
   macos-command-tests:
     executor:
       name: chiubaka/macos
-      xcode-version: 14.3.1
     steps:
       - chiubaka/setup-macos:
           with-simulator: true
