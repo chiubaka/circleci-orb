@@ -5,12 +5,13 @@ export BOOT=""
 
 echo "Waiting for AVD to finish booting"
 
-export PATH=$(dirname $(dirname $(command -v
-android)))/platform-tools:$PATH
+PATH=$(dirname "$(dirname "$(command -v android)")")/platform-tools:$PATH
+export PATH
 
 until [[ "$BOOT" =~ "1" ]]; do
   sleep 5
-  export BOOT=$(adb -e shell getprop sys.boot_completed 2>&1)
+  BOOT=$(adb -e shell getprop sys.boot_completed 2>&1)
+  export BOOT
 done
 
 sleep 15
