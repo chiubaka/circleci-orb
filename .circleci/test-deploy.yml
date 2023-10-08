@@ -43,7 +43,7 @@ jobs:
       - chiubaka/setup-macos:
           with-simulator: true
           simulator-device: iPhone 14
-          simulator-version: 16.4
+          simulator-version: "16.4"
   command-tests:
     executor: chiubaka/docker-node
     steps:
