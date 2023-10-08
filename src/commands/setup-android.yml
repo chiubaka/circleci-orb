@@ -9,7 +9,7 @@ parameters:
   device-name:
     description: The name of the AVD device to create
     type: string
-    default: detox
+    default: Detox
   init-submodules:
     type: boolean
     default: false
