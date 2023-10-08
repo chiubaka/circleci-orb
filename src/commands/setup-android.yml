@@ -48,6 +48,7 @@ steps:
         - android/start-emulator:
             avd-name: << parameters.avd-name >>
             no-window: true
+            post-emulator-launch-assemble-command: ""
   - setup-react-native:
       app-dir: << parameters.app-dir >>
       checkout: false
