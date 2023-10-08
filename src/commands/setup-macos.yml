@@ -40,7 +40,7 @@ parameters:
   simulator-version:
     description: The simulator OS version to use (e.g. 16.4)
     type: string
-    deafult: ""
+    default: ""
   with-simulator:
     description: Whether or not to set up the executor with a simulator
     default: false

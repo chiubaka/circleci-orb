@@ -1,4 +1,5 @@
-
+description: >
+  Set up an Android executor to run Android-specific React Native tasks.
 
 parameters:
   app-dir:
