@@ -21,10 +21,6 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to initialize submodules included in this repository.
-  install-simulator-tools:
-    description: Whether or not to install simulator tooling (required for e.g. Detox E2E testing)
-    type: boolean
-    default: false
   install-xcodes:
     description: Whether or not to install Xcodes for switching between Xcode versions
     type: boolean
@@ -37,12 +33,30 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  simulator-device:
+    description: The simulator device name to use (e.g. iPhone 14)
+    type: string
+    default: ""
+  simulator-version:
+    description: The simulator OS version to use (e.g. 16.4)
+    type: string
+    deafult: ""
+  with-simulator:
+    description: Whether or not to set up the executor with a simulator
+    default: false
+    type: boolean
   yarn-berry:
     type: boolean
     default: false
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
+  - when:
+      condition: << parameters.with-simulator >>
+      steps:
+        - macos/preboot-simulator:
+            device: << parameters.simulator-device >>
+            version: << parameters.simulator-version >>
   - checkout
   - run:
       command: << include(scripts/configureReactNativeEnv.sh) >>
@@ -53,7 +67,7 @@ steps:
       condition:
         and:
           - << parameters.homebrew-cache >>
-          - not: << parameters.install-simulator-tools >>
+          - not: << parameters.with-simulator >>
       steps:
         - restore_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
@@ -61,7 +75,7 @@ steps:
       condition:
         and:
           - << parameters.homebrew-cache >>
-          - << parameters.install-simulator-tools >>
+          - << parameters.with-simulator >>
       steps:
         - restore_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
@@ -80,7 +94,7 @@ steps:
             command: brew update >/dev/null
             name: Update brew
   - when:
-      condition: << parameters.install-simulator-tools >>
+      condition: << parameters.with-simulator >>
       steps:
         - run:
             command: >
@@ -98,7 +112,7 @@ steps:
       condition:
         and:
           - << parameters.homebrew-cache >>
-          - not: << parameters.install-simulator-tools >>
+          - not: << parameters.with-simulator >>
       steps:
         - save_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
@@ -108,7 +122,7 @@ steps:
       condition:
         and:
           - << parameters.homebrew-cache >>
-          - << parameters.install-simulator-tools >>
+          - << parameters.with-simulator >>
       steps:
         - save_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
@@ -120,3 +134,7 @@ steps:
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
       yarn-berry: << parameters.yarn-berry >>
+  - when:
+      condition: << parameters.with-simulator >>
+      steps:
+        - macos/wait-until-simulator-booted

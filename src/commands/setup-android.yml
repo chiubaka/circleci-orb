@@ -1,0 +1,55 @@
+
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  avd-name:
+    description: Name of the AVD to create.
+    type: string
+    default: ""
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  platform-version:
+    description: The platform version to use for the AVD
+    type: string
+    default: ""
+  with-emulator:
+    description: Whether or not to setup this Android executor with an emulator for UI testing
+    type: boolean
+    default: false
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+
+steps:
+  - checkout
+  - when:
+      condition: << parameters.with-emulator >>
+      steps:
+        - android/accept-licenses
+        - android/create-avd:
+            avd-name: << parameters.avd-name >>
+            system-image: system-images;<< parameters.platform-version >>;default;x86_64
+            install: true
+        - android/start-emulator:
+            avd-name: << parameters.avd-name >>
+            no-window: true
+  - setup-react-native:
+      app-dir: << parameters.app-dir >>
+      checkout: false
+      init-submodules: << parameters.init-submodules >>
+      nx-affected: << parameters.nx-affected >>
+      yarn-berry: << parameters.yarn-berry >>
+  - when:
+      condition: << parameters.with-emulator >>
+      steps:
+        - android/wait-for-emulator
