@@ -1,13 +1,12 @@
 # Ripped from circleci/android orb
 description: >
-  Select a CircleCI convenience image to get building on Android.
+  This selects an Android machine image.
+  CircleCI's Android machine images are recommended for Android emulator tests.
 
-  See https://circleci.com/developer/images/image/cimg/android#image-tags for a
-  full list of
+machine:
+  image: android:<< parameters.tag >>
+  resource_class: << parameters.resource-class >>
 
-  the available images.
-docker:
-  - image: cimg/android:<< parameters.tag >>
 parameters:
   resource-class:
     default: medium
@@ -26,7 +25,6 @@ parameters:
       The Android image tag to use.
 
       Choose a tag from
-      https://circleci.com/developer/images/image/cimg/android#image-tags.
+      https://circleci.com/developer/machine/image/android#image-tags
     type: string
-    default: 2023.09.1-node
-resource_class: << parameters.resource-class >>
+    default: 2023.09.1
