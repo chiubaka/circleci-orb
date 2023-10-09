@@ -23,8 +23,8 @@ steps:
       app-dir: << parameters.app-dir >>
       cache: << parameters.cache >>
       pre-bundle-install-steps:
-        - bundle lock --add-platform arm64-darwin-21
-        - bundle lock --add-platform arm64-darwin-22
+        - run: bundle lock --add-platform arm64-darwin-21
+        - run: bundle lock --add-platform arm64-darwin-22
   - when:
       condition: << parameters.install-pods >>
       steps:

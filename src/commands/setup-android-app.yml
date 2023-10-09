@@ -15,4 +15,4 @@ steps:
       app-dir: << parameters.app-dir >>
       cache: << parameters.cache >>
       pre-bundle-install-steps:
-        - bundle lock --add-platform x86_64-linux
+        - run: bundle lock --add-platform x86_64-linux
