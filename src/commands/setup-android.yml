@@ -40,6 +40,9 @@ steps:
   - when:
       condition: << parameters.with-emulator >>
       steps:
+        - run:
+            name: Install Pulse Audio
+            command: apt-get install pulseaudio
         - start-android-emulator:
             device-name: << parameters.device-name >>
             platform-version: << parameters.platform-version >>
