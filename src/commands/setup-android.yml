@@ -42,7 +42,10 @@ steps:
       steps:
         - run:
             name: Install Pulse Audio
-            command: apt-get update -y && apt-get install -y pulseaudio
+            command: >
+              apt-get update -y
+              
+              apt-get install -y pulseaudio libxcomposite-dev
         - start-android-emulator:
             device-name: << parameters.device-name >>
             platform-version: << parameters.platform-version >>
