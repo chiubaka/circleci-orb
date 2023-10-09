@@ -21,4 +21,4 @@ parameters:
   tag:
     description: The tag to use for the docker image
     type: string
-    default: v12
+    default: v12.0
