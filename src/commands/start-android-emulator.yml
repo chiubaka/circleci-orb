@@ -18,12 +18,10 @@ parameters:
 steps:
   - run:
       name: Install Emulator dependencies
-      command: >
-        yes | sdkmanager "platform-tools" "tools" > /dev/null
-        yes | sdkmanager "platforms;<< parameters.platform-version >>" > /dev/null
-        yes | sdkmanager "emulator" > /dev/null
-        yes | sdkmanager "build-tools;<< parameters.build-tools-version >>" > /dev/null
-        yes | sdkmanager --licenses > /dev/null
+      command: << include(scripts/installAndroidEmulatorDependencies.sh) >>
+      environment:
+        ANDROID_BUILD_TOOLS_VERSION: << parameters.build-tools-version >>
+        ANDROID_PLATFORM_VERSION: << parameters.platform-version >>
   - run:
       name: Start ADB Server
       command: adb start-server
