@@ -42,7 +42,7 @@ steps:
       steps:
         - run:
             name: Install Pulse Audio
-            command: apt-get install pulseaudio
+            command: apt-get install libpulse0
         - start-android-emulator:
             device-name: << parameters.device-name >>
             platform-version: << parameters.platform-version >>
