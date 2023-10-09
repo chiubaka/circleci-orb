@@ -97,6 +97,11 @@ steps:
         - run:
             command: brew update >/dev/null
             name: Update brew
+  - run:
+      name: Install Watchman
+      command: >
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install watchman > /dev/null
+        command watchman -v
   - when:
       condition: << parameters.with-simulator >>
       steps:

@@ -6,6 +6,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  build-tools-version:
+    description: The version of the Android build tools to install.
+    type: string
+    default: 34.0.0
   device-name:
     description: The name of the AVD device to create
     type: string
@@ -40,13 +44,8 @@ steps:
   - when:
       condition: << parameters.with-emulator >>
       steps:
-        - run:
-            name: Install Pulse Audio
-            command: >
-              apt-get update -y
-
-              apt-get install -y pulseaudio libxcomposite-dev
         - start-android-emulator:
+            build-tools-version: << parameters.build-tool-version >>
             device-name: << parameters.device-name >>
             platform-version: << parameters.platform-version >>
   - setup-react-native:

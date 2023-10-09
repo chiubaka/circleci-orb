@@ -9,22 +9,31 @@ parameters:
   device-name:
     description: The name of the AVD device to create
     type: string
-    default: Detox_AVD
-  logcat-grep:
-    description: >
-      ADB logs will be shown in the "Start Android Emulator" commands, but we filter
-      it using grep to avoid noise. You can specify additional strings to grep for.
-      Make sure you escape special characters.
-    type: string
-    default: com.reactnativecommunity
+    default: Detox
   platform-version:
     description: The platform version to use for the AVD
     type: string
     default: android-34
 
 steps:
-  - react-native/android_emulator_start:
-      build_tools_version: << parameters.build-tools-version >>
-      device_name: << parameters.device-name >>
-      logcat_grep: << parameters.logcat-grep >>
-      platform_version: << parameters.platform-version >>
+  - run:
+      name: Install Emulator dependencies
+      command: >
+        yes | sdkmanager "platform-tools" "tools" > /dev/null
+        yes | sdkmanager "platforms;<< parameters.platform-version >>" > /dev/null
+        yes | sdkmanager "emulator" > /dev/null
+        yes | sdkmanager "build-tools;<< parameter.build-tools-version >>" > /dev/null
+        yes | sdkmanager --licenses > /dev/null
+  - run:
+      name: Start ADB Server
+      command: adb start-server
+      background: true
+  - android/create-avd:
+      avd-name: << parameters.device-name >>
+      system-image: system-images;<< parameters.platform-version >>;default;x86_64
+      install: true
+  - android/start-emulator:
+      avd-name: << parameters.device-name >>
+      no-window: true
+      post-emulator-launch-assemble-command: ""
+      wait-for-emulator: false
