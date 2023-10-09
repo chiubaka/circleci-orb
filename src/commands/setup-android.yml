@@ -45,7 +45,7 @@ steps:
       condition: << parameters.with-emulator >>
       steps:
         - start-android-emulator:
-            build-tools-version: << parameters.build-tool-version >>
+            build-tools-version: << parameters.build-tools-version >>
             device-name: << parameters.device-name >>
             platform-version: << parameters.platform-version >>
   - setup-react-native:
