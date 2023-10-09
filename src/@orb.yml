@@ -14,4 +14,5 @@ orbs:
   macos: circleci/macos@2.4.0
   node: circleci/node@5.0.2
   nx: nrwl/nx@1.5.1
+  react-native: react-native-community/react-native@7.1.1
   ruby: circleci/ruby@2.1.0

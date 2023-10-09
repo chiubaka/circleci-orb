@@ -1,11 +1,9 @@
-# Ripped from circleci/android orb
+# Ripped from reactnativecommunity/react-native-android
 description: >
-  This selects an Android machine image.
-  CircleCI's Android machine images are recommended for Android emulator tests.
-
-machine:
-  image: android:<< parameters.tag >>
-  resource_class: << parameters.resource-class >>
+  An executor for running Android-related React Native tasks
+docker:
+  - image: reactnativecommunity/react-native-android:<< parameters.tag >>
+resource_class: << parameters.resource-class >>
 
 parameters:
   resource-class:
@@ -21,10 +19,6 @@ parameters:
       - 2xlarge+
     type: enum
   tag:
-    description: >
-      The Android image tag to use.
-
-      Choose a tag from
-      https://circleci.com/developer/machine/image/android#image-tags
+    description: The tag to use for the docker image
     type: string
-    default: 2023.09.1
+    default: v12

@@ -2,22 +2,26 @@ description: >
   Create and start an Android emulator
 
 parameters:
+  build-tools-version:
+    description: The version of the Android build tools to install.
+    type: string
+    default: 34.0.0
   device-name:
     description: The name of the AVD device to create
     type: string
-    default: detox
+    default: Detox_AVD
+  logcat-grep:
+    description: ADB logs will be shown in the "Start Android Emulator" commands, but we filter it using grep to avoid noise. You can specify additional strings to grep for. Make sure you escape special characters.
+    type: string
+    default: com.reactnativecommunity
   platform-version:
     description: The platform version to use for the AVD
     type: string
     default: android-34
 
 steps:
-  - android/create-avd:
-      avd-name: << parameters.device-name >>
-      system-image: system-images;<< parameters.platform-version >>;default;x86_64
-      install: true
-  - android/start-emulator:
-      avd-name: << parameters.device-name >>
-      no-window: true
-      post-emulator-launch-assemble-command: ""
-      wait-for-emulator: false
+  - react-native/android_emulator_start:
+      build_tools_version: << parameters.build-tools-version >>
+      device_name: << parameters.device-name >>
+      logcat_grep: << parameters.logcat-grep >>
+      platform_version: << parameters.platform-version >>
