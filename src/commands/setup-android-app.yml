@@ -1,0 +1,18 @@
+description: >
+  Sets up a single Android app. Must be used once per app in a monorepo.
+
+parameters:
+  app-dir:
+    description: The directory containing the app project (and Gemfile)
+    type: string
+  cache:
+    description: Whether or not to cache dependencies (CocoaPods, Ruby)
+    type: boolean
+    default: true
+
+steps:
+  - setup-react-native-app:
+      app-dir: << parameters.app-dir >>
+      cache: << parameters.cache >>
+      pre-bundle-install-steps:
+        - bundle lock --add-platform x86_64-linux

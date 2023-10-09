@@ -10,10 +10,15 @@ parameters:
     description: Whether or not to enable automatic caching of Gemfile dependencies for increased speed.
     type: boolean
     default: true
+  pre-bundle-install-steps:
+    description: Steps to run after the bundler is installed but before Ruby dependencies are installed
+    type: steps
+    default: []
 
 steps:
   - ruby/install-deps:
       app-dir: << parameters.app-dir >>
+      pre-install-steps: << parameters.pre-bundle-install-steps >>
       with-cache: << parameters.cache >>
   - run:
       name: Install Fastlane plugins
