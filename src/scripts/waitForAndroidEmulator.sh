@@ -1,18 +1,9 @@
 #! /usr/bin/env bash
-set -e
-
-export BOOT=""
+set -xe
 
 echo "Waiting for AVD to finish booting"
 
-PATH=$(dirname "$(dirname "$(command -v android)")")/platform-tools:$PATH
-export PATH
-
-until [[ "$BOOT" =~ "1" ]]; do
-  sleep 5
-  BOOT=$(adb -e shell getprop sys.boot_completed 2>&1)
-  export BOOT
-done
+adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done; input keyevent 82'
 
 sleep 15
 
