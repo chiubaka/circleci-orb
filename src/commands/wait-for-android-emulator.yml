@@ -4,6 +4,6 @@ description: >
 
 steps:
   - run:
-        command: << include(scripts/waitForAndroidEmulator.sh) >>
-        name: Wait for AVD to be ready
-        no_output_timeout: 5m
+      command: << include(scripts/waitForAndroidEmulator.sh) >>
+      name: Wait for AVD to be ready
+      no_output_timeout: 5m
