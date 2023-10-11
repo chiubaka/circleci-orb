@@ -8,7 +8,10 @@ display:
   source_url: "https://github.com/chiubaka/circleci-orb"
 
 orbs:
+  android: circleci/android@2.3.0
   codecov: codecov/codecov@3.2.3
   docker: circleci/docker@2.1.3
+  macos: circleci/macos@2.4.0
   node: circleci/node@5.0.2
   nx: nrwl/nx@1.5.1
+  ruby: circleci/ruby@2.1.0

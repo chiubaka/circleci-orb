@@ -1,0 +1,9 @@
+# Ripped from react-native-community/react-native orb
+description: >
+  Wait for Android emulator to be ready
+
+steps:
+  - run:
+      command: << include(scripts/waitForAndroidEmulator.sh) >>
+      name: Wait for AVD to be ready
+      no_output_timeout: 5m
