@@ -1,10 +1,6 @@
 description: >
   Runs node on docker
 
-docker:
-  - image: cimg/node:<< parameters.tag >>
-resource_class: << parameters.resource-class >>
-
 parameters:
   tag:
     default: lts
@@ -16,3 +12,7 @@ parameters:
     default: medium
     description: Resource class to use for Docker
     type: string
+
+docker:
+  - image: cimg/node:<< parameters.tag >>
+resource_class: << parameters.resource-class >>

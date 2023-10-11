@@ -4,10 +4,6 @@ description: >
   CircleCI's Android machine images are recommended for Android emulator tests.
   CircleCI's docker executors don't easily support nested virtualization.
 
-machine:
-  image: android:<< parameters.tag >>
-  resource_class: << parameters.resource-class >>
-
 parameters:
   resource-class:
     default: medium
@@ -29,3 +25,7 @@ parameters:
       https://circleci.com/developer/machine/image/android#image-tags
     type: string
     default: 2023.09.1
+
+machine:
+  image: android:<< parameters.tag >>
+  resource_class: << parameters.resource-class >>

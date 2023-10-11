@@ -1,7 +1,9 @@
 description: >
   Tests the project code using the test script provided by package.json
 
-executor: << parameters.executor >>
+executor:
+  name: << parameters.executor >>
+  resource_class: << parameters.resource-class >>
 
 parameters:
   executor:
@@ -48,6 +50,18 @@ parameters:
     type: steps
     default: []
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
   setup-steps:
     type: steps
     default: []
