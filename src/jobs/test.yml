@@ -2,14 +2,10 @@ description: >
   Tests the project code using the test script provided by package.json
 
 executor:
-  name: << parameters.executor >>
-  resource_class: << parameters.resource-class >>
+  name: docker-node
+  resource-class: << parameters.resource-class >>
 
 parameters:
-  executor:
-    type: executor
-    default: docker-node
-    description: What executor to use for tests. Customize this if you need to spin up additional services for testing.
   init-submodules:
     type: boolean
     default: false

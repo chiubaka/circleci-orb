@@ -3,7 +3,7 @@ description: >
 
 executor:
   name: docker-node
-  resource_class: << parameters.resource-class >>
+  resource-class: << parameters.resource-class >>
 
 parameters:
   app-dir:
