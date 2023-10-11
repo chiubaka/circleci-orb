@@ -107,7 +107,7 @@ steps:
             app-dir: << parameters.app-dir >>
 
   - store_test_results:
-      path: << parameters.app-dir >>/reports/
+      path: << parameters.app-dir >>/reports/junit
   - store_artifacts:
       path: << parameters.app-dir >>/reports/
   - steps: << parameters.cleanup-steps >>
