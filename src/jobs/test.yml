@@ -1,13 +1,11 @@
 description: >
   Tests the project code using the test script provided by package.json
 
-executor: << parameters.executor >>
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
 
 parameters:
-  executor:
-    type: executor
-    default: docker-node
-    description: What executor to use for tests. Customize this if you need to spin up additional services for testing.
   init-submodules:
     type: boolean
     default: false
@@ -48,6 +46,18 @@ parameters:
     type: steps
     default: []
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
   setup-steps:
     type: steps
     default: []

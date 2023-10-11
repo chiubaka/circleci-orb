@@ -1,7 +1,9 @@
 description: >
   Deploys the project (or a subset of packages in a monorepo).
 
-executor: docker-node
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
 
 parameters:
   app-dir:
@@ -36,6 +38,18 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
   task-name:
     type: string
     default: Deploy

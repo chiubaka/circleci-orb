@@ -1,7 +1,9 @@
 description: >
   Lints the project code using the lint script provided by package.json
 
-executor: docker-node
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
 
 parameters:
   init-submodules:
@@ -20,6 +22,18 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
   setup-steps:
     type: steps
     default: []
