@@ -22,7 +22,7 @@ if [ "$react_native" = false ]; then
 
   jq -n "{}" > "$CIRCLECI_ROOT/params.json"
 
-  envsubst < "$CIRCLECI_ROOT/js.yml.template" > "$CIRCLECI_ROOT/main.yml"
+  envsubst < "$CIRCLECI_ROOT/js.template.yml" > "$CIRCLECI_ROOT/main.yml"
 
   print_generated_files
 
@@ -127,6 +127,6 @@ IOS_SEMVER_REGEX=$ios_semver_regex \
   ANDROID_SEMVER_REGEX=$android_semver_regex \
   SETUP_IOS_APPS_STEPS=$setup_ios_apps_steps \
   SETUP_ANDROID_APPS_STEPS=$setup_android_apps_steps \
-  envsubst < "$CIRCLECI_ROOT/react-native.yml.template" > "$CIRCLECI_ROOT/main.yml"
+  envsubst < "$CIRCLECI_ROOT/react-native.template.yml" > "$CIRCLECI_ROOT/main.yml"
 
 print_generated_files

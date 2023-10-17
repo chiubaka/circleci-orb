@@ -1,8 +1,8 @@
 description: >
   Setup job for dynamic configuration. Does some basic setup of the repository
   and then generates config from a set of expected templates for continuation.
-  Client projects must include a `.circleci/react-native.yml.template` file and a
-  `.circleci/js.yml.template` file. A main.yml file will be generated for continuation
+  Client projects must include a `.circleci/react-native.template.yml` file and a
+  `.circleci/js.template.yml` file. A main.yml file will be generated for continuation
   using one of these files using the `envsubst` command.
 
   React Native templates will be supplied with the following variables:
