@@ -12,7 +12,7 @@ e2e_android=false
 deploy_ios=false
 deploy_android=false
 
-affected_projects=`yarn nx show projects --affected`
+affected_projects=$(yarn nx show projects --affected)
 
 for project in $affected_projects; do
   targets=$(yarn nx show project $project | jq -r ".targets | keys[]")
@@ -56,7 +56,7 @@ android_projects=$(yarn nx show projects --with-target run:android --json | jq -
 setup_ios_apps=""
 react_native=false
 
-if [ ! -z "$ios_projects" ]; then
+if [ -n "$ios_projects" ]; then
   react_native=true
   for project in $ios_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
@@ -70,7 +70,7 @@ fi
 
 setup_android_apps=""
 
-if [ ! -z "$android_projects" ]; then
+if [ -n "$android_projects" ]; then
   react_native=true
   for project in $android_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
