@@ -1,0 +1,63 @@
+description: >
+  Setup job for dynamic configuration. Does some basic setup of the repository
+  and then generates config from a set of expected templates for continuation.
+  Client projects must include a `.circleci/react-native.yml.template` file and a
+  `.circleci/js.yml.template` file. A main.yml file will be generated for continuation
+  using one of these files using the `envsubst` command.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  yarn-berry:
+    type: boolean
+    default: true
+    description: Whether or not to use Yarn berry for package management.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  resource-class:
+    default: small
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
+
+steps:
+  - setup:
+      init-submodules: << parameters.init-submodules >>
+      app-dir: << parameters.app-dir >>
+      yarn-berry: << parameters.yarn-berry >>
+      nx-affected: << parameters.nx-affected >>
+  - steps: << parameters.setup-steps >>
+  - run:
+      name: Generate .circleci/main.yml and .circleci/params.json
+      command: << include(scripts/generateMainConfig.sh) >>
+  - steps: << parameters.cleanup-steps >>
+  - continuation/continue:
+      configuration_path: .circleci/main.yml
+      parameters: .circleci/params.json
