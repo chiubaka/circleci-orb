@@ -1,9 +1,10 @@
 description: >
-  Builds Android project code using the script provided by package.json
+  Test iOS project code using the script provided by package.json
 
 executor:
-  name: android
+  name: macos
   resource-class: << parameters.resource-class >>
+  xcode-version: << parameters.xcode-version >>
 
 parameters:
   app-dir:
@@ -43,15 +44,27 @@ parameters:
   setup-apps-steps:
     type: steps
     description: >
-      Steps to run in order to initialize Android apps within this repository.
-      Refer to the setup-android-app command, which was designed to setup an
-      individual Android app. This parameter most likely consists of one
-      setup-android-app command per Android app in this repository. If using
+      Steps to run in order to initialize iOS apps within this repository.
+      Refer to the setup-ios-app command, which was designed to setup an
+      individual iOS app. This parameter most likely consists of one
+      setup-ios-app command per iOS app in this repository. If using
       chiubaka/dynamic-setup, this parameter can be generated for you.
   setup-steps:
     type: steps
     default: []
     description: Additional steps to run as part of setup for this job
+  simulator-device:
+    description: The simulator device name to use (e.g. iPhone 14)
+    type: string
+    default: iPhone 14
+  simulator-version:
+    description: The simulator OS version to use (e.g. 16.4)
+    type: string
+    default: "16.4"
+  xcode-version:
+    description: XCode version to use.
+    type: string
+    default: 14.3.1
   yarn-berry:
     type: boolean
     default: true
@@ -64,15 +77,18 @@ steps:
       steps:
         - run:
             command: circleci-agent step halt
-  - setup-android:
+  - setup-macos:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+      simulator-device: << parameters.simulator-device >>
+      simulator-version: << parameters.simulator-version >>
+      with-simulator: true
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
-      name: Build code
+      name: Run tests
       working_directory: << parameters.app-dir >>
-      command: yarn run build:android:ci
+      command: yarn run test:ios:ci
   - steps: << parameters.cleanup-steps >>

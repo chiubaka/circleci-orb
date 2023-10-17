@@ -1,5 +1,5 @@
 description: >
-  Builds Android project code using the script provided by package.json
+  Run Android project E2E tests using the script provided by package.json
 
 executor:
   name: android
@@ -10,6 +10,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  build-tools-version:
+    description: The version of the Android build tools to install.
+    type: string
+    default: 34.0.0
   cleanup-steps:
     type: steps
     default: []
@@ -28,6 +32,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  platform-version:
+    description: The platform version to use for the AVD
+    type: string
+    default: android-34
   resource-class:
     default: medium
     description: Resource class used for the executor.
@@ -69,10 +77,13 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+      build-tools-version: << parameters.build-tools-version >>
+      platform-version: << parameters.platform-version >>
+      with-emulator: true
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
-      name: Build code
+      name: Run E2E tests
       working_directory: << parameters.app-dir >>
-      command: yarn run build:android:ci
+      command: yarn run e2e:android:ci
   - steps: << parameters.cleanup-steps >>

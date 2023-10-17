@@ -79,36 +79,36 @@ else
   affected_android_projects=$(yarn nx show projects --affected --with-target run:android)
 fi
 
-setup_ios_apps=""
+setup_ios_apps_steps=""
 
 if [ -n "$affected_ios_projects" ]; then
   echo "Found affected iOS projects: $affected_ios_projects"
 
   for project in $affected_ios_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
-    setup_ios_apps+="
+    setup_ios_apps_steps+="
     - chiubaka/setup-ios-app:
         app-dir: $project_root"
   done
 else
   echo "No affected iOS projects"
-  setup_ios_apps=[]
+  setup_ios_apps_steps=[]
 fi
 
-setup_android_apps=""
+setup_android_apps_steps=""
 
 if [ -n "$affected_android_projects" ]; then
   echo "Found affected Android projects: $affected_android_projects"
 
   for project in $affected_android_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
-    setup_android_apps+="
+    setup_android_apps_steps+="
     - chiubaka/setup-android-app:
         app-dir: $project_root"
   done
 else
   echo "No affected Android projects"
-  setup_android_apps=[]
+  setup_android_apps_steps=[]
 fi
 
 jq -n \
@@ -125,8 +125,8 @@ jq -n \
 
 IOS_SEMVER_REGEX=$ios_semver_regex \
   ANDROID_SEMVER_REGEX=$android_semver_regex \
-  SETUP_IOS_APPS=$setup_ios_apps \
-  SETUP_ANDROID_APPS=$setup_android_apps \
+  SETUP_IOS_APPS_STEPS=$setup_ios_apps_steps \
+  SETUP_ANDROID_APPS_STEPS=$setup_android_apps_steps \
   envsubst < "$CIRCLECI_ROOT/react-native.yml.template" > "$CIRCLECI_ROOT/main.yml"
 
 print_generated_files

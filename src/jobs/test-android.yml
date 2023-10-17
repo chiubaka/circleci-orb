@@ -1,5 +1,5 @@
 description: >
-  Builds Android project code using the script provided by package.json
+  Test Android project code using the script provided by package.json
 
 executor:
   name: android
@@ -72,7 +72,7 @@ steps:
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
-      name: Build code
+      name: Run tests
       working_directory: << parameters.app-dir >>
-      command: yarn run build:android:ci
+      command: yarn run test:android:ci
   - steps: << parameters.cleanup-steps >>

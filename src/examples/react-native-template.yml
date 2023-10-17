@@ -1,0 +1,197 @@
+description: >
+  A sample template config for React Native to be used in combination
+  with chiubaka/dynamic-setup. Environment variables will be substituted
+  for dynamic values using the `envsubst` command.
+usage:
+  version: 2.1
+
+  constants:
+    # Semantic versioning RegEx modified from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    semver-regex: &semver-regex /^(\w+-)+v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+    ios-semver-regex: &ios-semver-regex $IOS_SEMVER_REGEX
+    android-semver-regex: &android-semver-regex $ANDROID_SEMVER_REGEX
+    # This value must match the value provided in the repo's .xcode-version file!!
+    xcode-version: &xcode-version 14.3.1
+    ios-job-params: &ios-job-params
+      setup-apps-steps: $SETUP_IOS_APPS_STEPS
+    android-job-params: &android-job-params
+      setup-apps-steps: $SETUP_ANDROID_APPS_STEPS
+
+  filters:
+    semver-tags: &semver-tags
+      tags:
+        only: *semver-regex
+    android-semver-tags: &android-semver-tags
+      tags:
+        only: *android-semver-regex
+    ios-semver-tags: &ios-semver-tags
+      tags:
+        only: *ios-semver-regex
+    ignore-android-semver-tags: &ignore-android-semver-tags
+      tags:
+        ignore: *android-semver-regex
+    ignore-ios-semver-tags: &ignore-ios-semver-tags
+      tags:
+        ignore: *ios-semver-regex
+    ignore-branches: &ignore-branches
+      branches:
+        ignore: /.*/
+
+  orbs:
+    chiubaka: chiubaka/circleci-orb@dev:alpha
+
+  parameters:
+    build-ios:
+      description: Whether or not to enable the build-ios job
+      type: boolean
+      default: false
+    build-android:
+      description: Whether or not to enable the build-android job
+      type: boolean
+      default: false
+    test-ios:
+      description: Whether or not to enable the test-ios job
+      type: boolean
+      default: false
+    test-android:
+      description: Whether or not to enable the test-android job
+      type: boolean
+      default: false
+    e2e-ios:
+      description: Whether or not to enable the e2e-ios job
+      type: boolean
+      default: false
+    e2e-android:
+      description: Whether or not to enable the e2e-android job
+      type: boolean
+      default: false
+    deploy-ios:
+      description: Whether or not to enable the deploy-ios job
+      type: boolean
+      default: false
+    deploy-android:
+      description: Whether or not to enable the deploy-android job
+      type: boolean
+      default: false
+
+  filters:
+    semver-tags: &semver-tags
+      tags:
+        only: *semver-regex
+    ignore-branches: &ignore-branches
+      branches:
+        ignore: /.*/
+
+  workflows:
+    react-native-build-test-e2e-deploy:
+      when: << pipeline.parameters.react-native >>
+      jobs:
+        - chiubaka/lint:
+            name: lint
+            filter:
+              <<: *semver-tags
+        - chiubaka/build:
+            name: build
+            filter:
+              <<: *semver-tags
+        - chiubaka/test:
+            name: test
+            filter:
+              <<: *semver-tags
+        - chiubaka/e2e:
+            name: e2e
+            requires:
+              - build
+            filter:
+              <<: *semver-tags
+        - chiubaka/deploy:
+            name: deploy
+            requires:
+              - build
+              - test
+              - e2e
+            filter:
+              <<: *ignore-branches
+              <<: *ignore-android-semver-tags
+              <<: *ignore-ios-semver-tags
+              <<: *semver-tags
+        - chiubaka/build-android:
+            name: build-android
+            enabled: << pipeline.parameters.build-android >>
+            <<: *android-job-params
+            requires:
+              - build
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/build-ios:
+            name: build-ios
+            enabled: << pipeline.parameters.build-ios >>
+            <<: *ios-job-params
+            requires:
+              - build
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/test-android:
+            name: test-android
+            enabled: << pipeline.parameters.test-android >>
+            <<: *android-job-params
+            requires:
+              - build
+              - build-android
+              - test
+              - e2e
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/test-ios:
+            name: test-ios
+            enabled: << pipeline.parameters.test-ios >>
+            <<: *ios-job-params
+            requires:
+              - build
+              - build-ios
+              - test
+              - e2e
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/e2e-android:
+            name: e2e-android
+            enabled: << pipeline.parameters.e2e-android >>
+            <<: *android-job-params
+            requires:
+              - build-android
+              - test-android
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/e2e-ios:
+            name: e2e-ios
+            enabled: << pipeline.parameters.e2e-ios >>
+            <<: *ios-job-params
+            requires:
+              - build-ios
+              - test-ios
+            filter:
+              <<: *android-semver-tags
+              <<: *ios-semver-tags
+        - chiubaka/deploy-android:
+            name: deploy-android
+            enabled: << pipeline.parameters.deploy-android >>
+            <<: *android-job-params
+            requires:
+              - e2e-android
+            filters:
+              <<: *ignore-branches
+              <<: *android-semver-tags
+        - chiubaka/deploy-ios:
+            name: deploy-ios
+            enabled: << pipeline.parameters.deploy-ios >>
+            <<: *ios-job-params
+            requires:
+              - e2e-ios
+            filters:
+              <<: *ignore-branches
+              <<: *ios-semver-tags
