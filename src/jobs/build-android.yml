@@ -40,7 +40,7 @@ parameters:
       - 2xlarge
       - 2xlarge+
     type: enum
-  setup-app-steps:
+  setup-apps-steps:
     type: steps
     description: >
       Steps to run in order to initialize Android apps within this repository.
@@ -68,7 +68,7 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
-  - steps: << parameters.setup-app-steps >>
+  - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
       name: Build code
