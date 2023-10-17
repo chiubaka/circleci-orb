@@ -11,33 +11,13 @@ usage:
     # This value must match the value provided in the repo's .xcode-version file!!
     xcode-version: &xcode-version 14.3.1
     ios-job-params: &ios-job-params
-      setup-apps-steps: 
+      setup-apps-steps:
       - chiubaka/setup-ios-app:
           app-dir: apps/kagami
     android-job-params: &android-job-params
-      setup-apps-steps: 
+      setup-apps-steps:
       - chiubaka/setup-android-app:
           app-dir: apps/kagami
-
-  filters:
-    semver-tags: &semver-tags
-      tags:
-        only: *semver-regex
-    android-semver-tags: &android-semver-tags
-      tags:
-        only: *android-semver-regex
-    ios-semver-tags: &ios-semver-tags
-      tags:
-        only: *ios-semver-regex
-    ignore-android-semver-tags: &ignore-android-semver-tags
-      tags:
-        ignore: *android-semver-regex
-    ignore-ios-semver-tags: &ignore-ios-semver-tags
-      tags:
-        ignore: *ios-semver-regex
-    ignore-branches: &ignore-branches
-      branches:
-        ignore: /.*/
 
   orbs:
     chiubaka: chiubaka/circleci-orb@dev:alpha
@@ -80,6 +60,18 @@ usage:
     semver-tags: &semver-tags
       tags:
         only: *semver-regex
+    android-semver-tags: &android-semver-tags
+      tags:
+        only: *android-semver-regex
+    ios-semver-tags: &ios-semver-tags
+      tags:
+        only: *ios-semver-regex
+    ignore-android-semver-tags: &ignore-android-semver-tags
+      tags:
+        ignore: *android-semver-regex
+    ignore-ios-semver-tags: &ignore-ios-semver-tags
+      tags:
+        ignore: *ios-semver-regex
     ignore-branches: &ignore-branches
       branches:
         ignore: /.*/
