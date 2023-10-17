@@ -26,7 +26,7 @@ parameters:
     default: true
   yarn-berry:
     type: boolean
-    default: false
+    default: true
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
