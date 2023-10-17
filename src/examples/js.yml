@@ -44,4 +44,4 @@ usage:
               - test
             filters:
               <<: *ignore-branches
-              <<: *semver-tags
+              # <<: *semver-tags

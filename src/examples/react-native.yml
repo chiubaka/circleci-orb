@@ -106,9 +106,9 @@ usage:
               - e2e
             filter:
               <<: *ignore-branches
-              <<: *ignore-android-semver-tags
-              <<: *ignore-ios-semver-tags
-              <<: *semver-tags
+              # <<: *ignore-android-semver-tags
+              # <<: *ignore-ios-semver-tags
+              # <<: *semver-tags
         - chiubaka/build-android:
             name: build-android
             enabled: << pipeline.parameters.build-android >>
@@ -117,7 +117,7 @@ usage:
               - build
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/build-ios:
             name: build-ios
             enabled: << pipeline.parameters.build-ios >>
@@ -126,7 +126,7 @@ usage:
               - build
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/test-android:
             name: test-android
             enabled: << pipeline.parameters.test-android >>
@@ -138,7 +138,7 @@ usage:
               - e2e
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/test-ios:
             name: test-ios
             enabled: << pipeline.parameters.test-ios >>
@@ -150,7 +150,7 @@ usage:
               - e2e
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/e2e-android:
             name: e2e-android
             enabled: << pipeline.parameters.e2e-android >>
@@ -160,7 +160,7 @@ usage:
               - test-android
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/e2e-ios:
             name: e2e-ios
             enabled: << pipeline.parameters.e2e-ios >>
@@ -170,7 +170,7 @@ usage:
               - test-ios
             filter:
               <<: *android-semver-tags
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
         - chiubaka/deploy-android:
             name: deploy-android
             enabled: << pipeline.parameters.deploy-android >>
@@ -179,7 +179,7 @@ usage:
               - e2e-android
             filters:
               <<: *ignore-branches
-              <<: *android-semver-tags
+              # <<: *android-semver-tags
         - chiubaka/deploy-ios:
             name: deploy-ios
             enabled: << pipeline.parameters.deploy-ios >>
@@ -188,4 +188,4 @@ usage:
               - e2e-ios
             filters:
               <<: *ignore-branches
-              <<: *ios-semver-tags
+              # <<: *ios-semver-tags
