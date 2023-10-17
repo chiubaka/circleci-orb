@@ -14,7 +14,7 @@ print_generated_files() {
 all_ios_projects=$(yarn nx show projects --with-target run:ios)
 all_android_projects=$(yarn nx show projects --with-target run:android)
 
-([ -n "$all_ios_projects" ] || [ -n "$all_android_projects" ]) && react_native=true || react_native=false
+{ [ -n "$all_ios_projects" ] || [ -n "$all_android_projects" ]; } && react_native=true || react_native=false
 
 # This is a normal JS project! Copy the JS config template and exit.
 if [ "$react_native" = false ]; then
