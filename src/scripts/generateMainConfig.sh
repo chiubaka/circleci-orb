@@ -3,114 +3,130 @@
 MONOREPO_ROOT="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
 CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 
-build_ios=false
-build_android=false
-test_ios=false
-test_android=false
-e2e_ios=false
-e2e_android=false
-deploy_ios=false
-deploy_android=false
+print_generated_files() {
+  echo "Contents of $CIRCLECI_ROOT/main.yml:"
+  cat "$CIRCLECI_ROOT/main.yml"
 
-affected_projects=$(yarn nx show projects --affected)
+  echo "Contents of $CIRCLECI_ROOT/params.json:"
+  cat "$CIRCLECI_ROOT/params.json"
+}
 
-for project in $affected_projects; do
-  targets=$(yarn nx show project $project | jq -r ".targets | keys[]")
+all_ios_projects=$(yarn nx show projects --with-target run:ios)
+all_android_projects=$(yarn nx show projects --with-target run:android)
 
-  if [[ "$targets" =~ .*"build:ios:ci".* ]]; then
-    build_ios=true
-  fi
+([ -n "$all_ios_projects" ] || [ -n "$all_android_projects" ]) && react_native=true || react_native=false
 
-  if [[ "$targets" =~ .*"build:android:ci".* ]]; then
-    build_android=true
-  fi
+# This is a normal JS project! Copy the JS config template and exit.
+if [ "$react_native" = false ]; then
+  echo "No React Native projects found. Using JS CI template."
 
-  if [[ "$targets" =~ .*"test:ios:ci".* ]]; then
-    test_android=true
-  fi
+  jq -n "{}" > "$CIRCLECI_ROOT/params.json"
 
-  if [[ "$targets" =~ .*"test:android:ci".* ]]; then
-    test_android=true
-  fi
+  envsubst < "$CIRCLECI_ROOT/js.yml.template" > "$CIRCLECI_ROOT/main.yml"
 
-  if [[ "$targets" =~ .*"e2e:ios:ci".* ]]; then
-    e2e_ios=true
-  fi
+  print_generated_files
 
-  if [[ "$targets" =~ .*"e2e:android:ci".* ]]; then
-    e2e_android=true
-  fi
+  exit 0
+fi
 
-  if [[ "$targets" =~ .*"deploy:ios:ci".* ]]; then
-    deploy_android=true
-  fi
+echo "Detected React Native projects. Using React Native CI template."
 
-  if [[ "$targets" =~ .*"deploy:android:ci".* ]]; then
-    deploy_android=true
-  fi
-done
+[ -n "$(yarn nx show projects --affected --with-target build:ios)" ] && build_ios=true || build_ios=false
+[ -n "$(yarn nx show projects --affected --with-target build:android)" ] && build_android=true || build_android=false
+[ -n "$(yarn nx show projects --affected --with-target test:ios)" ] && test_ios=true || test_ios=false
+[ -n "$(yarn nx show projects --affected --with-target test:android)" ] && test_android=true || test_android=false
+[ -n "$(yarn nx show projects --affected --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
+[ -n "$(yarn nx show projects --affected --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
+[ -n "$(yarn nx show projects --affected --with-target deploy:ios)" ] && deploy_ios=true || deploy_ios=false
+[ -n "$(yarn nx show projects --affected --with-target deploy:android)" ] && deploy_android=true || deploy_android=false
 
-ios_projects=$(yarn nx show projects --with-target run:ios --json | jq -r -c ".[]")
-android_projects=$(yarn nx show projects --with-target run:android --json | jq -r -c ".[]")
+ios_semver_regex="/^(${all_ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
+android_semver_regex="/^(${all_android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
+
+# Must use perl to evaluate tag matches because CircleCI regex format is
+# perl-compatible, but not natively bash-compatible.
+ios_tag_match=$(echo $CIRCLE_TAG | perl -ne "$ios_semver_regex and print \$1")
+android_tag_match=$(echo $CIRCLE_TAG | perl -ne "$android_semver_regex and print \$1")
+
+# If this is a tag-based deployment, for each platform, if that platform's semver
+# regex is matched:
+#   1. The only affected project for this platform is the project referenced in the
+#      tag
+#   2. All jobs for the affected platform should be enabled
+if [ -n "$ios_tag_match" ]; then
+  echo "Detected matching iOS project in tag: $ios_tag_match"
+
+  affected_ios_projects=$ios_tag_match
+
+  build_ios=true
+  test_ios=true
+  e2e_ios=true
+  deploy_ios=true
+else
+  affected_ios_projects=$(yarn nx show projects --affected --with-target run:ios)
+fi
+
+if [ -n "$android_tag_match" ]; then
+  echo "Detected matching android project in tag: $android_tag_match"
+
+  affected_android_projects=$android_tag_match
+
+  build_android=true
+  test_android=true
+  e2e_android=true
+  deploy_android=true
+else
+  affected_android_projects=$(yarn nx show projects --affected --with-target run:android)
+fi
 
 setup_ios_apps=""
-react_native=false
 
-if [ -n "$ios_projects" ]; then
-  react_native=true
-  for project in $ios_projects; do
+if [ -n "$affected_ios_projects" ]; then
+  echo "Found affected iOS projects: $affected_ios_projects"
+
+  for project in $affected_ios_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
     setup_ios_apps+="
     - chiubaka/setup-ios-app:
         app-dir: $project_root"
   done
 else
+  echo "No affected iOS projects"
   setup_ios_apps=[]
 fi
 
 setup_android_apps=""
 
-if [ -n "$android_projects" ]; then
-  react_native=true
-  for project in $android_projects; do
+if [ -n "$affected_android_projects" ]; then
+  echo "Found affected Android projects: $affected_android_projects"
+
+  for project in $affected_android_projects; do
     project_root=$(yarn nx show project $project | jq -r ".root")
     setup_android_apps+="
     - chiubaka/setup-android-app:
         app-dir: $project_root"
   done
 else
+  echo "No affected Android projects"
   setup_android_apps=[]
 fi
 
-react_native=false
+jq -n \
+  "{ \
+    \"build-ios\": $build_ios, \
+    \"build-android\": $build_android, \
+    \"test-ios\": $test_ios, \
+    \"test-android\": $test_android, \
+    \"e2e-ios\": $e2e_ios, \
+    \"e2e-android\": $e2e_android, \
+    \"deploy-ios\": $deploy_ios, \
+    \"deploy-android\": $deploy_android \
+  }" > "$CIRCLECI_ROOT/params.json"
 
-if [ "$react_native" = true ]; then
-  jq -n \
-    "{ \
-      \"react-native\": $react_native, \
-      \"build-ios\": $build_ios, \
-      \"build-android\": $build_android, \
-      \"test-ios\": $test_ios, \
-      \"test-android\": $test_android, \
-      \"e2e-ios\": $e2e_ios, \
-      \"e2e-android\": $e2e_android, \
-      \"deploy-ios\": $deploy_ios, \
-      \"deploy-android\": $deploy_android \
-    }" > "$CIRCLECI_ROOT/params.json"
+IOS_SEMVER_REGEX=$ios_semver_regex \
+  ANDROID_SEMVER_REGEX=$android_semver_regex \
+  SETUP_IOS_APPS=$setup_ios_apps \
+  SETUP_ANDROID_APPS=$setup_android_apps \
+  envsubst < "$CIRCLECI_ROOT/react-native.yml.template" > "$CIRCLECI_ROOT/main.yml"
 
-  ios_semver_regex="/^(${ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
-  android_semver_regex="/^(${android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
-
-  IOS_SEMVER_REGEX=$ios_semver_regex \
-    ANDROID_SEMVER_REGEX=$android_semver_regex \
-    SETUP_IOS_APPS=$setup_ios_apps \
-    SETUP_ANDROID_APPS=$setup_android_apps \
-    envsubst < "$CIRCLECI_ROOT/react-native.yml.template" > "$CIRCLECI_ROOT/main.yml"
-else
-  jq -n "{}" > "$CIRCLECI_ROOT/params.json"
-
-  envsubst < "$CIRCLECI_ROOT/js.yml.template" > "$CIRCLECI_ROOT/main.yml"
-fi
-
-cat "$CIRCLECI_ROOT/main.yml"
-cat "$CIRCLECI_ROOT/params.json"
+print_generated_files
