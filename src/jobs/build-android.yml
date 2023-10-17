@@ -68,9 +68,8 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
-  - steps:
-      - steps: << parameters.setup-app-steps >>
-      - steps: << parameters.setup-steps >>
+  - steps: << parameters.setup-app-steps >>
+  - steps: << parameters.setup-steps >>
   - run:
       name: Build code
       working_directory: << parameters.app-dir >>
