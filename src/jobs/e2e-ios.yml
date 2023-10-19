@@ -82,5 +82,5 @@ steps:
   - run:
       name: Run tests
       working_directory: << parameters.app-dir >>
-      command: yarn run test:ios:ci
+      command: yarn run e2e:ios:ci
   - steps: << parameters.cleanup-steps >>
