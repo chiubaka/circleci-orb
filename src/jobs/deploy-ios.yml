@@ -30,17 +30,9 @@ parameters:
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
   resource-class:
-    default: medium
+    default: macos.m1.medium.gen1
     description: Resource class used for the executor.
-    enum:
-      - small
-      - medium
-      - medium+
-      - large
-      - xlarge
-      - 2xlarge
-      - 2xlarge+
-    type: enum
+    type: string
   setup-apps-steps:
     type: steps
     description: >
@@ -76,8 +68,6 @@ steps:
       nx-affected: << parameters.nx-affected >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
-  - run:
-      name: Deploy iOS project
-      working_directory: << parameters.app-dir >>
-      command: yarn run deploy:ios:ci
+  - deploy-ios:
+      app-dir: << parameters.app-dir >>
   - steps: << parameters.cleanup-steps >>
