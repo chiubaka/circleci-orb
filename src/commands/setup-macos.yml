@@ -89,9 +89,6 @@ steps:
       steps:
         - restore_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
-  - run:
-      command: node --version
-      name: Verify node version
   - when:
       condition: << parameters.homebrew-update >>
       steps:
@@ -99,7 +96,7 @@ steps:
             command: brew update >/dev/null
             name: Update brew
   - run:
-      command: << include(scripts/installNodeVersion.sh) >>
+      command: << include(scripts/installMacOsNodeVersion.sh) >>
       name: Install node@<< parameters.node-version  >>
       environment:
         NODE_VERSION: << parameters.node-version >>
