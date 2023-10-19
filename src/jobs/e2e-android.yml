@@ -71,6 +71,7 @@ steps:
         not: << parameters.enabled >>
       steps:
         - run:
+            name: Skip disabled job
             command: circleci-agent step halt
   - setup-android:
       init-submodules: << parameters.init-submodules >>

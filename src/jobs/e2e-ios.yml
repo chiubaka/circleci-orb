@@ -68,6 +68,7 @@ steps:
         not: << parameters.enabled >>
       steps:
         - run:
+            name: Skip disabled job
             command: circleci-agent step halt
   - setup-macos:
       init-submodules: << parameters.init-submodules >>
