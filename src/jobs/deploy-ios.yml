@@ -15,12 +15,6 @@ parameters:
     type: steps
     default: []
     description: Steps to run as part of cleanup for this job
-  enabled:
-    description: >
-      Whether or not this job should be run. When false the job will pass
-      without doing anything
-    type: boolean
-    default: true
   init-submodules:
     type: boolean
     default: false
@@ -55,13 +49,6 @@ parameters:
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
-  - when:
-      condition:
-        not: << parameters.enabled >>
-      steps:
-        - run:
-            name: Skip disabled job
-            command: circleci-agent step halt
   - setup-macos:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
