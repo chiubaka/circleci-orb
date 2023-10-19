@@ -39,4 +39,4 @@ steps:
             cache: << parameters.cache >>
             pod-install-directory: << parameters.pod-install-directory >>
   - setup-ios-code-signing:
-      app-dir: << parameters.app-dir >>
+      secrets-dir: << parameters.app-dir >>/ios/secrets

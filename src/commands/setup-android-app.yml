@@ -20,4 +20,4 @@ steps:
             command: bundle lock --add-platform x86_64-linux
             working_directory: << parameters.app-dir >>
   - setup-android-code-signing:
-      app-dir: << parameters.app-dir >>
+      secrets-dir: << parameters.app-dir >>/android/secrets
