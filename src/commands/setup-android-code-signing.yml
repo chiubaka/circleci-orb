@@ -21,6 +21,7 @@ steps:
       working-directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
   - run:
       name: "Rename generated keystore properties to upload-keystore.properties"
-      command: mv << parameters.app-dir >>/<< parameters.secrets-dir >>/keystore.properties << parameters.app-dir >>/<< parameters.secrets-dir >>/upload-keystore.properties
+      command: mv keystore.properties upload-keystore.properties
+      working_directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
   - android/create-google-play-key:
       working-directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
