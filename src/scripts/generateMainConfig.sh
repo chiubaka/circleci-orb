@@ -111,8 +111,31 @@ else
   setup_android_apps_steps=[]
 fi
 
+declare -A xcode_versions_map
+
+for project in $all_ios_projects; do
+  project_root=$(yarn nx show project $project | jq -r ".root")
+  project_xcode_version=$(cat $project_root/.xcode-version)
+  xcode_versions_map[$project_xcode_version]=0
+done
+
+xcode_versions=("${!xcode_versions_map[@]}")
+
+num_xcode_versions=${#xcode_versions[@]}
+xcode_version=$DEFAULT_XCODE_VERSION
+
+if (( $num_xcode_versions == 0 )); then
+  echo "No Xcode versions configured. Defaulting to $DEFAULT_XCODE_VERSION."
+else
+  xcode_version=${xcode_versions[0]}
+  if (( num_xcode_versions > 1 )); then
+    echo "WARNING: Multiple Xcode versions detected: ${xcode_versions[@]}. Using $xcode_version. Additional versions may incur additional CI execution time as they cannot be pre-installed on the executor."
+  fi
+fi
+
 jq -n \
   "{ \
+    \"xcode-version\": \"$xcode_version\", \
     \"build-ios\": $build_ios, \
     \"build-android\": $build_android, \
     \"test-ios\": $test_ios, \
