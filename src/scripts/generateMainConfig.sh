@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+DEFAULT_XCODE_VERSION="14.3.1"
+
 MONOREPO_ROOT="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
 CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 
@@ -31,14 +33,15 @@ fi
 
 echo "Detected React Native projects. Using React Native CI template."
 
-[ -n "$(yarn nx show projects --affected --with-target build:ios)" ] && build_ios=true || build_ios=false
-[ -n "$(yarn nx show projects --affected --with-target build:android)" ] && build_android=true || build_android=false
-[ -n "$(yarn nx show projects --affected --with-target test:ios)" ] && test_ios=true || test_ios=false
-[ -n "$(yarn nx show projects --affected --with-target test:android)" ] && test_android=true || test_android=false
-[ -n "$(yarn nx show projects --affected --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
-[ -n "$(yarn nx show projects --affected --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
-[ -n "$(yarn nx show projects --affected --with-target deploy:ios)" ] && deploy_ios=true || deploy_ios=false
-[ -n "$(yarn nx show projects --affected --with-target deploy:android)" ] && deploy_android=true || deploy_android=false
+# We should never skip jobs and validations on the primary branch!
+([ $CIRCLE_BRANCH == "master"  ] || [ $CIRCLE_BRANCh == "main" ]) && affected_options="" || affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
+
+[ -n "$(yarn nx show projects $affected_options --with-target build:ios)" ] && build_ios=true || build_ios=false
+[ -n "$(yarn nx show projects $affected_options --with-target build:android)" ] && build_android=true || build_android=false
+[ -n "$(yarn nx show projects $affected_options --with-target test:ios)" ] && test_ios=true || test_ios=false
+[ -n "$(yarn nx show projects $affected_options --with-target test:android)" ] && test_android=true || test_android=false
+[ -n "$(yarn nx show projects $affected_options --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
+[ -n "$(yarn nx show projects $affected_options --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
 
 ios_semver_regex="/^(${all_ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
 android_semver_regex="/^(${all_android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
@@ -63,7 +66,7 @@ if [ -n "$ios_tag_match" ]; then
   e2e_ios=true
   deploy_ios=true
 else
-  affected_ios_projects=$(yarn nx show projects --affected --with-target run:ios)
+  affected_ios_projects=$(yarn nx show projects $affected_options --with-target run:ios)
 fi
 
 if [ -n "$android_tag_match" ]; then
@@ -76,7 +79,7 @@ if [ -n "$android_tag_match" ]; then
   e2e_android=true
   deploy_android=true
 else
-  affected_android_projects=$(yarn nx show projects --affected --with-target run:android)
+  affected_android_projects=$(yarn nx show projects $affected_options --with-target run:android)
 fi
 
 setup_ios_apps_steps=""
@@ -143,8 +146,6 @@ jq -n \
     \"test-android\": $test_android, \
     \"e2e-ios\": $e2e_ios, \
     \"e2e-android\": $e2e_android, \
-    \"deploy-ios\": $deploy_ios, \
-    \"deploy-android\": $deploy_android \
   }" > "$CIRCLECI_ROOT/params.json"
 
 IOS_SEMVER_REGEX=$ios_semver_regex \
