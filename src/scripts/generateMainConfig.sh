@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-DEFAULT_XCODE_VERSION="14.3.1"
-
 MONOREPO_ROOT="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
 CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 
@@ -128,7 +126,7 @@ num_xcode_versions=${#xcode_versions[@]}
 xcode_version=$DEFAULT_XCODE_VERSION
 
 if (( num_xcode_versions == 0 )); then
-  echo "No Xcode versions configured. Defaulting to $DEFAULT_XCODE_VERSION."
+  echo "No Xcode versions configured. Will default to Xcode version specified in react-native.template.yml."
 else
   xcode_version=${xcode_versions[0]}
   if (( num_xcode_versions > 1 )); then
@@ -137,16 +135,28 @@ else
   fi
 fi
 
-jq -n \
-  "{ \
-    \"xcode-version\": \"$xcode_version\", \
-    \"build-ios\": $build_ios, \
-    \"build-android\": $build_android, \
-    \"test-ios\": $test_ios, \
-    \"test-android\": $test_android, \
-    \"e2e-ios\": $e2e_ios, \
-    \"e2e-android\": $e2e_android, \
-  }" > "$CIRCLECI_ROOT/params.json"
+if [ -n "$xcode_version"]; then
+  jq -n \
+    "{ \
+      \"build-ios\": $build_ios, \
+      \"build-android\": $build_android, \
+      \"test-ios\": $test_ios, \
+      \"test-android\": $test_android, \
+      \"e2e-ios\": $e2e_ios, \
+      \"e2e-android\": $e2e_android, \
+    }" > "$CIRCLECI_ROOT/params.json"
+else
+  jq -n \
+    "{ \
+      \"xcode-version\": \"$xcode_version\", \
+      \"build-ios\": $build_ios, \
+      \"build-android\": $build_android, \
+      \"test-ios\": $test_ios, \
+      \"test-android\": $test_android, \
+      \"e2e-ios\": $e2e_ios, \
+      \"e2e-android\": $e2e_android, \
+    }" > "$CIRCLECI_ROOT/params.json"
+fi
 
 IOS_SEMVER_REGEX=$ios_semver_regex \
   ANDROID_SEMVER_REGEX=$android_semver_regex \
