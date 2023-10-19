@@ -71,8 +71,6 @@ steps:
       nx-affected: << parameters.nx-affected >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
-  - run:
-      name: Deploy Android project
-      working_directory: << parameters.app-dir >>
-      command: yarn run deploy:android:ci
+  - deploy-android:
+      app-dir: << parameters.app-dir >>
   - steps: << parameters.cleanup-steps >>
