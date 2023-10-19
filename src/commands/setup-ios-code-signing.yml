@@ -1,0 +1,20 @@
+description: >
+  Sets up code signing for a single iOS app. Must be used once per app in a monorepo.
+
+parameters:
+  app-dir:
+    description: The directory containing the React Native app project
+    type: string
+  secrets-dir:
+    description: Location of the Secrets directory relative to the `app-dir` parameter
+    type: string
+    default: ios/secrets
+
+steps:
+  - run:
+      name: Ensure ios/secrets directory exists
+      command: mkdir -p << parameters.app-dir >>/<< parameters.secrets-dir >>
+  - run:
+      name: Decode App Store Connect Key
+      command: echo $APP_STORE_CONNECT_KEY | base64 -d -o app-store-connect-key.p8
+      working_directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
