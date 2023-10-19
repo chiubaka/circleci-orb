@@ -124,11 +124,12 @@ xcode_versions=("${!xcode_versions_map[@]}")
 num_xcode_versions=${#xcode_versions[@]}
 xcode_version=$DEFAULT_XCODE_VERSION
 
-if (( $num_xcode_versions == 0 )); then
+if (( num_xcode_versions == 0 )); then
   echo "No Xcode versions configured. Defaulting to $DEFAULT_XCODE_VERSION."
 else
   xcode_version=${xcode_versions[0]}
   if (( num_xcode_versions > 1 )); then
+    # shellcheck disable=2145
     echo "WARNING: Multiple Xcode versions detected: ${xcode_versions[@]}. Using $xcode_version. Additional versions may incur additional CI execution time as they cannot be pre-installed on the executor."
   fi
 fi
