@@ -62,7 +62,6 @@ if [ -n "$ios_tag_match" ]; then
   build_ios=true
   test_ios=true
   e2e_ios=true
-  deploy_ios=true
 else
   affected_ios_projects=$(yarn nx show projects $affected_options --with-target run:ios)
 fi
@@ -75,7 +74,6 @@ if [ -n "$android_tag_match" ]; then
   build_android=true
   test_android=true
   e2e_android=true
-  deploy_android=true
 else
   affected_android_projects=$(yarn nx show projects $affected_options --with-target run:android)
 fi
