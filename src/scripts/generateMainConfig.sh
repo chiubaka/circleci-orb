@@ -135,7 +135,7 @@ else
   fi
 fi
 
-if [ -n "$xcode_version"]; then
+if [ -n "$xcode_version" ]; then
   jq -n \
     "{ \
       \"build-ios\": $build_ios, \
