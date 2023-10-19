@@ -1,0 +1,26 @@
+description: >
+  Sets up code signing for a single Android app. Must be used once per app in a monorepo.
+
+parameters:
+  app-dir:
+    description: The directory containing the React Native app project
+    type: string
+  secrets-dir:
+    description: Location of the Secrets directory relative to the `app-dir` parameter
+    type: string
+    default: android/secrets
+
+steps:
+  - run:
+      name: "Ensure android/secrets directory exists"
+      command: mkdir -p << parameters.app-dir >>/<< parameters.secrets-dir >>
+  - android/decode-keystore:
+      keystore-location: << parameters.app-dir >>/<< parameters.secrets-dir >>/upload-keystore.jks
+  - android/create-keystore-properties:
+      release-keystore: ./upload-keystore.jks
+      working-directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
+  - run:
+      name: "Rename generated keystore properties to upload-keystore.properties"
+      command: mv << parameters.app-dir >>/<< parameters.secrets-dir >>/keystore.properties << parameters.app-dir >>/<< parameters.secrets-dir >>/upload-keystore.properties
+  - android/create-google-play-key:
+      working-directory: << parameters.app-dir >>/<< parameters.secrets-dir >>

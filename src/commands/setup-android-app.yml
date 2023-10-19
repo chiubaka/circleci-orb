@@ -19,3 +19,5 @@ steps:
             name: Add x86_64-linux platform to Gemfile.lock
             command: bundle lock --add-platform x86_64-linux
             working_directory: << parameters.app-dir >>
+  - setup-android-code-signing:
+      app-dir: << parameters.app-dir >>
