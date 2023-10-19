@@ -12,9 +12,7 @@ parameters:
 
 steps:
   - run:
-      name: Ensure ios/secrets directory exists
-      command: mkdir -p << parameters.app-dir >>/<< parameters.secrets-dir >>
-  - run:
-      name: Decode App Store Connect Key
-      command: echo $APP_STORE_CONNECT_KEY | base64 -d -o app-store-connect-key.p8
-      working_directory: << parameters.app-dir >>/<< parameters.secrets-dir >>
+      name: Decode App Store Connect key
+      command: << include(scripts/decodeAppStoreConnectKey.sh) >>
+      environment:
+        SECRETS_DIR: << parameters.app-dir >>/<< parameters.secrets-dir >>
