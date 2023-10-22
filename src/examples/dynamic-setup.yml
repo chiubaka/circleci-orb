@@ -1,0 +1,15 @@
+description: >
+  Using dynamic configuration to generate a continuation config
+  based off of a template.
+usage:
+  version: 2.1
+
+  setup: true
+
+  orbs:
+    chiubaka: chiubaka/circleci-orb@dev:alpha
+
+  workflows:
+    dynamic-setup:
+      jobs:
+        - chiubaka/dynamic-setup

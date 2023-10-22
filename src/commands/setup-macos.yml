@@ -30,9 +30,11 @@ parameters:
     type: boolean
     default: true
   node-version:
-    default: "18"
-    description: Full version tag of the version of node to use.
-    type: string
+    default: 18
+    description: >
+      Major version of Node to use. Specific minor and patch versions are not supported
+      due to needing to install Node through homebrew. (https://discuss.circleci.com/t/nodejs-regularly-fails-to-install-after-10min/49170/3)
+    type: integer
   nx-affected:
     type: boolean
     default: true
@@ -55,7 +57,7 @@ parameters:
     type: boolean
   yarn-berry:
     type: boolean
-    default: false
+    default: true
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
@@ -87,20 +89,17 @@ steps:
       steps:
         - restore_cache:
             key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
-  - run:
-      command: << include(scripts/installNodeVersion.sh) >>
-      name: Install node@<< parameters.node-version  >>
-      environment:
-        NODE_VERSION: << parameters.node-version >>
-  - run:
-      command: node --version
-      name: Verify node version
   - when:
       condition: << parameters.homebrew-update >>
       steps:
         - run:
             command: brew update >/dev/null
             name: Update brew
+  - run:
+      command: << include(scripts/installMacOsNodeVersion.sh) >>
+      name: Install node@<< parameters.node-version  >>
+      environment:
+        NODE_VERSION: << parameters.node-version >>
   - when:
       condition: << parameters.install-watchman >>
       steps:

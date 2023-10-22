@@ -1,0 +1,21 @@
+description: >
+  This command triggers the iOS deploy script for the repo.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+
+steps:
+  - write-shared-script:
+      script-name: parseMonorepoDeployTag.sh
+      script: << include(scripts/parseMonorepoDeployTag.sh) >>
+  - run:
+      name: "Deploy iOS project"
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/deployMonorepoPackage.sh) >>
+      environment:
+        PARSE_MONOREPO_DEPLOY_TAG_SCRIPT: ../@chiubaka/circleci-orb/scripts/parseMonorepoDeployTag.sh
+        DEPLOY_SCRIPT: deploy:ios:ci
+        DRY_RUN: false

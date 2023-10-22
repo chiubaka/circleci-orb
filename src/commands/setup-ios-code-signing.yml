@@ -1,0 +1,14 @@
+description: >
+  Sets up code signing for a single iOS app. Must be used once per app in a monorepo.
+
+parameters:
+  secrets-dir:
+    description: Location of the Secrets directory relative to the `app-dir` parameter
+    type: string
+
+steps:
+  - run:
+      name: Decode App Store Connect key
+      command: << include(scripts/decodeAppStoreConnectKey.sh) >>
+      environment:
+        SECRETS_DIR: << parameters.secrets-dir >>

@@ -1,0 +1,113 @@
+description: >
+  Runs the project E2E tests using the E2E script provided by package.json
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  configure-git-user:
+    type: boolean
+    default: false
+    description: Whether or not to ensure that a git user is set before running this job.
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Name of the git user to configure
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Email of the git user to configure
+  monorepo:
+    type: boolean
+    default: true
+    description: Whether or not this repo is a monorepo
+  docker-compose:
+    type: boolean
+    default: false
+    description: Whether or not to run docker-compose as part of testing setup
+  wait-for-docker-services:
+    type: steps
+    default: []
+    description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
+
+steps:
+  - when:
+      condition: << parameters.docker-compose >>
+      steps:
+        - setup-machine
+  - setup:
+      init-submodules: << parameters.init-submodules >>
+      app-dir: << parameters.app-dir >>
+      yarn-berry: << parameters.yarn-berry >>
+      nx-affected: << parameters.nx-affected >>
+  - steps: << parameters.setup-steps >>
+  - when:
+      condition: << parameters.docker-compose >>
+      steps:
+        - compose-docker:
+            app-dir: << parameters.app-dir >>
+            wait-for-services: << parameters.wait-for-docker-services >>
+  - when:
+      condition: << parameters.configure-git-user >>
+      steps:
+        - run:
+            name: Configure git user
+            working_directory: << parameters.app-dir >>
+            command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
+  - run:
+      name: Run E2E tests
+      working_directory: << parameters.app-dir >>
+      command: yarn run e2e:ci
+  - when:
+      condition:
+        not: << parameters.monorepo >>
+      steps:
+        - codecov/upload
+  - when:
+      condition: << parameters.monorepo >>
+      steps:
+        - upload-monorepo-coverage:
+            app-dir: << parameters.app-dir >>
+
+  - store_test_results:
+      path: << parameters.app-dir >>/reports/
+  - store_artifacts:
+      path: << parameters.app-dir >>/reports/
+  - steps: << parameters.cleanup-steps >>
