@@ -16,6 +16,18 @@ all_android_projects=$(yarn nx show projects --with-target run:android)
 
 { [ -n "$all_ios_projects" ] || [ -n "$all_android_projects" ]; } && react_native=true || react_native=false
 
+declare -A all_react_native_projects_map
+
+for project in $all_ios_projects; do
+  all_react_native_projects_map[$project]=0
+done
+
+for project in $all_android_projects; do
+  all_react_native_projects_map[$project]=0
+done
+
+all_react_native_projects=${!all_react_native_projects_map[*]}
+
 # This is a normal JS project! Copy the JS config template and exit.
 if [ "$react_native" = false ]; then
   echo "No React Native projects found. Using JS CI template."
@@ -32,7 +44,7 @@ fi
 echo "Detected React Native projects. Using React Native CI template."
 
 # We should never skip jobs and validations on the primary branch!
-{ [ $CIRCLE_BRANCH == "master"  ] || [ $CIRCLE_BRANCH == "main" ]; } && affected_options="" || affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
+{ [ "$CIRCLE_BRANCH" == "master"  ] || [ "$CIRCLE_BRANCH" == "main" ]; } && affected_options="" || affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
 
 [ -n "$(yarn nx show projects $affected_options --with-target build:ios)" ] && build_ios=true || build_ios=false
 [ -n "$(yarn nx show projects $affected_options --with-target build:android)" ] && build_android=true || build_android=false
@@ -121,7 +133,6 @@ done
 xcode_versions=("${!xcode_versions_map[@]}")
 
 num_xcode_versions=${#xcode_versions[@]}
-xcode_version=$DEFAULT_XCODE_VERSION
 
 if (( num_xcode_versions == 0 )); then
   echo "No Xcode versions configured. Will default to Xcode version specified in react-native.template.yml."
@@ -133,28 +144,41 @@ else
   fi
 fi
 
-if [ -n "$xcode_version" ]; then
-  jq -n \
-    "{ \
-      \"build-ios\": $build_ios, \
-      \"build-android\": $build_android, \
-      \"test-ios\": $test_ios, \
-      \"test-android\": $test_android, \
-      \"e2e-ios\": $e2e_ios, \
-      \"e2e-android\": $e2e_android, \
-    }" > "$CIRCLECI_ROOT/params.json"
-else
-  jq -n \
-    "{ \
-      \"xcode-version\": \"$xcode_version\", \
-      \"build-ios\": $build_ios, \
-      \"build-android\": $build_android, \
-      \"test-ios\": $test_ios, \
-      \"test-android\": $test_android, \
-      \"e2e-ios\": $e2e_ios, \
-      \"e2e-android\": $e2e_android, \
-    }" > "$CIRCLECI_ROOT/params.json"
-fi
+for project in $all_react_native_projects; do
+  project_root=$(yarn nx show project $project | jq -r ".root")
+  fastlane_env=$project_root/fastlane/Fastlane.env
+
+  if [ -n "$IOS_SIMULATOR_DEFAULT_DEVICE" ] || [ -n "$IOS_SIMULATOR_DEFAULT_OS" ]; then
+    echo "WARNING: Fastlane environment variables have already been imported. Values will be overwritten and only the last imported set of values will be used. This may occur if you have multiple React Native projects and muliple Fastlane.env files."
+  fi
+
+  set -o allexport
+  # shellcheck disable=1090
+  source "$fastlane_env"
+  set +o allexport
+  echo "Imported environment variables from $fastlane_env"
+done
+
+[ -n "$xcode_version" ] && xcode_version="\"$xcode_version\"" || xcode_version=null
+[ -n "$IOS_SIMULATOR_DEFAULT_DEVICE" ] && ios_simulator_device="\"$IOS_SIMULATOR_DEFAULT_DEVICE\"" || ios_simulator_device=null
+[ -n "$IOS_SIMULATOR_DEFAULT_VERSION" ] && ios_simulator_version="\"$IOS_SIMULATOR_DEFAULT_VERSION\"" || ios_simulator_version=null
+[ -n "$ANDROID_EMULATOR_DEFAULT_BUILD_TOOLS_VERSION" ] && android_emulator_build_tools_version="\"$ANDROID_EMULATOR_DEFAULT_BUILD_TOOLS_VERSION\"" || android_emulator_build_tools_version=null
+[ -n "$ANDROID_EMULATOR_DEFAULT_PLATFORM_VERSION" ] && android_emulator_platform_version="\"$ANDROID_EMULATOR_DEFAULT_PLATFORM_VERSION\"" || android_emulator_platform_version=null
+
+jq -n \
+  "{ \
+    \"xcode-version\": $xcode_version, \
+    \"ios-simulator-device\": $ios_simulator_device, \
+    \"ios-simulator-version\": $ios_simulator_version, \
+    \"android-emulator-build-tools-version\": $android_emulator_build_tools_version, \
+    \"android-emulator-platform-version\": $android_emulator_platform_version, \
+    \"build-ios\": $build_ios, \
+    \"build-android\": $build_android, \
+    \"test-ios\": $test_ios, \
+    \"test-android\": $test_android, \
+    \"e2e-ios\": $e2e_ios, \
+    \"e2e-android\": $e2e_android, \
+  }" > "$CIRCLECI_ROOT/params.json"
 
 IOS_SEMVER_REGEX=$ios_semver_regex \
   ANDROID_SEMVER_REGEX=$android_semver_regex \
