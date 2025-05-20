@@ -6,46 +6,46 @@ executor:
   resource-class: << parameters.resource-class >>
 
 parameters:
-  init-submodules:
-    type: boolean
-    default: false
-    description: Whether or not to initialize submodules included in this repository.
   app-dir:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
   configure-git-user:
     type: boolean
     default: false
     description: Whether or not to ensure that a git user is set before running this job.
-  git-user-name:
-    type: string
-    default: CircleCI
-    description: Name of the git user to configure
-  git-user-email:
-    type: string
-    default: circleci@chiubaka.com
-    description: Email of the git user to configure
-  monorepo:
-    type: boolean
-    default: true
-    description: Whether or not this repo is a monorepo
   docker-compose:
     type: boolean
     default: false
     description: Whether or not to run docker-compose as part of testing setup
-  wait-for-docker-services:
-    type: steps
-    default: []
-    description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Email of the git user to configure
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Name of the git user to configure
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  monorepo:
+    type: boolean
+    default: true
+    description: Whether or not this repo is a monorepo
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   resource-class:
     default: medium
     description: Resource class used for the executor.
@@ -62,10 +62,14 @@ parameters:
     type: steps
     default: []
     description: Steps to run as part of setup for this job
-  cleanup-steps:
+  wait-for-docker-services:
     type: steps
     default: []
-    description: Steps to run as part of cleanup for this job
+    description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - when:
@@ -73,10 +77,11 @@ steps:
       steps:
         - setup-machine
   - setup:
-      init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
+      init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
+      yarn-berry: << parameters.yarn-berry >>
   - steps: << parameters.setup-steps >>
   - when:
       condition: << parameters.docker-compose >>

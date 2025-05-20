@@ -67,6 +67,7 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
   - steps: << parameters.setup-steps >>
   - run:
       name: Generate .circleci/main.yml and .circleci/params.json

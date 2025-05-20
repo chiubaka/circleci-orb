@@ -26,6 +26,10 @@ parameters:
     description: The platform version to use for the AVD
     type: string
     default: android-34
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   setup-nx:
     description: Whether or not to run Nx-specific setup commands
     type: boolean
@@ -53,6 +57,7 @@ steps:
       checkout: false
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
       setup-nx: << parameters.setup-nx >>
       yarn-berry: << parameters.yarn-berry >>
   - when:

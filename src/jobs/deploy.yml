@@ -10,6 +10,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
   configure-git-user:
     type: boolean
     default: false
@@ -38,6 +42,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   resource-class:
     default: medium
     description: Resource class used for the executor.
@@ -50,6 +58,10 @@ parameters:
       - 2xlarge
       - 2xlarge+
     type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
   task-name:
     type: string
     default: Deploy
@@ -58,20 +70,13 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
-  setup-steps:
-    type: steps
-    default: []
-    description: Steps to run as part of setup for this job
-  cleanup-steps:
-    type: steps
-    default: []
-    description: Steps to run as part of cleanup for this job
 
 steps:
   - setup:
       app-dir: << parameters.app-dir >>
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
       yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.configure-git-user >>

@@ -36,6 +36,10 @@ parameters:
     description: The platform version to use for the AVD
     type: string
     default: android-34
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   resource-class:
     default: medium
     description: Resource class used for the executor.
@@ -74,13 +78,14 @@ steps:
             name: Skip disabled job
             command: circleci-agent step halt
   - setup-android:
-      init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
-      nx-affected: << parameters.nx-affected >>
       build-tools-version: << parameters.build-tools-version >>
+      init-submodules: << parameters.init-submodules >>
+      nx-affected: << parameters.nx-affected >>
       platform-version: << parameters.platform-version >>
+      primary-branch: << parameters.primary-branch >>
       with-emulator: true
+      yarn-berry: << parameters.yarn-berry >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
