@@ -18,6 +18,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   yarn-berry:
     type: boolean
     default: false
@@ -30,7 +34,7 @@ steps:
         - checkout
   - run:
       name: Set default git branch
-      command: git config --global init.defaultBranch master
+      command: git config --global init.defaultBranch << parameters.primary-branch >>
   - when:
       condition: << parameters.init-submodules >>
       steps:
@@ -41,7 +45,7 @@ steps:
       condition: << parameters.nx-affected >>
       steps:
         - nx/set-shas:
-            main-branch-name: master
+            main-branch-name: << parameters.primary-branch >>
   - when:
       condition: << parameters.nx-affected >>
       steps:
