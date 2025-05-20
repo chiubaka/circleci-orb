@@ -1,0 +1,61 @@
+description: >
+  Set up an Android executor to run Android-specific React Native tasks.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  build-tools-version:
+    description: The version of the Android build tools to install.
+    type: string
+    default: 34.0.0
+  device-name:
+    description: The name of the AVD device to create
+    type: string
+    default: Detox
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  platform-version:
+    description: The platform version to use for the AVD
+    type: string
+    default: android-34
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
+  with-emulator:
+    description: Whether or not to setup this Android executor with an emulator for UI testing
+    type: boolean
+    default: false
+  yarn-berry:
+    type: boolean
+    default: true
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+
+steps:
+  - checkout
+  - when:
+      condition: << parameters.with-emulator >>
+      steps:
+        - start-android-emulator:
+            build-tools-version: << parameters.build-tools-version >>
+            device-name: << parameters.device-name >>
+            platform-version: << parameters.platform-version >>
+  - setup-react-native:
+      app-dir: << parameters.app-dir >>
+      checkout: false
+      init-submodules: << parameters.init-submodules >>
+      nx-affected: << parameters.nx-affected >>
+      setup-nx: << parameters.setup-nx >>
+      yarn-berry: << parameters.yarn-berry >>
+  - when:
+      condition: << parameters.with-emulator >>
+      steps:
+        - wait-for-android-emulator

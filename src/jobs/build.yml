@@ -1,7 +1,9 @@
 description: >
   Builds the project code using the build script provided by package.json
 
-executor: docker-node
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
 
 parameters:
   init-submodules:
@@ -20,6 +22,26 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  resource-class:
+    default: medium
+    description: Resource class used for the executor.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of setup for this job
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
 
 steps:
   - setup:
@@ -27,7 +49,9 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+  - steps: << parameters.setup-steps >>
   - run:
       name: Build code
       working_directory: << parameters.app-dir >>
       command: yarn run build:ci
+  - steps: << parameters.cleanup-steps >>

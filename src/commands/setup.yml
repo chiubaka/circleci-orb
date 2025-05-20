@@ -2,6 +2,10 @@ description: >
   This command sets up the CI environment for the repository
 
 parameters:
+  checkout:
+    description: Whether or not to checkout as the first step of this command
+    type: boolean
+    default: true
   init-submodules:
     type: boolean
     default: false
@@ -10,17 +14,20 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
   nx-affected:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
-  - checkout
+  - when:
+      condition: << parameters.checkout >>
+      steps:
+        - checkout
   - run:
       name: Set default git branch
       command: git config --global init.defaultBranch master
@@ -48,7 +55,7 @@ steps:
         - node/install-packages:
             check-cache: always
             pkg-manager: yarn-berry
-            with-cache: false
+            with-cache: true
             app-dir: << parameters.app-dir >>
   - when:
       condition:
@@ -57,5 +64,5 @@ steps:
         - node/install-packages:
             check-cache: always
             pkg-manager: yarn
-            with-cache: false
+            with-cache: true
             app-dir: << parameters.app-dir >>

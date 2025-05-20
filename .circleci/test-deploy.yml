@@ -13,38 +13,66 @@ test-parameters:
     init-submodules: true
     app-dir: ~/project/samples/genesis
     yarn-berry: true
+  setup-and-cleanup: &setup-and-cleanup-test-parameters
+    setup-steps:
+      - run:
+          name: "Test custom setup step"
+          command: echo "Hello, world!"
+    cleanup-steps:
+      - run:
+          name: "Test custom cleanup step"
+          command: echo "Goodbye, world!"
 
 filters: &filters
   tags:
     only: /.*/
 
 jobs:
-  # Create a job to test the commands of your orbs.
-  # You may want to add additional validation steps to ensure the commands are working as expected.
+  android-command-tests:
+    executor: chiubaka/android
+    steps:
+      - chiubaka/setup-android:
+          # Need a real example repo in order to run the Nx commands
+          setup-nx: false
+          with-emulator: true
+          << : *genesis-test-parameters
+  # macos-command-tests:
+  #   executor:
+  #     name: chiubaka/macos
+  #   steps:
+  #     - chiubaka/setup-macos:
+  #         # Need a real example repo in order to run the Nx commands
+  #         setup-nx: false
+  #         with-simulator: true
+  #         simulator-device: iPhone 14
+  #         simulator-version: "16.4"
+  #         <<: *genesis-test-parameters
   command-tests:
     executor: chiubaka/docker-node
     steps:
-      # Run your orb's commands to validate them.
       - chiubaka/setup:
           <<: *generated-typescript-package-test-parameters
       - chiubaka/setup:
           <<: *genesis-test-parameters
 
 workflows:
-  test-deploy:
+  test-publish:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
       - chiubaka/lint:
           name: chiubaka-lint-job
           <<: *generated-typescript-package-test-parameters
+          <<: *setup-and-cleanup-test-parameters
           filters: *filters
       - chiubaka/build:
           name: chiubaka-build-job
           <<: *generated-typescript-package-test-parameters
+          <<: *setup-and-cleanup-test-parameters
           filters: *filters
       - chiubaka/test:
           name: generated-typescript-package-test
           <<: *generated-typescript-package-test-parameters
+          <<: *setup-and-cleanup-test-parameters
           configure-git-user: true
           monorepo: false
           filters: *filters
@@ -65,14 +93,19 @@ workflows:
           context: npm-publishing
           dry-run: true
           <<: *generated-typescript-package-test-parameters
+          <<: *setup-and-cleanup-test-parameters
           configure-git-user: true
-          git-user-name: Daniel Chiu
-          git-user-email: daniel@chiubaka.com
+          git-user-name: CircleCI
+          git-user-email: circleci@chiubaka.com
           monorepo: false
           task-name: Publish to NPM
           filters: *filters
       - command-tests:
           filters: *filters
+      - android-command-tests:
+          filters: *filters
+      # - macos-command-tests:
+      #     filters: *filters
       - orb-tools/pack:
           filters: *filters
       - orb-tools/publish:
@@ -86,6 +119,8 @@ workflows:
             - generated-typescript-package-test
             - chiubaka-deploy-job
             - command-tests
+            - android-command-tests
+            # - macos-command-tests
           context: orb-publishing
           filters:
             branches:

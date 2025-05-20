@@ -1,0 +1,37 @@
+description: >
+  Create and start an Android emulator
+
+parameters:
+  build-tools-version:
+    description: The version of the Android build tools to install.
+    type: string
+    default: 34.0.0
+  device-name:
+    description: The name of the AVD device to create
+    type: string
+    default: Detox
+  platform-version:
+    description: The platform version to use for the AVD
+    type: string
+    default: android-34
+
+steps:
+  - run:
+      name: Install Emulator dependencies
+      command: << include(scripts/installAndroidEmulatorDependencies.sh) >>
+      environment:
+        ANDROID_BUILD_TOOLS_VERSION: << parameters.build-tools-version >>
+        ANDROID_PLATFORM_VERSION: << parameters.platform-version >>
+  - run:
+      name: Start ADB Server
+      command: adb start-server
+      background: true
+  - android/create-avd:
+      avd-name: << parameters.device-name >>
+      system-image: system-images;<< parameters.platform-version >>;default;x86_64
+      install: true
+  - android/start-emulator:
+      avd-name: << parameters.device-name >>
+      no-window: true
+      post-emulator-launch-assemble-command: ""
+      wait-for-emulator: false

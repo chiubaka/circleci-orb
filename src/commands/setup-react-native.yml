@@ -1,0 +1,47 @@
+description: >
+  Runs common workspace-level setup steps for React Native projects. This command
+  should be run once. There is a separate package-specific command that sets up
+  individual apps.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  checkout:
+    description: Whether or not to checkout as the first step of this command
+    type: boolean
+    default: true
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
+  yarn-berry:
+    type: boolean
+    default: true
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+
+steps:
+  - setup:
+      checkout: << parameters.checkout >>
+      app-dir: << parameters.app-dir >>
+      init-submodules: << parameters.init-submodules >>
+      nx-affected: << parameters.nx-affected >>
+      yarn-berry: << parameters.yarn-berry >>
+  - when:
+      condition: << parameters.setup-nx >>
+      steps:
+        - run:
+            name: Ensure Symlink
+            command: yarn nx run-many --target=ensure-symlink
+        - run:
+            name: Sync Deps
+            command: yarn nx run-many --target=sync-deps

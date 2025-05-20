@@ -1,0 +1,156 @@
+description: >
+  Sets up a macOS executor for various React Native tasks. A significant portion of this command is
+  ripped and modified from the react-native-community/react-native orb, which seems to
+  expect full Detox configurations _and_ Android testing on macOS executors (which is silly
+  given the cost).
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  homebrew-cache:
+    default: true
+    description: Should we cache after brew install?
+    type: boolean
+  homebrew-update:
+    default: false
+    description: Should we run brew update?
+    type: boolean
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether or not to initialize submodules included in this repository.
+  install-watchman:
+    description: Whether or not to install Watchman
+    type: boolean
+    default: false
+  install-xcodes:
+    description: Whether or not to install Xcodes for switching between Xcode versions
+    type: boolean
+    default: true
+  node-version:
+    default: 18
+    description: >
+      Major version of Node to use. Specific minor and patch versions are not supported
+      due to needing to install Node through homebrew. (https://discuss.circleci.com/t/nodejs-regularly-fails-to-install-after-10min/49170/3)
+    type: integer
+  nx-affected:
+    type: boolean
+    default: true
+    description: Whether or not to set up environment variables for `nx affected`.
+  setup-nx:
+    description: Whether or not to run Nx-specific setup commands
+    type: boolean
+    default: true
+  simulator-device:
+    description: The simulator device name to use (e.g. iPhone 14)
+    type: string
+    default: iPhone 14
+  simulator-version:
+    description: The simulator OS version to use (e.g. 16.4)
+    type: string
+    default: "16.4"
+  with-simulator:
+    description: Whether or not to set up the executor with a simulator
+    default: false
+    type: boolean
+  yarn-berry:
+    type: boolean
+    default: true
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+
+steps:
+  - when:
+      condition: << parameters.with-simulator >>
+      steps:
+        - macos/preboot-simulator:
+            device: << parameters.simulator-device >>
+            version: << parameters.simulator-version >>
+  - checkout
+  - run:
+      command: << include(scripts/configureReactNativeEnv.sh) >>
+      name: Configure Environment Variables
+      environment:
+        NODE_VERSION: << parameters.node-version >>
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - not: << parameters.with-simulator >>
+      steps:
+        - restore_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - << parameters.with-simulator >>
+      steps:
+        - restore_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
+  - when:
+      condition: << parameters.homebrew-update >>
+      steps:
+        - run:
+            command: brew update >/dev/null
+            name: Update brew
+  - run:
+      command: << include(scripts/installMacOsNodeVersion.sh) >>
+      name: Install node@<< parameters.node-version  >>
+      environment:
+        NODE_VERSION: << parameters.node-version >>
+  - when:
+      condition: << parameters.install-watchman >>
+      steps:
+        - run:
+            name: Install Watchman
+            command: >
+              HOMEBREW_NO_AUTO_UPDATE=1 brew install watchman > /dev/null
+              command watchman -v
+  - when:
+      condition: << parameters.with-simulator >>
+      steps:
+        - run:
+            command: >
+              HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew > /dev/null
+
+              HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils > /dev/null
+            name: Install Simulator Tools
+  - when:
+      condition: << parameters.install-xcodes >>
+      steps:
+        - run:
+            name: Install Xcodes
+            command: brew install xcodesorg/made/xcodes
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - not: << parameters.with-simulator >>
+      steps:
+        - save_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-without-simulator-tools
+            paths:
+              - ~/Library/Caches/Homebrew
+  - when:
+      condition:
+        and:
+          - << parameters.homebrew-cache >>
+          - << parameters.with-simulator >>
+      steps:
+        - save_cache:
+            key: brew-cache-{{ arch }}-{{ .Environment.CACHE_VERSION }}-with-simulator-tools
+            paths:
+              - ~/Library/Caches/Homebrew
+  - setup-react-native:
+      app-dir: << parameters.app-dir >>
+      checkout: false
+      init-submodules: << parameters.init-submodules >>
+      nx-affected: << parameters.nx-affected >>
+      setup-nx: << parameters.setup-nx >>
+      yarn-berry: << parameters.yarn-berry >>
+  - when:
+      condition: << parameters.with-simulator >>
+      steps:
+        - macos/wait-until-simulator-booted

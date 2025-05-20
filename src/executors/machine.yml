@@ -1,5 +1,13 @@
 description: >
   Runs a machine executor configured with NodeJS and docker-compose
+
+parameters:
+  resource-class:
+    default: medium
+    description: Resource class to use for Docker
+    type: string
+
 machine:
   image: ubuntu-2004:202010-01
   docker_layer_caching: true
+resource_class: << parameters.resource-class >>

@@ -1,5 +1,5 @@
 description: >
-  Tests the project code using the test script provided by package.json
+  Runs the project E2E tests using the E2E script provided by package.json
 
 executor:
   name: docker-node
@@ -92,9 +92,9 @@ steps:
             working_directory: << parameters.app-dir >>
             command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
   - run:
-      name: Run tests
+      name: Run E2E tests
       working_directory: << parameters.app-dir >>
-      command: yarn run test:ci
+      command: yarn run e2e:ci
   - when:
       condition:
         not: << parameters.monorepo >>
