@@ -3,7 +3,7 @@ set -xe
 
 echo "Waiting for AVD to finish booting"
 
-adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done; input keyevent 82'
+adb wait-for-device shell "while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done; input keyevent 82"
 
 sleep 15
 

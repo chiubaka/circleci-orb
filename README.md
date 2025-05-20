@@ -43,4 +43,4 @@ We welcome [issues](https://github.com/chiubaka/circleci-orb/issues) to and [pul
 ### Project Setup
 1. Clone this repository
 2. Run `yarn install` in the project root
-3. Run `brew install expect` (needed for the `unbuffer` command)
+3. Install `yamllint` on the system for linting support
