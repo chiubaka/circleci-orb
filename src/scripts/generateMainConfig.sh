@@ -44,7 +44,11 @@ fi
 echo "Detected React Native projects. Using React Native CI template."
 
 # We should never skip jobs and validations on the primary branch!
-{ [ "$CIRCLE_BRANCH" == "master"  ] || [ "$CIRCLE_BRANCH" == "main" ]; } && affected_options="" || affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
+if [ "$CIRCLE_BRANCH" == "$PRIMARY_BRANCH" ]; then
+  affected_options=""
+else
+  affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
+fi
 
 [ -n "$(yarn nx show projects "$affected_options" --with-target build:ios)" ] && build_ios=true || build_ios=false
 [ -n "$(yarn nx show projects "$affected_options" --with-target build:android)" ] && build_android=true || build_android=false

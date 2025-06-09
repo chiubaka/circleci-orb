@@ -39,6 +39,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   setup-nx:
     description: Whether or not to run Nx-specific setup commands
     type: boolean
@@ -148,6 +152,7 @@ steps:
       checkout: false
       init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
       setup-nx: << parameters.setup-nx >>
       yarn-berry: << parameters.yarn-berry >>
   - when:

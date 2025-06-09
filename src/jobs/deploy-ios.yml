@@ -23,6 +23,10 @@ parameters:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   resource-class:
     default: macos.m1.medium.gen1
     description: Resource class used for the executor.
@@ -54,6 +58,7 @@ steps:
       app-dir: << parameters.app-dir >>
       yarn-berry: << parameters.yarn-berry >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - deploy-ios:

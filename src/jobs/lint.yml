@@ -6,22 +6,26 @@ executor:
   resource-class: << parameters.resource-class >>
 
 parameters:
-  init-submodules:
-    type: boolean
-    default: false
-    description: Whether or not to initialize submodules included in this repository.
   app-dir:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  yarn-berry:
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run as part of cleanup for this job
+  init-submodules:
     type: boolean
     default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
+    description: Whether or not to initialize submodules included in this repository.
   nx-affected:
     type: boolean
     default: true
     description: Whether or not to set up environment variables for `nx affected`.
+  primary-branch:
+    type: string
+    default: "master"
+    description: The name of the primary branch.
   resource-class:
     default: medium
     description: Resource class used for the executor.
@@ -38,17 +42,18 @@ parameters:
     type: steps
     default: []
     description: Steps to run as part of setup for this job
-  cleanup-steps:
-    type: steps
-    default: []
-    description: Steps to run as part of cleanup for this job
+  yarn-berry:
+    type: boolean
+    default: false
+    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - setup:
-      init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
+      init-submodules: << parameters.init-submodules >>
       nx-affected: << parameters.nx-affected >>
+      primary-branch: << parameters.primary-branch >>
+      yarn-berry: << parameters.yarn-berry >>
   - steps: << parameters.setup-steps >>
   - run:
       name: Lint code

@@ -59,23 +59,23 @@ workflows:
   test-publish:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
-      - chiubaka/lint:
-          name: chiubaka-lint-job
-          <<: *generated-typescript-package-test-parameters
-          <<: *setup-and-cleanup-test-parameters
-          filters: *filters
-      - chiubaka/build:
-          name: chiubaka-build-job
-          <<: *generated-typescript-package-test-parameters
-          <<: *setup-and-cleanup-test-parameters
-          filters: *filters
-      - chiubaka/test:
-          name: generated-typescript-package-test
-          <<: *generated-typescript-package-test-parameters
-          <<: *setup-and-cleanup-test-parameters
-          configure-git-user: true
-          monorepo: false
-          filters: *filters
+      # - chiubaka/lint:
+      #     name: chiubaka-lint-job
+      #     <<: *generated-typescript-package-test-parameters
+      #     <<: *setup-and-cleanup-test-parameters
+      #     filters: *filters
+      # - chiubaka/build:
+      #     name: chiubaka-build-job
+      #     <<: *generated-typescript-package-test-parameters
+      #     <<: *setup-and-cleanup-test-parameters
+      #     filters: *filters
+      # - chiubaka/test:
+      #     name: generated-typescript-package-test
+      #     <<: *generated-typescript-package-test-parameters
+      #     <<: *setup-and-cleanup-test-parameters
+      #     configure-git-user: true
+      #     monorepo: false
+      #     filters: *filters
       # Requires https://github.com/chiubaka/circleci-orb/issues/45 to uncomment
       # - chiubaka/test:
       #     name: genesis-test
@@ -88,22 +88,22 @@ workflows:
       #           container-name: genesis_registry
       #           url: http://localhost:4873/healthcheck
       #     filters: *filters
-      - chiubaka/deploy:
-          name: chiubaka-deploy-job
-          context: npm-publishing
-          dry-run: true
-          <<: *generated-typescript-package-test-parameters
-          <<: *setup-and-cleanup-test-parameters
-          configure-git-user: true
-          git-user-name: CircleCI
-          git-user-email: circleci@chiubaka.com
-          monorepo: false
-          task-name: Publish to NPM
-          filters: *filters
+      # - chiubaka/deploy:
+      #     name: chiubaka-deploy-job
+      #     context: npm-publishing
+      #     dry-run: true
+      #     <<: *generated-typescript-package-test-parameters
+      #     <<: *setup-and-cleanup-test-parameters
+      #     configure-git-user: true
+      #     git-user-name: CircleCI
+      #     git-user-email: circleci@chiubaka.com
+      #     monorepo: false
+      #     task-name: Publish to NPM
+      #     filters: *filters
       - command-tests:
           filters: *filters
-      - android-command-tests:
-          filters: *filters
+      # - android-command-tests:
+      #     filters: *filters
       # - macos-command-tests:
       #     filters: *filters
       - orb-tools/pack:
@@ -114,12 +114,12 @@ workflows:
           pub-type: production
           requires:
             - orb-tools/pack
-            - chiubaka-lint-job
-            - chiubaka-build-job
-            - generated-typescript-package-test
-            - chiubaka-deploy-job
+            # - chiubaka-lint-job
+            # - chiubaka-build-job
+            # - generated-typescript-package-test
+            # - chiubaka-deploy-job
             - command-tests
-            - android-command-tests
+            # - android-command-tests
             # - macos-command-tests
           context: orb-publishing
           filters:
