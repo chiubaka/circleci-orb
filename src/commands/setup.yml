@@ -34,7 +34,9 @@ steps:
         - checkout
   - run:
       name: Set default git branch
-      command: git config --global init.defaultBranch << parameters.primary-branch >>
+      command: << include(scripts/setDefaultGitBranch.sh) >>
+      environment:
+        PRIMARY_BRANCH: << parameters.primary-branch >>
   - when:
       condition: << parameters.init-submodules >>
       steps:
