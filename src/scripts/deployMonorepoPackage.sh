@@ -10,7 +10,7 @@ yarn=${YARN_BINARY:-"yarn"}
 deploy_script=${DEPLOY_SCRIPT:-"deploy:ci"}
 
 if [ "$DRY_RUN" = true ]; then
-  $yarn $deploy_script "$package_name" --dry-run
+  $yarn "$deploy_script" "$package_name" --dry-run
 else
-  $yarn $deploy_script "$package_name"
+  $yarn "$deploy_script" "$package_name"
 fi

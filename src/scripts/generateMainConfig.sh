@@ -46,20 +46,20 @@ echo "Detected React Native projects. Using React Native CI template."
 # We should never skip jobs and validations on the primary branch!
 { [ "$CIRCLE_BRANCH" == "master"  ] || [ "$CIRCLE_BRANCH" == "main" ]; } && affected_options="" || affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
 
-[ -n "$(yarn nx show projects $affected_options --with-target build:ios)" ] && build_ios=true || build_ios=false
-[ -n "$(yarn nx show projects $affected_options --with-target build:android)" ] && build_android=true || build_android=false
-[ -n "$(yarn nx show projects $affected_options --with-target test:ios)" ] && test_ios=true || test_ios=false
-[ -n "$(yarn nx show projects $affected_options --with-target test:android)" ] && test_android=true || test_android=false
-[ -n "$(yarn nx show projects $affected_options --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
-[ -n "$(yarn nx show projects $affected_options --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target build:ios)" ] && build_ios=true || build_ios=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target build:android)" ] && build_android=true || build_android=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target test:ios)" ] && test_ios=true || test_ios=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target test:android)" ] && test_android=true || test_android=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
+[ -n "$(yarn nx show projects "$affected_options" --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
 
 ios_semver_regex="/^(${all_ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
 android_semver_regex="/^(${all_android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
 
 # Must use perl to evaluate tag matches because CircleCI regex format is
 # perl-compatible, but not natively bash-compatible.
-ios_tag_match=$(echo $CIRCLE_TAG | perl -ne "$ios_semver_regex and print \$1")
-android_tag_match=$(echo $CIRCLE_TAG | perl -ne "$android_semver_regex and print \$1")
+ios_tag_match=$(echo "$CIRCLE_TAG" | perl -ne "$ios_semver_regex and print \$1")
+android_tag_match=$(echo "$CIRCLE_TAG" | perl -ne "$android_semver_regex and print \$1")
 
 # If this is a tag-based deployment, for each platform, if that platform's semver
 # regex is matched:
@@ -75,7 +75,7 @@ if [ -n "$ios_tag_match" ]; then
   test_ios=true
   e2e_ios=true
 else
-  affected_ios_projects=$(yarn nx show projects $affected_options --with-target run:ios)
+  affected_ios_projects=$(yarn nx show projects "$affected_options" --with-target run:ios)
 fi
 
 if [ -n "$android_tag_match" ]; then
@@ -87,7 +87,7 @@ if [ -n "$android_tag_match" ]; then
   test_android=true
   e2e_android=true
 else
-  affected_android_projects=$(yarn nx show projects $affected_options --with-target run:android)
+  affected_android_projects=$(yarn nx show projects "$affected_options" --with-target run:android)
 fi
 
 setup_ios_apps_steps=""
@@ -96,7 +96,7 @@ if [ -n "$affected_ios_projects" ]; then
   echo "Found affected iOS projects: $affected_ios_projects"
 
   for project in $affected_ios_projects; do
-    project_root=$(yarn nx show project $project | jq -r ".root")
+    project_root=$(yarn nx show project "$project" | jq -r ".root")
     setup_ios_apps_steps+="
     - chiubaka/setup-ios-app:
         app-dir: $project_root"
@@ -112,7 +112,7 @@ if [ -n "$affected_android_projects" ]; then
   echo "Found affected Android projects: $affected_android_projects"
 
   for project in $affected_android_projects; do
-    project_root=$(yarn nx show project $project | jq -r ".root")
+    project_root=$(yarn nx show project "$project" | jq -r ".root")
     setup_android_apps_steps+="
     - chiubaka/setup-android-app:
         app-dir: $project_root"
@@ -125,8 +125,8 @@ fi
 declare -A xcode_versions_map
 
 for project in $all_ios_projects; do
-  project_root=$(yarn nx show project $project | jq -r ".root")
-  project_xcode_version=$(cat $project_root/.xcode-version)
+  project_root=$(yarn nx show project "$project" | jq -r ".root")
+  project_xcode_version=$(cat "$project_root"/.xcode-version)
   xcode_versions_map[$project_xcode_version]=0
 done
 
@@ -145,7 +145,7 @@ else
 fi
 
 for project in $all_react_native_projects; do
-  project_root=$(yarn nx show project $project | jq -r ".root")
+  project_root=$(yarn nx show project "$project" | jq -r ".root")
   fastlane_env=$project_root/fastlane/Fastlane.env
 
   if [ -n "$IOS_SIMULATOR_DEFAULT_DEVICE" ] || [ -n "$IOS_SIMULATOR_DEFAULT_OS" ]; then
