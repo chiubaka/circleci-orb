@@ -93,3 +93,5 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 - Treat `org/agents/skills` as the shared org skill source intended for subtree distribution.
 - Local repositories may add repo-specific skills under `.agents/skills` without changing org-shared skill sources.
+- Keep org-level guidance source in `org/agents/AGENTS.org.md`; sync root `AGENTS.md` via `org/agents/scripts/bootstrap-agents-md.sh`.
+- Validate guidance sync drift with `org/agents/scripts/bootstrap-agents-md.sh --check`.
