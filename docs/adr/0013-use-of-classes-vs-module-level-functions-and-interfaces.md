@@ -4,7 +4,7 @@ date: 2026-03-27
 decision-makers: Daniel Chiu
 ---
 
-# Use of Classes vs Module-Level Functions and Interfaces
+# ADR 0013: Use of classes vs module-level functions and interfaces
 
 ## Context and Problem Statement
 
@@ -52,7 +52,7 @@ Within classes:
 
 Precedence note:
 
-* When this ADR's hybrid guidance and ADR 0016 could both apply, prefer ADR 0016 for class-owned orchestration modules. In those files, module-level exports should be limited to true shared utilities, not class-local helpers.
+* When this ADR's hybrid guidance and ADR 0012 could both apply, prefer ADR 0012 for class-owned orchestration modules. In those files, module-level exports should be limited to true shared utilities, not class-local helpers.
 
 #### Module-Level Functions
 

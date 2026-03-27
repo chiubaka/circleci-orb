@@ -4,7 +4,7 @@ date: 2026-03-21
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0007: Canonical agent skills directory (`.agents/skills`) and per-tool symlinks
+# ADR 0003: Canonical agent skills directory (`.agents/skills`) and per-tool symlinks
 
 ## Context and Problem Statement
 

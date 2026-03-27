@@ -4,7 +4,7 @@ date: 2026-03-27
 decision-makers: Daniel Chiu
 ---
 
-# Classes as Primary Responsibility Boundaries
+# ADR 0012: Classes as primary responsibility boundaries
 
 ## Context and Problem Statement
 

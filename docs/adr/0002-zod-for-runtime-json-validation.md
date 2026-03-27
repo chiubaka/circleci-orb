@@ -4,7 +4,7 @@ date: 2026-03-20
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0006: Zod for runtime JSON validation (including LLM structured output)
+# ADR 0002: Zod for runtime JSON validation (including LLM structured output)
 
 ## Context and Problem Statement
 
@@ -18,7 +18,7 @@ We want one **clear, team-wide choice** for this pattern so new features (API pa
 - **TypeScript alignment:** Inferred types from validators should stay in sync with domain types (`enum`s, `ExtractedConcept`-like shapes).
 - **Ecosystem fit:** Documentation, Stack Overflow answers, and third-party examples should apply without translation.
 - **Maintainability:** A single dialect for validators in the monorepo beats mixing multiple schema systems.
-- **Operational context:** Primary first consumer is a **Node server** (`@l3xo/server`); extreme edge-bundle size is not the first constraint.
+- **Operational context:** Primary first consumer is a **Node server package**; extreme edge-bundle size is not the first constraint.
 
 ## Considered Options
 
@@ -45,7 +45,7 @@ We want one **clear, team-wide choice** for this pattern so new features (API pa
 
 ### Confirmation
 
-- **Implementation:** `@l3xo/server` declares a `zod` dependency; structured LLM output goes through **`LlmService#promptJson`**, which **binds the caller’s `ZodType<T>` to the provider’s structured-output contract** when the adapter supports it, then parses the response and validates with the same schema before returning **`T`**. Other untrusted JSON entry points follow the same parse-then-validate pattern.
+- **Implementation:** The server/runtime package declares a `zod` dependency; structured LLM output goes through **`LlmService#promptJson`**, which **binds the caller’s `ZodType<T>` to the provider’s structured-output contract** when the adapter supports it, then parses the response and validates with the same schema before returning **`T`**. Other untrusted JSON entry points follow the same parse-then-validate pattern.
 - **Review:** Code review checks that new external/untrusted JSON entry points use Zod (or reference a shared schema module) rather than unchecked casts.
 - **Revisit:** If profiling shows validation as a bottleneck, or if JSON Schema becomes the org-wide contract for APIs, consider a follow-up ADR to widen or split strategies (without duplicating validators ad hoc).
 
@@ -104,4 +104,4 @@ Decoder combinators; fits FP pipelines.
 
 - `LlmService` uses a **single `prompt: string`** argument for both `prompt` and `promptJson` (one-shot tasks); role splits or richer request shapes stay a future revision if needed. For **`promptJson`**, the prompt carries **task semantics**; **output shape is defined by `schema`** at the provider and validated with Zod on the return path—callers should not duplicate JSON field lists in the prompt.
 - First use case: `LlmConceptExtractor` calls `LlmService#promptJson` with a Zod schema for the LLM payload (e.g. concepts with `canonicalForm`, `type`, `language`).
-- Related: [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) (boundaries and where validation runs—infrastructure / application edges as appropriate within a feature slice).
+- Related: [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) (boundaries and where validation runs—infrastructure / application edges as appropriate within a feature slice).

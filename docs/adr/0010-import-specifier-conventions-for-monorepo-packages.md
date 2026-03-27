@@ -4,11 +4,11 @@ date: 2026-03-26
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0014: Import specifier conventions for monorepo packages
+# ADR 0010: Import specifier conventions for monorepo packages
 
 ## Context and Problem Statement
 
-Deep relative imports (`../../../`) reduce readability and are noisy to maintain as modules move. At the same time, this monorepo must support package-style imports between workspace packages (for example, `@l3xo/backend`) in a way that remains compatible with npm-style boundaries.
+Deep relative imports (`../../../`) reduce readability and are noisy to maintain as modules move. At the same time, this monorepo must support package-style imports between workspace packages (for example, `@scope/backend`) in a way that remains compatible with npm-style boundaries.
 
 We need a convention for intra-package imports that improves local ergonomics without colliding with present or future `@scope/pkg` workspace package imports.
 
@@ -35,7 +35,7 @@ Justification: `~/` avoids namespace overlap with `@scope/pkg`, keeps package bo
 ### Rules
 
 1. **Intra-package alias:** each workspace package should map `~/*` to its local source root (typically `src/*`) in `tsconfig.json`.
-2. **Inter-package imports:** imports across workspace packages should use scoped package names (for example, `@l3xo/backend`) and package public APIs.
+2. **Inter-package imports:** imports across workspace packages should use scoped package names (for example, `@scope/backend`) and package public APIs.
 3. **No `@` local alias:** do not introduce `@/` for package-local paths in this monorepo.
 4. **Public API boundaries remain:** continue enforcing package and barrel boundaries per existing ADRs and lint rules.
 
@@ -73,6 +73,6 @@ Justification: `~/` avoids namespace overlap with `@scope/pkg`, keeps package bo
 
 ## More Information
 
-- [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) — feature/layer decomposition and package layout.
-- [ADR 0012](0012-barrel-files-public-api-boundaries.md) — barrel/public API boundaries.
-- [`AGENTS.md`](../../../AGENTS.md) — operational conventions and required verification commands.
+- [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — feature/layer decomposition and package layout.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrel/public API boundaries.
+- Repository-local illustration: `org/docs/adr/examples/import-aliases-example.md`.

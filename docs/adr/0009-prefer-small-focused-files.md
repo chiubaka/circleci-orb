@@ -4,11 +4,11 @@ date: 2026-03-26
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0013: Prefer small, focused files by default
+# ADR 0009: Prefer small, focused files by default
 
 ## Context and Problem Statement
 
-In `@l3xo/backend`, we want module internals to stay easy to scan from the file tree while reducing unnecessary coupling between unrelated contracts and types. A recurring question is when to keep multiple exports in one file versus splitting them into dedicated files.
+In backend/workspace packages, we want module internals to stay easy to scan from the file tree while reducing unnecessary coupling between unrelated contracts and types. A recurring question is when to keep multiple exports in one file versus splitting them into dedicated files.
 
 Without a shared default, file organization drifts toward either oversized files (harder targeted edits, noisier diffs) or over-fragmentation (extra import/barrel churn). We need a clear preference with explicit exceptions.
 
@@ -52,7 +52,7 @@ Justification: This preserves tree-level discoverability and better isolates cha
 ### Confirmation
 
 - **Review:** PR review checks that new contracts/types follow this default unless a clear "change together" rationale exists.
-- **Conventions:** barrel updates stay intentional per [ADR 0012](0012-barrel-files-public-api-boundaries.md), avoiding broad re-export catalogs.
+- **Conventions:** barrel updates stay intentional per [ADR 0008](0008-barrel-files-public-api-boundaries.md), avoiding broad re-export catalogs.
 - **Consistency:** naming follows main-export alignment in new files and touched refactors.
 
 ## Pros and Cons of the Options
@@ -76,6 +76,6 @@ Justification: This preserves tree-level discoverability and better isolates cha
 
 ## More Information
 
-- [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) — feature/layer decomposition in `@l3xo/backend`.
-- [ADR 0012](0012-barrel-files-public-api-boundaries.md) — barrel files as public API boundaries.
-- [`AGENTS.md`](../../../AGENTS.md) — short operational pointers to ADRs.
+- [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — feature/layer decomposition in backend packages.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrel files as public API boundaries.
+- Repository-local illustration: `org/docs/adr/examples/small-focused-files-example.md`.

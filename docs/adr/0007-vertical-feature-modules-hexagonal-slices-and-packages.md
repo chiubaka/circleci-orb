@@ -4,7 +4,7 @@ date: 2026-03-26
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0011: Vertical feature modules, hexagonal slices, packages, and core
+# ADR 0007: Vertical feature modules, hexagonal slices, packages, and core
 
 ## Context and Problem Statement
 
@@ -33,7 +33,7 @@ This ADR **supersedes** [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.m
 
 - **Retain only horizontal layers** at app or single-package root (status quo before this ADR).
 - **Vertical slices without packages:** feature folders inside one package only.
-- **Vertical slices + package boundaries:** transport-agnostic backend package (and optional tiny `core` package), thin `apps/server` for HTTP and composition.
+- **Vertical slices + package boundaries:** transport-agnostic backend package (and optional tiny `core` package), thin server host app for HTTP and composition.
 - **Framework-owned modular structure** (e.g. NestJS `@Module()` as the single source of truth for slice boundaries).
 
 ## Decision Outcome
@@ -60,7 +60,7 @@ Treat all non-exported files in any layer as **private**. **Prefer lint** (e.g. 
 - consumers outside the feature cannot reach into `**/my-feature/...` internals without going through the **feature barrel**; and
 - callers do not bypass **layer** barrels inside the feature without a deliberate exception.
 
-**Required barrels under `infrastructure/<category>/`:** Every immediate subdirectory under `infrastructure/` (for example `openAi/`, `drizzle/`, `stub/`, `llm/`) defines its own **`index.ts`** barrel. This keeps adapter categories explicit and gives a stable import boundary for callers and tests. **Non-exported** files in that category stay **private** to the category subtree. Keep each barrel’s exports **small** so the boundary stays honest. See [ADR 0012](0012-barrel-files-public-api-boundaries.md) for the cross-cutting rule.
+**Required barrels under `infrastructure/<category>/`:** Every immediate subdirectory under `infrastructure/` (for example `openAi/`, `drizzle/`, `stub/`, `llm/`) defines its own **`index.ts`** barrel. This keeps adapter categories explicit and gives a stable import boundary for callers and tests. **Non-exported** files in that category stay **private** to the category subtree. Keep each barrel’s exports **small** so the boundary stays honest. See [ADR 0008](0008-barrel-files-public-api-boundaries.md) for the cross-cutting rule.
 
 **Cross-module imports:** Depend on another feature **only** through its **barrel** (or through a shared **`core`** export). Maintain a **directed acyclic graph** of module dependencies; cycles are not allowed.
 
@@ -68,7 +68,7 @@ Treat all non-exported files in any layer as **private**. **Prefer lint** (e.g. 
 
 ### Clarification: top-level feature boundaries
 
-When a service contract or adapter grows into a distinct capability area, prefer promoting it to its **own top-level feature module** instead of expanding `shared/` folders. For example, in `@l3xo/backend`, keep `llm`, `users`, `concepts`, `corrections`, and `occurrences` as first-class features with their own `domain/`, `application/`, and (when needed) `infrastructure/` areas.
+When a service contract or adapter grows into a distinct capability area, prefer promoting it to its **own top-level feature module** instead of expanding `shared/` folders.
 
 Within a feature:
 
@@ -84,11 +84,11 @@ Use a dedicated **`core`** area (name reserved for this role) for the **smallest
 
 ### Packages and server app
 
-- **Transport-agnostic product logic** (feature modules, integration/orchestration that is not HTTP-specific) should live in a **workspace package** such as `@l3xo/backend` (exact package name may vary; the decision is the **boundary**). That code **must not** assume it runs inside an HTTP server.
-- **`apps/server`** (or equivalent) remains a **thin** host: composition, env/config wiring, HTTP stack, and mapping requests to calls into the backend package’s **public** API.
-- **Hono** (and any HTTP framework) is an **infrastructure/detail** of the server app—e.g. `infrastructure/hono/` under the app (routes, middleware, request/response mapping). It is **not** a dependency of the transport-agnostic backend package.
+- **Transport-agnostic product logic** (feature modules, integration/orchestration that is not HTTP-specific) should live in a **workspace package** (exact package name may vary; the decision is the **boundary**). That code **must not** assume it runs inside an HTTP server.
+- A **server host app** (or equivalent) remains a **thin** host: composition, env/config wiring, HTTP stack, and mapping requests to calls into the backend package’s **public** API.
+- Any HTTP framework is an **infrastructure/detail** of the server app and is **not** a dependency of the transport-agnostic backend package.
 
-A **separate** tiny package such as `@l3xo/core` is **optional** but recommended when **`core`** should stay minimal and **backend** would otherwise mix “kernel” with “features.” If both exist: `@l3xo/core` holds only the kernel; `@l3xo/backend` holds feature modules and may depend on `@l3xo/core`. **`apps/server`** depends on `@l3xo/backend` (and `@l3xo/core` if needed); **packages must not** depend on `apps/server`.
+A **separate** tiny package (for example `@scope/core`) is **optional** but recommended when **`core`** should stay minimal and **backend** would otherwise mix “kernel” with “features.” If both exist: the core package holds only the kernel; the backend package holds feature modules and may depend on core. The server app depends on backend (and core if needed); backend/core packages must not depend on the server app.
 
 ### Relationship to NestJS-style layout
 
@@ -109,7 +109,7 @@ For readers familiar with NestJS, **feature modules** here are organized in a **
 - **Review:** PRs check import direction within a slice (`domain` → no `infrastructure`; `application` → no concrete `infrastructure` vendor imports for orchestration), **intra-feature** imports that respect **layer barrels**, and **cross-feature** imports **only** from feature barrels or `core`.
 - **Automation:** Add or extend ESLint (or monorepo boundary tooling) to enforce **public vs. private** surfaces at **feature**, **layer**, and (where adopted) **infrastructure category** scope; track gaps in review if rules are not yet in place.
 - **Build health:** Continue `pnpm build`, `pnpm lint`, `pnpm test` for regressions.
-- **Checklist:** [`REVIEW-CHECKLIST.md`](../../../REVIEW-CHECKLIST.md) should stay aligned with this ADR’s boundaries.
+- **Checklist:** local review guidance should stay aligned with this ADR’s boundaries.
 
 ## Pros and Cons of the Options
 
@@ -136,7 +136,7 @@ For readers familiar with NestJS, **feature modules** here are organized in a **
 ## More Information
 
 - [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.md) — **superseded** by this ADR for layout; retained for history and for the original DDD naming rationale.
-- [ADR 0009](0009-composition-roots-and-wiring-boundaries.md) — composition roots at **edges**; applies to `apps/server` and equivalent hosts wiring backend packages to Hono/adapters.
-- [ADR 0010](0010-consistency-and-extension-for-new-features.md) — extend features by **matching idioms** within this structure unless an exception is documented.
-- [ADR 0012](0012-barrel-files-public-api-boundaries.md) — barrel files as **public API** at package, feature, layer, and optional nested scopes.
-- [`AGENTS.md`](../../../AGENTS.md) — short pointers to ADRs including barrels.
+- [ADR 0005](0005-composition-roots-and-wiring-boundaries.md) — composition roots at **edges**; applies to server host apps wiring backend packages to HTTP adapters.
+- [ADR 0006](0006-consistency-and-extension-for-new-features.md) — extend features by **matching idioms** within this structure unless an exception is documented.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrel files as **public API** at package, feature, layer, and optional nested scopes.
+- Repository-local examples: `org/docs/adr/examples/feature-module-layout-example.md` and `org/docs/adr/examples/composition-root-example.md`.

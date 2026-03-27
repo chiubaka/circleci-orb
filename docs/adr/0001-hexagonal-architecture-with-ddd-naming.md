@@ -1,11 +1,11 @@
 ---
-status: superseded-by-ADR-0011
+status: superseded-by-ADR-0007
 date: 2026-03-19
 decision-makers: Daniel Chiu
 ---
 # ADR 0001: Hexagonal Architecture with DDD Naming
 
-> **Superseded:** Layout and decomposition for this repository are defined by [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) (vertical feature modules, per-slice layers, packages, and `core`). This ADR remains useful for **historical context** and for the original **DDD naming vs. hexagonal vocabulary** tradeoff.
+> **Superseded:** Layout and decomposition for this repository are defined by [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) (vertical feature modules, per-slice layers, packages, and `core`). This ADR remains useful for **historical context** and for the original **DDD naming vs. hexagonal vocabulary** tradeoff.
 
 ## Context and Problem Statement
 
@@ -62,11 +62,5 @@ Justification: This best satisfies the decision drivers by enforcing dependency 
 
 ## More Information
 
-Implementation notes for the current `l3xo` module:
-
-- `domain/types.ts` contains business model types.
-- `application/interfaces.ts` contains contracts like `UsersService` (conceptually a port).
-- `application/L3xo.ts` orchestrates the tutoring loop.
-- `infrastructure/services/StubUsersService.ts` provides the initial stub implementation.
-- `apps/server/src/app.ts` is the HTTP/presentation wiring and request mapping.
+This ADR is intentionally historical and vocabulary-focused. For repository-local layout illustrations, see `org/docs/adr/examples/feature-module-layout-example.md` and `org/docs/adr/examples/composition-root-example.md`.
 

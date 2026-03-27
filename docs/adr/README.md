@@ -13,20 +13,20 @@ Keep each decision at the narrowest level that still reflects who should follow 
 ## Current org-level ADR set in this repo
 
 - `0001-hexagonal-architecture-with-ddd-naming.md` (historical/superseded context for layout evolution)
-- `0006-zod-for-runtime-json-validation.md`
-- `0007-agent-skills-canonical-location-and-symlinks.md`
-- `0008-self-documenting-code-and-documentation-expectations.md`
-- `0009-composition-roots-and-wiring-boundaries.md`
-- `0010-consistency-and-extension-for-new-features.md`
-- `0011-vertical-feature-modules-hexagonal-slices-and-packages.md`
-- `0012-barrel-files-public-api-boundaries.md`
-- `0013-prefer-small-focused-files.md`
-- `0014-import-specifier-conventions-for-monorepo-packages.md`
-- `0015-test-import-alias-hash-root.md`
-- `0016-classes-as-primary-responsibility-boundaries.md`
-- `0017-use-of-classes-vs-module-level-functions-and-interfaces.md`
+- `0002-zod-for-runtime-json-validation.md`
+- `0003-agent-skills-canonical-location-and-symlinks.md`
+- `0004-self-documenting-code-and-documentation-expectations.md`
+- `0005-composition-roots-and-wiring-boundaries.md`
+- `0006-consistency-and-extension-for-new-features.md`
+- `0007-vertical-feature-modules-hexagonal-slices-and-packages.md`
+- `0008-barrel-files-public-api-boundaries.md`
+- `0009-prefer-small-focused-files.md`
+- `0010-import-specifier-conventions-for-monorepo-packages.md`
+- `0011-test-import-alias-hash-root.md`
+- `0012-classes-as-primary-responsibility-boundaries.md`
+- `0013-use-of-classes-vs-module-level-functions-and-interfaces.md`
 
-See [`AGENTS.md`](../../../AGENTS.md) for concise agent-facing pointers to these ADRs.
+If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
 ## ADR template
 

@@ -4,11 +4,11 @@ date: 2026-03-26
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0015: Use `#/` as the package-local test import root
+# ADR 0011: Use `#/` as the package-local test import root
 
 ## Context and Problem Statement
 
-[ADR 0014](0014-import-specifier-conventions-for-monorepo-packages.md) established `~/` as the intra-package alias for production code under `src/` and reserved `@scope/pkg` imports for cross-package/public API boundaries. As test suites grow, deep relative imports inside `test/` become noisy and brittle.
+[ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) established `~/` as the intra-package alias for production code under `src/` and reserved `@scope/pkg` imports for cross-package/public API boundaries. As test suites grow, deep relative imports inside `test/` become noisy and brittle.
 
 We need a package-local convention for test support imports that improves ergonomics while preserving architectural clarity: production code should stay distinct from test-only code, and package imports should stay unambiguous in a monorepo.
 
@@ -96,6 +96,6 @@ Justification: `#/` creates a non-overlapping namespace next to `~/` and `@scope
 
 ## More Information
 
-- [ADR 0014](0014-import-specifier-conventions-for-monorepo-packages.md) — `~/` for intra-package source imports and `@scope/pkg` for inter-package imports.
-- [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) — package boundaries and module structure.
-- [ADR 0012](0012-barrel-files-public-api-boundaries.md) — public API boundaries and import discipline.
+- [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) — `~/` for intra-package source imports and `@scope/pkg` for inter-package imports.
+- [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — package boundaries and module structure.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — public API boundaries and import discipline.

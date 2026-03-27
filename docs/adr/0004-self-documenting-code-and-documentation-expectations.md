@@ -4,7 +4,7 @@ date: 2026-03-24
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0008: Self-documenting code and documentation expectations
+# ADR 0004: Self-documenting code and documentation expectations
 
 ## Context and Problem Statement
 
@@ -36,13 +36,13 @@ Those two forces can be misread as “comments are the main clarity tool” or �
 - Good, because reviewers can ask for **refactors** when comments would paper over confusing structure, without arguing about whether lint “requires” comments.
 - Good, because **public** APIs can still be thoroughly documented for consumers and IDE hover.
 - Good, because we **do not** churn ESLint config to chase a subjective “feel.”
-- Bad, because **mandated** JSDoc on some exports can feel verbose if authors only restate signatures—mitigate by writing **substantive** lines (behavior, preconditions, non-obvious semantics) per [`REVIEW-CHECKLIST.md`](../../../REVIEW-CHECKLIST.md).
+- Bad, because **mandated** JSDoc on some exports can feel verbose if authors only restate signatures—mitigate by writing **substantive** lines (behavior, preconditions, non-obvious semantics) in code review guidance.
 
 ### Confirmation
 
-- **AGENTS.md** and **REVIEW-CHECKLIST.md** reference this ADR and restate the principle briefly for day-to-day work.
+- **Local guidance docs:** repository-level contributor guides should reference this ADR and restate the principle briefly for day-to-day work.
 - **Lint:** Existing `pnpm lint` continues to enforce JSDoc rules; no change to those rules under this ADR.
-- **Review:** Reviewers use [`REVIEW-CHECKLIST.md`](../../../REVIEW-CHECKLIST.md) (JSDoc section) for judgment on substance vs. redundancy.
+- **Review:** Reviewers should use local review guidance (including a JSDoc section where available) for judgment on substance vs. redundancy.
 
 ## Pros and Cons of the Options
 
@@ -62,4 +62,4 @@ Those two forces can be misread as “comments are the main clarity tool” or �
 
 ## More Information
 
-- Related: [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) (where code lives by **feature module** and layer); this ADR does not change those boundaries—only how we document and clarify behavior within them.
+- Related: [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) (where code lives by **feature module** and layer); this ADR does not change those boundaries—only how we document and clarify behavior within them.

@@ -4,7 +4,7 @@ date: 2026-03-24
 decision-makers: Daniel Chiu
 ---
 
-# ADR 0010: Consistency and extension for new features
+# ADR 0006: Consistency and extension for new features
 
 ## Context and Problem Statement
 
@@ -15,7 +15,7 @@ We want a **recorded** expectation: when adding capability, **prefer** matching 
 ## Decision Drivers
 
 - **Predictability:** Similar problems should **look** similar in code and in review diffs.
-- **Alignment with ADR 0011 and 0009:** New code should respect **per-feature** layer boundaries, module **barrels**, and composition roots unless a deliberate exception is documented.
+- **Alignment with ADR 0007 and 0009:** New code should respect **per-feature** layer boundaries, module **barrels**, and composition roots unless a deliberate exception is documented.
 - **Reviewability:** Checklist-style prompts help humans and agents catch **grab-bag** options and **mixed** responsibilities early.
 - **Pragmatism:** Do not block useful work when no existing idiom fits—then prefer a **small**, well-named addition that future work can follow.
 
@@ -34,14 +34,14 @@ We want a **recorded** expectation: when adding capability, **prefer** matching 
 ### Consequences
 
 - Good, because **cruft drift** (inconsistent logger names, unrelated concerns in one file, option bags) gets a standard lens in review.
-- Good, because **ADR 0009** composition guidance, **ADR 0011** module layout, and **ADR 0008** documentation expectations apply uniformly to new work.
-- Bad, because **judgment** is required—“matches existing idiom” is not always objective; mitigate with [`REVIEW-CHECKLIST.md`](../../../REVIEW-CHECKLIST.md) prompts and ADR cross-links.
+- Good, because **ADR 0005** composition guidance, **ADR 0007** module layout, and **ADR 0004** documentation expectations apply uniformly to new work.
+- Bad, because **judgment** is required—“matches existing idiom” is not always objective; mitigate with local review prompts and ADR cross-links.
 
 ### Confirmation
 
-- **REVIEW-CHECKLIST.md** includes a **Consistency and extension** section aligned with this ADR.
-- **Tests:** Behavior changes follow existing TDD expectations in [`AGENTS.md`](../../../AGENTS.md); new contracts may add tests that lock intended usage.
-- **CI:** [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) encourages **lint** for module boundaries when feasible; until rules exist, review carries the same expectations.
+- **Local review guidance** should include a **Consistency and extension** section aligned with this ADR.
+- **Tests:** Behavior changes should follow local TDD expectations; new contracts may add tests that lock intended usage.
+- **CI:** [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) encourages **lint** for module boundaries when feasible; until rules exist, review carries the same expectations.
 
 ## Pros and Cons of the Options
 
@@ -59,7 +59,7 @@ We want a **recorded** expectation: when adding capability, **prefer** matching 
 
 ## More Information
 
-- [ADR 0011](0011-vertical-feature-modules-hexagonal-slices-and-packages.md) — vertical modules, layers per slice, packages, `core`.
-- [ADR 0012](0012-barrel-files-public-api-boundaries.md) — barrels as public API boundaries.
+- [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — vertical modules, layers per slice, packages, `core`.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrels as public API boundaries.
 - [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.md) — **superseded** for layout; historical naming rationale.
-- [ADR 0009](0009-composition-roots-and-wiring-boundaries.md) — where wiring and presentation assembly live.
+- [ADR 0005](0005-composition-roots-and-wiring-boundaries.md) — where wiring and presentation assembly live.
