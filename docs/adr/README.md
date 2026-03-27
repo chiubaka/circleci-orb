@@ -49,4 +49,6 @@ Before adding a new ADR:
 2. If the decision is repository-specific, place it in that repo’s `docs/adr/`.
 3. If the decision is package-specific, place it in that package’s `docs/adr/`.
 4. Copy the template and keep the scope tight: one decision per ADR.
+5. If the ADR needs concrete pattern demonstration, add a small illustrative example under `org/docs/adr/examples/` and reference it from the ADR.
+6. Keep org-level ADR references portable: do not point to repo-local files, paths, or implementation patterns that may be missing when this org ADR set is bootstrapped into another repository.
 
