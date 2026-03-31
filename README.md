@@ -87,11 +87,11 @@ If you edit files under `org/` from a consumer repository and want the simplest 
 
 - Commit your changes in the consumer repository.
 - Push the `org/` subtree directly to org remote:
-  - `git subtree push --prefix=org org <ORG_BRANCH>`
+  - `git subtree push --prefix=org org master`
 
 Then in other consumers:
 
 - `git fetch org`
-- `git subtree pull --prefix=org org <ORG_BRANCH>`
+- `git subtree pull --prefix=org org master`
 
 For more detail, see `org/agents/README.md`.
