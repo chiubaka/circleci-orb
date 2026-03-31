@@ -145,3 +145,11 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Local repositories may add repo-specific skills under `.agents/skills` without changing org-shared skill sources.
 - Keep org-level guidance source in `org/agents/AGENTS.org.md`; sync root `AGENTS.md` via `org/agents/scripts/bootstrap-agents-md.sh`.
 - Validate guidance sync drift with `org/agents/scripts/bootstrap-agents-md.sh --check`.
+
+## Org subtree safety
+
+- Treat `org/` as a `git subtree`-managed prefix; do not remove and recreate `org/` unless the user explicitly requests subtree reinitialization.
+- For `org/` updates, use subtree workflows (`git subtree pull` / `git subtree push`) rather than ad hoc delete-and-copy workflows.
+- Keep subtree strategy consistent for a given repository: if `--squash` is used for subtree add or pull, keep using `--squash` for later subtree sync commands.
+- Do not rewrite away subtree ancestry on active branches (for example via history surgery that drops prior subtree integration commits) unless explicitly requested.
+- If subtree sync fails with unrelated history, prefer non-destructive recovery steps first (verify remote/branch/prefix consistency and subtree history markers) before reinitializing.

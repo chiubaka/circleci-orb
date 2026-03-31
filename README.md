@@ -64,17 +64,34 @@ From the target repository root:
 - `git subtree pull --prefix=org org <ORG_BRANCH>`
 - `org/agents/scripts/bootstrap.sh --check`
 
+### Subtree safety and operational guardrails
+
+- Treat `org/` as subtree-managed; avoid deleting and recreating the directory.
+- Keep subtree command style consistent over time for this prefix:
+  - If you started with `--squash`, continue using `--squash` for later pulls and pushes.
+- Keep remote, branch, and prefix stable (`org`, `<ORG_BRANCH>`, `--prefix=org`) unless intentionally migrating with a documented plan.
+- Avoid history rewrites that drop subtree integration ancestry on active branches.
+
+Quick health checks:
+
+- Confirm subtree markers exist in history:
+  - `git log --grep="git-subtree-dir: org" --all`
+- Confirm the org remote and branch you intend to sync:
+  - `git remote -v`
+  - `git branch -r | rg "org/"`
+- If sync fails, prefer diagnosis and non-destructive recovery before subtree reinitialization.
+
 ## Contributing org changes back upstream
 
 If you edit files under `org/` from a consumer repository and want the simplest direct sync:
 
 - Commit your changes in the consumer repository.
 - Push the `org/` subtree directly to org remote:
-  - `git subtree push --prefix=org org master`
+  - `git subtree push --prefix=org org <ORG_BRANCH>`
 
 Then in other consumers:
 
 - `git fetch org`
-- `git subtree pull --prefix=org org master`
+- `git subtree pull --prefix=org org <ORG_BRANCH>`
 
 For more detail, see `org/agents/README.md`.
