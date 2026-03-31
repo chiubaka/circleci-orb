@@ -33,7 +33,8 @@ Without a shared mental model, wiring can **sprawl** (mixing domain logic with r
 
 ### Consequences
 
-- Good, because **L3xo**-style orchestration and **services** stay focused on behavior while `di/` and `app` (or equivalent) own **how** instances are built.
+- Good, because orchestration classes and services stay focused on behavior while `di/`, `config/`, and `app` (or equivalent) own **how** instances are built.
+- Good, because package APIs can converge on a single stable, config-first facade entrypoint (for example `Facade.init(config)`) instead of scattered `create*` helpers that duplicate wiring rules.
 - Good, because reviewers can ask: “Does this change belong in **wiring** or in **domain/application**?”
 - Bad, because **concentrated** composition files can still get large—mitigate with **internal** structure (functions, submodules) without abandoning the single composition-root idea.
 - Bad, because “edges” must be **interpreted** per package; confirmation relies on review as much as on folders alone.
@@ -43,6 +44,7 @@ Without a shared mental model, wiring can **sprawl** (mixing domain logic with r
 - **Review:** local review guidance should include prompts for wiring vs. domain concerns and mixed responsibilities.
 - **Large changes:** Non-trivial new wiring or new HTTP surface should get an explicit **architecture or design** pass in PR description or review.
 - **Examples of layout** (illustrative; see [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md)): transport-agnostic wiring may live beside feature modules in a backend package; a server host app owns HTTP framework wiring, env/config, and composition that binds concrete adapters to backend facades. For a repo-local illustration, see `org/docs/adr/examples/composition-root-example.md`.
+- **Facade construction consistency:** for orchestration-heavy packages, review should enforce one stable config-first facade entrypoint at the edge, with centralized dependency loading/composition in a dedicated module, instead of introducing new one-off composition factories.
 
 ## Pros and Cons of the Options
 

@@ -168,7 +168,9 @@ END {
     echo "$REPO_START"
     echo "_Repository-specific overrides migrated from previous AGENTS.md._"
     echo
-    cat "$backup_path"
+    awk -v orgStart="$ORG_START" -v orgEnd="$ORG_END" -v repoStart="$REPO_START" -v repoEnd="$REPO_END" '
+      $0 != orgStart && $0 != orgEnd && $0 != repoStart && $0 != repoEnd { print }
+    ' "$backup_path"
     echo
     echo "$REPO_END"
   } > "$tmp_next"

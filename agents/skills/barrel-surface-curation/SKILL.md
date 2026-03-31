@@ -16,6 +16,7 @@ Treat each `index.ts` barrel as a deliberate public API boundary and keep export
 
 - `org/docs/adr/0008-barrel-files-public-api-boundaries.md`
 - `org/docs/adr/0007-vertical-feature-modules-hexagonal-slices-and-packages.md`
+- `org/docs/adr/0016-frontend-responsibility-areas-and-layered-boundaries.md`
 - `org/docs/adr/0009-prefer-small-focused-files.md`
 
 ## When to use this skill
@@ -34,7 +35,8 @@ Use this skill when:
 3. Require barrels at:
    - Package public API (where applicable),
    - Feature root,
-   - Layer roots (`domain/`, `application/`, `infrastructure/`),
+   - Layer roots (`domain/`, `application/`, `infrastructure/`, `presentation/` when present),
+   - First-class slice directories under a module root (same encapsulation role as layers—for example `presentation/` under a composition host),
    - Immediate `infrastructure/<category>/` directories.
 4. Prefer concrete imports in tests unless validating the barrel surface itself.
 5. If a barrel grows into a broad catalog, split responsibilities or reduce surface.

@@ -52,6 +52,8 @@ Each **feature module** is a directory tree with:
 
 **Layer barrels (within each feature module):** `domain/`, `application/`, and `infrastructure/` each have their own **`index.ts`** barrel. Each barrel re-exports **only** that layer’s **public** surface; everything else in that directory tree is **private** to the layer.
 
+**Frontend `presentation/` layer:** Client packages that add a **`presentation/`** tree per [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md) treat it as another **layer** for barrel purposes: **`presentation/index.ts`** is the public surface for cross-layer and cross-module consumption from that layer, same as `domain/` / `application/` / `infrastructure/`.
+
 - **Consumption rule:** A **sibling layer** (or the feature root) should depend on a layer **through that layer’s barrel** (e.g. `application/` imports from the `domain/` barrel—not from deep paths under `domain/…`) wherever dependency rules allow. **Files inside the same layer** may still use direct relative imports between **private** implementation files; barrels gate what is **visible across layers** (and the feature root aggregates what leaves the feature). **Prefer lint rules** to block **cross-layer** deep imports that skip a layer barrel, in addition to enforcing hexagonal direction (e.g. `domain/` must not import `application/` or `infrastructure/`).
 - The **feature** still has a **root** `index.ts` that re-exports **only** what **other** features, `core`, or the app host may import (facades, stable types, port interfaces when another compilation unit must supply an implementation).
 

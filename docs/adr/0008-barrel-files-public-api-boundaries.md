@@ -38,7 +38,8 @@ This ADR records **when** and **at what depth** barrels are appropriate—includ
 2. **Scopes we use:**
    - **Workspace package** root barrel (when the package has one)—public API of the package.
    - **Feature module** root barrel—what other features, `core`, or the app host may import.
-   - **Layer barrels** (`domain/`, `application/`, `infrastructure/`)—what sibling layers / the feature root may import **across** layer boundaries, per ADR 0007.
+   - **Layer barrels** (`domain/`, `application/`, `infrastructure/`, and **`presentation/`** when that layer exists)—what sibling layers / the feature root may import **across** layer boundaries, per [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) and (for frontend) [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md).
+   - **First-class slice directories** under a **module root** (a vertical feature **or** a thin composition host such as `app/` in ADR 0016): When a subdirectory is a deliberate responsibility slice—not a throwaway folder of helpers—it defines **`index.ts`** as that slice’s curated public surface, using the **same** discipline as layer barrels. Cross-slice callers import **through** that barrel. A module may omit entire hexagonal layers (for example a host that has no `domain/`); **any slice the module defines must still be barrel-gated.** In frontend layouts, **`presentation/`** is the standard UI-facing slice: if a module contains `presentation/`, it **must** include **`presentation/index.ts`**.
    - **Nested barrels** under each immediate `infrastructure/<category>/` subdirectory (e.g. `openAi/`, `drizzle/`, `stub/`)—**required**. Every such category directory defines `index.ts` and is treated as a public/private boundary for that adapter category.
 
 3. **Within-layer imports:** Files in the same layer may import **private** siblings via relative paths without going through every intermediate barrel; barrels primarily govern **cross-layer** and **cross-feature** (and **cross-package**) visibility, per ADR 0007.
@@ -80,4 +81,5 @@ This ADR records **when** and **at what depth** barrels are appropriate—includ
 ## More Information
 
 - [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — feature modules, layer barrels, infrastructure categories.
+- [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md) — frontend responsibility areas, `presentation/`, and composition hosts (`app/`) with non-hexagonal slice sets.
 - Repository-local illustration: `org/docs/adr/examples/feature-module-layout-example.md`.

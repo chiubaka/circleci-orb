@@ -14,6 +14,9 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
   - `org/docs/adr/0009-prefer-small-focused-files.md`
   - `org/docs/adr/0010-import-specifier-conventions-for-monorepo-packages.md`
   - `org/docs/adr/0011-test-import-alias-hash-root.md`
+  - `org/docs/adr/0017-workspace-library-dist-boundary-and-dev-watch.md`
+  - `org/docs/adr/0018-index-barrels-re-export-only.md`
+  - `org/docs/adr/0016-frontend-responsibility-areas-and-layered-boundaries.md`
   - `org/docs/adr/0004-self-documenting-code-and-documentation-expectations.md`
   - `org/docs/adr/0005-composition-roots-and-wiring-boundaries.md`
   - `org/docs/adr/0006-consistency-and-extension-for-new-features.md`
@@ -23,6 +26,11 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 - In code and internal developer docs, use canonical `L-3XO` / `l3xo` naming.
 - Reserve `Lex` for intentional user-facing product copy only.
+
+## Source file basenames (TypeScript / TSX)
+
+- When the module’s **primary** public surface is a single PascalCase binding (class, React component, context object, and similar), name the file **`ThatName.ts`** / **`ThatName.tsx`** to match that symbol—not a camelCase basename that diverges from it (for example `ChatContext.ts`, not `chatContext.ts`).
+- **Exceptions:** barrels (`index.ts`), tooling/config files (`*.config.ts`, etc.), and modules with several co-equal exports where no one symbol clearly owns the module; align with neighboring files and feature-layer conventions instead of forcing a match.
 
 ## Self-documenting code and documentation
 
@@ -58,10 +66,11 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Example:
   - `packages/example/src/index.ts` -> `packages/example/test/index.test.ts`
 
-## Barrel files (`index.ts`)
+## Barrel files (`index.ts` / `index.tsx`)
 
 - Treat each barrel as an intentional public API boundary, not a complete subtree catalog.
-- Apply this at package, feature, layer (`domain` / `application` / `infrastructure`), and immediate `infrastructure/<category>/` scopes.
+- Apply this at package, feature, layer (`domain` / `application` / `infrastructure` / `presentation` when those directories exist), **first-class slice** directories under a module root (including composition hosts such as `app/`—for example `presentation/`, `navigation/`, `lib/` when they are deliberate slices), and immediate `infrastructure/<category>/` scopes. See `org/docs/adr/0008-barrel-files-public-api-boundaries.md`.
+- Per `org/docs/adr/0018-index-barrels-re-export-only.md` where enforced (for example `apps/web` via ESLint), `index` files must be **re-export-only**—put implementation in named modules under the slice (for example `…/presentation/App.tsx`) and re-export from that slice’s `index.ts`, then from the module root if needed.
 - In tests, prefer imports from concrete modules unless explicitly testing a barrel surface.
 - Add exports only when there is a real consumer for the barrel surface.
 - If barrel constraints expose cycles, refactor first (extract shared types/logic, invert dependency via ports) before considering narrow lint exceptions.
@@ -76,18 +85,59 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 ## Final verification after meaningful changes
 
-- Run all three commands before finishing meaningful code changes:
+- Run all four commands before finishing meaningful code changes:
   - `pnpm build`
   - `pnpm lint`
   - `pnpm test`
+  - `pnpm typecheck`
 - Treat IDE diagnostics as additive, not a replacement for command runs.
 - If lint behavior may be affected (config/rules/task wiring), run `pnpm lint -- --no-cache`.
-- Complete a review pass using the repository's review checklist to catch quality and consistency issues automation misses.
+- Complete a review pass using the `review` skill to catch quality and consistency issues automation misses.
 
 ## TypeScript API design: closed vocabularies
 
 - For small closed discriminant sets (for example log levels or stable role labels), prefer `enum` or a const-object-plus-derived-type over open string unions.
 - Use stronger enforcement only when recurring issues justify the extra rigidity.
+
+## Repository naming conventions
+
+- Repository query methods that look up one or more records by a field should be named `find*` (for example `findById`, `findByConversationId`). This aligns with Prisma's naming conventions and distinguishes read-only lookups from write operations.
+- Mutation methods follow the operation: `create`, `update`, `delete`, `upsert`, `append`, etc.
+
+## Naming: clarity over concision
+
+- Prefer full, descriptive names over short abbreviations for variables, parameters, and instance variables.
+- **Examples of preferred names:**
+  - `dependencies` over `deps`
+  - `llmService` over `llm`
+  - `configuration` over `config` (when referring to a resolved config object, not a type name)
+- Apply this at all scopes: local variables, function parameters, class instance variables, and destructured names.
+- Exception: conventional short names in their own domain (e.g., `i` for loop indices, `e` for event parameters in callbacks, `c` for Hono context in route handlers) are acceptable.
+
+## Constructor options: prefer destructured instance variables
+
+- When a class constructor accepts an options object, prefer saving each option as its own named instance variable rather than storing the whole options object as `this.options`.
+- This improves readability: callers see exactly which pieces of the options dict the class actually uses.
+- **Exception:** when the options object has many keys (roughly 5 or more), storing the whole object as an instance variable is acceptable for conciseness.
+- **Example (preferred for small options objects):**
+  ```ts
+  // Options interface
+  export interface MyServiceOptions {
+    model?: string;
+    logger: Logger;
+  }
+
+  // Class
+  export class MyService {
+    private readonly model: string | undefined;
+    private readonly logger: Logger;
+
+    public constructor(dependency: Dependency, options: MyServiceOptions) {
+      this.model = options.model;
+      this.logger = options.logger;
+    }
+  }
+  ```
 
 ## Skills and portability
 

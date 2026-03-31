@@ -25,6 +25,11 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0011-test-import-alias-hash-root.md`
 - `0012-classes-as-primary-responsibility-boundaries.md`
 - `0013-use-of-classes-vs-module-level-functions-and-interfaces.md`
+- `0014-stable-facade-construction-and-centralized-composition.md`
+- `0015-centralized-org-agent-standards-git-subtree-projection.md`
+- `0016-frontend-responsibility-areas-and-layered-boundaries.md`
+- `0017-workspace-library-dist-boundary-and-dev-watch.md`
+- `0018-index-barrels-re-export-only.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

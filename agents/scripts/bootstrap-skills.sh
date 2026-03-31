@@ -52,6 +52,23 @@ fi
 ORG_SKILLS_DIR="$REPO_ROOT/org/agents/skills"
 LOCAL_SKILLS_DIR="$REPO_ROOT/.agents/skills"
 
+resolve_realpath() {
+  local target="$1"
+
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$target"
+    return
+  fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$target"
+    return
+  fi
+
+  echo "Unable to resolve absolute path for '$target': requires 'realpath' or 'python3'" >&2
+  exit 1
+}
+
 if [[ ! -d "$ORG_SKILLS_DIR" ]]; then
   echo "Org skills directory not found: $ORG_SKILLS_DIR" >&2
   exit 1
@@ -81,8 +98,8 @@ for skill_dir in "$ORG_SKILLS_DIR"/*; do
   link_target="../../org/agents/skills/$skill_name"
 
   if [[ -L "$link_path" ]]; then
-    desired_abs="$(readlink -f "$skill_dir")"
-    existing_abs="$(readlink -f "$link_path")"
+    desired_abs="$(resolve_realpath "$skill_dir")"
+    existing_abs="$(resolve_realpath "$link_path")"
     if [[ "$desired_abs" == "$existing_abs" ]]; then
       ((ok+=1))
       echo "OK: $link_path -> $(readlink "$link_path")"

@@ -43,7 +43,8 @@ Use this skill when:
 3. Keep composition and wiring at explicit edges (host app/composition root), not in domain/application internals.
 4. Add or refine barrels intentionally:
    - Feature root barrel for cross-feature consumers.
-   - Layer barrels for cross-layer access.
+   - Layer barrels for cross-layer access (`domain/`, `application/`, `infrastructure/`, `presentation/` when those trees exist).
+   - Slice barrels for first-class directories under composition hosts (see ADR 0008 / ADR 0016).
    - `infrastructure/<category>/index.ts` for each immediate adapter category.
 5. Keep files focused; split mixed-responsibility files unless items are expected to evolve together.
 
