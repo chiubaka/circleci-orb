@@ -49,10 +49,13 @@ Within classes:
 * Avoid exporting helper functions solely for testing
 * Test primarily through public methods
 * In class-named orchestration files (for example, `*Evaluator.ts`, `*Service.ts`), treat the class as the default architectural boundary
+* In class-owned repository or adapter files (for example, `*Repository.ts`), keep record/domain mapping helpers on the class as `private static` methods by default unless the mapper is a true shared utility used across multiple classes
+* When translating between persistence or infrastructure records and domain types, prefer `toDomain` and `fromDomain` naming for those methods over ad hoc `map*` names
 
 Precedence note:
 
 * When this ADR's hybrid guidance and ADR 0012 could both apply, prefer ADR 0012 for class-owned orchestration modules. In those files, module-level exports should be limited to true shared utilities, not class-local helpers.
+* Apply the same class-ownership default to repository and adapter modules even when the local logic is "just mapping"; colocated translation logic still belongs to the class boundary unless reuse pressure proves otherwise
 
 #### Module-Level Functions
 

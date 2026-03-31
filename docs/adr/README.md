@@ -30,6 +30,9 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0016-frontend-responsibility-areas-and-layered-boundaries.md`
 - `0017-workspace-library-dist-boundary-and-dev-watch.md`
 - `0018-index-barrels-re-export-only.md`
+- `0019-vendor-specific-infrastructure-slices.md`
+- `0020-run-production-database-migrations-as-a-separate-deployment-step.md`
+- `0021-code-first-drizzle-schema-and-migrations.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
@@ -56,4 +59,3 @@ Before adding a new ADR:
 4. Copy the template and keep the scope tight: one decision per ADR.
 5. If the ADR needs concrete pattern demonstration, add a small illustrative example under `org/docs/adr/examples/` and reference it from the ADR.
 6. Keep org-level ADR references portable: do not point to repo-local files, paths, or implementation patterns that may be missing when this org ADR set is bootstrapped into another repository.
-

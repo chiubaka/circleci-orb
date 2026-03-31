@@ -16,6 +16,8 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
   - `org/docs/adr/0011-test-import-alias-hash-root.md`
   - `org/docs/adr/0017-workspace-library-dist-boundary-and-dev-watch.md`
   - `org/docs/adr/0018-index-barrels-re-export-only.md`
+  - `org/docs/adr/0019-vendor-specific-infrastructure-slices.md`
+  - `org/docs/adr/0020-run-production-database-migrations-as-a-separate-deployment-step.md`
   - `org/docs/adr/0016-frontend-responsibility-areas-and-layered-boundaries.md`
   - `org/docs/adr/0004-self-documenting-code-and-documentation-expectations.md`
   - `org/docs/adr/0005-composition-roots-and-wiring-boundaries.md`
@@ -45,6 +47,7 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Keep domain and application code free from framework/container wiring except at explicit boundaries.
 - When composition grows, prefer named steps or sectioned helpers so wiring remains scannable.
 - Choose feature layers deliberately (`domain` / `application` / `infrastructure`) and align names/options with neighboring code.
+- When shared infrastructure is concrete and vendor-specific, prefer `infrastructure/<vendor>` over generic names such as `persistence`; do not imply an abstraction that the code does not actually provide.
 - Default to classes for orchestration-heavy or domain-driven behavior; keep class-specific helpers private.
 - Prefer module-level functions for pure transformations and interfaces only when substitutability is real.
 - For class-named modules (for example, `*Service.ts`, `*Evaluator.ts`), treat the class as the default boundary.
@@ -85,13 +88,15 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 ## Final verification after meaningful changes
 
-- Run all four commands before finishing meaningful code changes:
+- Run all four commands from the repository root before finishing meaningful code changes:
   - `pnpm build`
   - `pnpm lint`
   - `pnpm test`
   - `pnpm typecheck`
+- Treat completion as blocked until those root commands succeed for the full workspace and all packages in scope, not just the package you touched directly.
+- Package-scoped checks may be useful during iteration, but they do not replace the required final root verification pass.
 - Treat IDE diagnostics as additive, not a replacement for command runs.
-- If lint behavior may be affected (config/rules/task wiring), run `pnpm lint -- --no-cache`.
+- If lint behavior may be affected (config/rules/task wiring), run `pnpm lint --force`.
 - Complete a review pass using the `review` skill to catch quality and consistency issues automation misses.
 
 ## TypeScript API design: closed vocabularies
@@ -103,6 +108,8 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 - Repository query methods that look up one or more records by a field should be named `find*` (for example `findById`, `findByConversationId`). This aligns with Prisma's naming conventions and distinguishes read-only lookups from write operations.
 - Mutation methods follow the operation: `create`, `update`, `delete`, `upsert`, `append`, etc.
+- When a repository or adapter maps between persistence/infrastructure records and domain types, prefer `toDomain` and `fromDomain` for those translation methods instead of ad hoc names such as `mapProfile`.
+- In class-owned repository or adapter modules (for example `*Repository.ts`), keep persistence-to-domain mapping helpers on the neighboring class as `private static` methods by default unless the mapper is a true shared utility used across multiple classes.
 
 ## Naming: clarity over concision
 

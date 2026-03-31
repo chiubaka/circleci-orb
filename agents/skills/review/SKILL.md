@@ -21,6 +21,12 @@ Use after finishing a meaningful code change and before pushing or asking for hu
 - [ ] Include file/line references for each finding so fixes are directly actionable.
 - [ ] Call out risks not covered by automation (edge cases, concurrency races, integration gaps).
 
+## Verification gate
+
+- [ ] Confirm the final verification suite was run from the repository root: `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm typecheck`.
+- [ ] Confirm those root commands passed for the full workspace and all packages, not just the package under review.
+- [ ] Treat package-scoped verification as additive only; flag handoff as incomplete if the root suite was skipped.
+
 ## Architecture and boundaries
 
 - [ ] Validate layering and boundary decisions against `AGENTS.md` and relevant ADRs.
