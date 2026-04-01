@@ -1,7 +1,7 @@
 # @chiubaka/org
 
 This directory is the org-level source of truth for shared architecture guidance and
-agent guidance used across Chiubaka repositories.
+agent guidance used across Chiubaka Technologies, LLC repositories.
 
 ## What lives here
 
