@@ -13,6 +13,7 @@ Make agent-guidance edits in the correct ownership boundary:
 
 - **Org-level guidance** for defaults shared across repositories.
 - **Repo-level guidance** for local behavior and implementation details.
+- **AGENTS.org.md streamlining** delegated to `agents-org-md-streamline`.
 
 ## When to use this skill
 
@@ -22,6 +23,8 @@ Use this skill when asked to add, move, split, or refactor guidance in:
 - `REVIEW-CHECKLIST.md`
 - `org/agents/AGENTS.org.md`
 - agent-guidance related docs or prompts
+
+Use `agents-org-md-streamline` for `org/agents/AGENTS.org.md` streamlining and rule classification. This skill is the routing/sync coordinator.
 
 ## Ownership dichotomy (required)
 
@@ -45,11 +48,11 @@ If uncertain, choose repo-level first, then promote to org-level only when porta
 - Keep root `AGENTS.md` bootstrap-compatible:
   - preserve `<!-- ORG_GUIDANCE_START --> ... <!-- ORG_GUIDANCE_END -->`
   - preserve `<!-- REPO_OVERRIDES_START --> ... <!-- REPO_OVERRIDES_END -->`
-- Keep repo overrides minimal; remove local duplication already covered by org guidance or commonly triggered skills/docs.
+- Keep repo overrides minimal.
 
-## Required sync step for org-level guidance updates
+## Required sync steps
 
-After any change to `org/agents/AGENTS.org.md`, run:
+After org-level guidance edits (including AGENTS.org.md streamlining), run:
 
 - `org/agents/scripts/bootstrap-agents-md.sh`
 
@@ -64,13 +67,14 @@ If you created or renamed an org-level skill as part of the same task, also run:
 ## Practical workflow
 
 1. Classify each requested guidance change as org-level or repo-level.
-2. Move portable defaults into `org/agents/AGENTS.org.md`.
-3. Keep only truly local requirements in root `AGENTS.md` repo overrides.
-4. Update `REVIEW-CHECKLIST.md` only for repo-specific review guidance.
-5. Run the bootstrap sync command(s) and validate with `--check`.
+2. Apply direct edits to the right source file(s):
+   - org defaults -> `org/agents/AGENTS.org.md`
+   - repo-local behavior -> root `AGENTS.md` repo overrides and/or `REVIEW-CHECKLIST.md`
+3. If org AGENTS guidance content was reorganized, run `agents-org-md-streamline`.
+4. Run the bootstrap sync command(s) and validate with `--check`.
 
 ## Quick examples
 
-- "Apply this naming convention across all repos" -> org-level -> edit `org/agents/AGENTS.org.md`, then run bootstrap sync.
+- "Apply this naming convention across all repos" -> org-level -> edit `org/agents/AGENTS.org.md`, run `agents-org-md-streamline`, then run bootstrap sync.
 - "Mention this repository's lint config file path" -> repo-level -> put it in root `AGENTS.md` overrides or `REVIEW-CHECKLIST.md`.
-- "This checklist item repeats org defaults already in skills" -> remove from repo overrides unless local behavior would break without it.
+- "Split org AGENTS generation rules vs review rules" -> use `agents-org-md-streamline`, then bootstrap sync from `org/agents/AGENTS.org.md`.
