@@ -99,6 +99,20 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - If lint behavior may be affected (config/rules/task wiring), run `pnpm lint --force`.
 - Complete a review pass using the `review` skill to catch quality and consistency issues automation misses.
 
+## Context-efficiency and iteration discipline
+
+- Keep strict quality gates while minimizing repeated context expansion during iteration.
+- During exploration, prefer narrow discovery first:
+  - Start with filename/symbol queries (`rg` files_with_matches or targeted globs) before pulling large slices of file content.
+  - Read only the specific files or segments needed for the current change; avoid broad full-file reads unless diagnostics require it.
+  - Skip large terminal or command-output dumps unless they directly help diagnose the current issue.
+- During implementation, lean on scoped verification loops:
+  - Re-run only the checks impacted by the files you touched.
+  - Use package-scoped/type-scoped commands while iterating; defer full repo verification until the final pre-handoff pass.
+- Preserve strictness at completion:
+  - The final root verification commands (build/lint/test/typecheck) still must run before handoff for any meaningful code change.
+  - Do not replace the required final pass with earlier scoped checks alone.
+
 ## TypeScript API design: closed vocabularies
 
 - For small closed discriminant sets (for example log levels or stable role labels), prefer `enum` or a const-object-plus-derived-type over open string unions.
