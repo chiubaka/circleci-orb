@@ -137,10 +137,49 @@ ensure_tool_links() {
   return 0
 }
 
+create_claude_md_link() {
+  local claude_path="$REPO_ROOT/CLAUDE.md"
+  local agents_target="AGENTS.md"
+
+  if [[ ! -e "$REPO_ROOT/$agents_target" ]]; then
+    echo "Missing AGENTS.md; cannot create CLAUDE.md link" >&2
+    return 1
+  fi
+
+  if [[ -L "$claude_path" ]]; then
+    local existing
+    existing="$(readlink "$claude_path")"
+    if [[ "$existing" == "$agents_target" ]]; then
+      echo "OK: CLAUDE.md -> $existing"
+      return 0
+    fi
+    echo "CONFLICT: CLAUDE.md points to $existing, expected $agents_target" >&2
+    return 1
+  fi
+
+  if [[ -e "$claude_path" ]]; then
+    echo "CONFLICT: CLAUDE.md already exists and is not a symlink" >&2
+    return 1
+  fi
+
+  if [[ "$CHECK_MODE" -eq 1 ]]; then
+    echo "MISSING: CLAUDE.md (should link to $agents_target)"
+    return 0
+  fi
+
+  ln -s "$agents_target" "$claude_path"
+  echo "LINKED:  CLAUDE.md -> $agents_target"
+  return 0
+}
+
 "$SCRIPT_DIR/bootstrap-skills.sh" $CHECK_ARG
 "$SCRIPT_DIR/bootstrap-agents-md.sh" $CHECK_ARG
 
 if ! ensure_tool_links; then
+  exit 1
+fi
+
+if ! create_claude_md_link; then
   exit 1
 fi
 
