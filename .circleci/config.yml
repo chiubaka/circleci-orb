@@ -23,10 +23,9 @@ workflows:
           filters: *filters
           path: ./test
           setup-steps:
-            - node/install:
-                install-yarn: true
+            - node/install
             - node/install-packages:
-                pkg-manager: yarn
+                pkg-manager: pnpm
       - shellcheck/check:
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
           filters: *filters

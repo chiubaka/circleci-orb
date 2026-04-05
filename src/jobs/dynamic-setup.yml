@@ -28,14 +28,6 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  yarn-berry:
-    type: boolean
-    default: true
-    description: Whether or not to use Yarn berry for package management.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   primary-branch:
     type: string
     default: "master"
@@ -65,8 +57,6 @@ steps:
   - setup:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
-      nx-affected: << parameters.nx-affected >>
       primary-branch: << parameters.primary-branch >>
   - steps: << parameters.setup-steps >>
   - run:

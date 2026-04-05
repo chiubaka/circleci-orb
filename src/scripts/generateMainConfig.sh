@@ -3,6 +3,9 @@
 MONOREPO_ROOT="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
 CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 
+# Make workspace-local binaries (e.g. turbo) available in this script's PATH.
+export PATH="$MONOREPO_ROOT/node_modules/.bin:$PATH"
+
 print_generated_files() {
   echo "Contents of $CIRCLECI_ROOT/main.yml:"
   cat "$CIRCLECI_ROOT/main.yml"
@@ -11,8 +14,22 @@ print_generated_files() {
   cat "$CIRCLECI_ROOT/params.json"
 }
 
-all_ios_projects=$(yarn nx show projects --with-target run:ios)
-all_android_projects=$(yarn nx show projects --with-target run:android)
+# Build the affected filter for turbo based on current branch.
+# On the primary branch, run all packages. On other branches, restrict to
+# packages that changed relative to the merge-base with the primary branch.
+if [ "$CIRCLE_BRANCH" == "$PRIMARY_BRANCH" ]; then
+  affected_filter=""
+else
+  affected_filter="--filter=[${TURBO_SCM_BASE}...HEAD]"
+fi
+
+# Get all packages with run:ios / run:android scripts using turbo dry-run.
+# turbo discovers packages by scanning for the task in package.json scripts.
+all_ios_projects_json=$(turbo run run:ios --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
+all_android_projects_json=$(turbo run run:android --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
+
+all_ios_projects=$(echo "$all_ios_projects_json" | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
+all_android_projects=$(echo "$all_android_projects_json" | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 
 { [ -n "$all_ios_projects" ] || [ -n "$all_android_projects" ]; } && react_native=true || react_native=false
 
@@ -27,6 +44,16 @@ for project in $all_android_projects; do
 done
 
 all_react_native_projects=${!all_react_native_projects_map[*]}
+
+# Get all workspace package paths for looking up directories
+all_packages_json=$(pnpm ls --json -r 2>/dev/null || echo '[]')
+
+get_package_dir() {
+  local pkg_name=$1
+  local abs_path
+  abs_path=$(echo "$all_packages_json" | jq -r --arg name "$pkg_name" '.[] | select(.name == $name) | .path' | head -1)
+  echo "${abs_path#"$MONOREPO_ROOT/"}"
+}
 
 # This is a normal JS project! Copy the JS config template and exit.
 if [ "$react_native" = false ]; then
@@ -43,19 +70,19 @@ fi
 
 echo "Detected React Native projects. Using React Native CI template."
 
-# We should never skip jobs and validations on the primary branch!
-if [ "$CIRCLE_BRANCH" == "$PRIMARY_BRANCH" ]; then
-  affected_options=""
-else
-  affected_options="--affected --base=$NX_BASE --head=$NX_HEAD"
-fi
-
-[ -n "$(yarn nx show projects "$affected_options" --with-target build:ios)" ] && build_ios=true || build_ios=false
-[ -n "$(yarn nx show projects "$affected_options" --with-target build:android)" ] && build_android=true || build_android=false
-[ -n "$(yarn nx show projects "$affected_options" --with-target test:ios)" ] && test_ios=true || test_ios=false
-[ -n "$(yarn nx show projects "$affected_options" --with-target test:android)" ] && test_android=true || test_android=false
-[ -n "$(yarn nx show projects "$affected_options" --with-target e2e:ios)" ] && e2e_ios=true || e2e_ios=false
-[ -n "$(yarn nx show projects "$affected_options" --with-target e2e:android)" ] && e2e_android=true || e2e_android=false
+# Determine which platform-specific jobs are needed
+# shellcheck disable=SC2086
+[ -n "$(turbo run build:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_ios=true || build_ios=false
+# shellcheck disable=SC2086
+[ -n "$(turbo run build:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_android=true || build_android=false
+# shellcheck disable=SC2086
+[ -n "$(turbo run test:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_ios=true || test_ios=false
+# shellcheck disable=SC2086
+[ -n "$(turbo run test:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_android=true || test_android=false
+# shellcheck disable=SC2086
+[ -n "$(turbo run e2e:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_ios=true || e2e_ios=false
+# shellcheck disable=SC2086
+[ -n "$(turbo run e2e:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_android=true || e2e_android=false
 
 ios_semver_regex="/^(${all_ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
 android_semver_regex="/^(${all_android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
@@ -79,7 +106,8 @@ if [ -n "$ios_tag_match" ]; then
   test_ios=true
   e2e_ios=true
 else
-  affected_ios_projects=$(yarn nx show projects "$affected_options" --with-target run:ios)
+  # shellcheck disable=SC2086
+  affected_ios_projects=$(turbo run run:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 fi
 
 if [ -n "$android_tag_match" ]; then
@@ -91,7 +119,8 @@ if [ -n "$android_tag_match" ]; then
   test_android=true
   e2e_android=true
 else
-  affected_android_projects=$(yarn nx show projects "$affected_options" --with-target run:android)
+  # shellcheck disable=SC2086
+  affected_android_projects=$(turbo run run:android $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 fi
 
 setup_ios_apps_steps=""
@@ -100,7 +129,7 @@ if [ -n "$affected_ios_projects" ]; then
   echo "Found affected iOS projects: $affected_ios_projects"
 
   for project in $affected_ios_projects; do
-    project_root=$(yarn nx show project "$project" | jq -r ".root")
+    project_root=$(get_package_dir "$project")
     setup_ios_apps_steps+="
     - chiubaka/setup-ios-app:
         app-dir: $project_root"
@@ -116,7 +145,7 @@ if [ -n "$affected_android_projects" ]; then
   echo "Found affected Android projects: $affected_android_projects"
 
   for project in $affected_android_projects; do
-    project_root=$(yarn nx show project "$project" | jq -r ".root")
+    project_root=$(get_package_dir "$project")
     setup_android_apps_steps+="
     - chiubaka/setup-android-app:
         app-dir: $project_root"
@@ -129,8 +158,8 @@ fi
 declare -A xcode_versions_map
 
 for project in $all_ios_projects; do
-  project_root=$(yarn nx show project "$project" | jq -r ".root")
-  project_xcode_version=$(cat "$project_root"/.xcode-version)
+  project_root=$(get_package_dir "$project")
+  project_xcode_version=$(cat "$MONOREPO_ROOT/$project_root"/.xcode-version)
   xcode_versions_map[$project_xcode_version]=0
 done
 
@@ -149,8 +178,8 @@ else
 fi
 
 for project in $all_react_native_projects; do
-  project_root=$(yarn nx show project "$project" | jq -r ".root")
-  fastlane_env=$project_root/fastlane/Fastlane.env
+  project_root=$(get_package_dir "$project")
+  fastlane_env=$MONOREPO_ROOT/$project_root/fastlane/Fastlane.env
 
   if [ -n "$IOS_SIMULATOR_DEFAULT_DEVICE" ] || [ -n "$IOS_SIMULATOR_DEFAULT_OS" ]; then
     echo "WARNING: Fastlane environment variables have already been imported. Values will be overwritten and only the last imported set of values will be used. This may occur if you have multiple React Native projects and muliple Fastlane.env files."

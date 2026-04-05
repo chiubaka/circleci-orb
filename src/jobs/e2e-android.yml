@@ -28,10 +28,6 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to initialize submodules included in this repository.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   platform-version:
     description: The platform version to use for the AVD
     type: string
@@ -64,10 +60,6 @@ parameters:
     type: steps
     default: []
     description: Additional steps to run as part of setup for this job
-  yarn-berry:
-    type: boolean
-    default: true
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - when:
@@ -81,15 +73,13 @@ steps:
       app-dir: << parameters.app-dir >>
       build-tools-version: << parameters.build-tools-version >>
       init-submodules: << parameters.init-submodules >>
-      nx-affected: << parameters.nx-affected >>
       platform-version: << parameters.platform-version >>
       primary-branch: << parameters.primary-branch >>
       with-emulator: true
-      yarn-berry: << parameters.yarn-berry >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
   - run:
       name: Run E2E tests
       working_directory: << parameters.app-dir >>
-      command: yarn run e2e:android:ci
+      command: pnpm run e2e:android:ci
   - steps: << parameters.cleanup-steps >>

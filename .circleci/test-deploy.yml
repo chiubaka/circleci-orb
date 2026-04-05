@@ -7,12 +7,9 @@ test-parameters:
   generated-typescript-package: &generated-typescript-package-test-parameters
     init-submodules: true
     app-dir: ~/project/samples/generated-typescript-package
-    yarn-berry: true
-    nx-affected: false
   genesis: &genesis-test-parameters
     init-submodules: true
     app-dir: ~/project/samples/genesis
-    yarn-berry: true
   setup-and-cleanup: &setup-and-cleanup-test-parameters
     setup-steps:
       - run:
@@ -32,8 +29,6 @@ jobs:
     executor: chiubaka/android
     steps:
       - chiubaka/setup-android:
-          # Need a real example repo in order to run the Nx commands
-          setup-nx: false
           with-emulator: true
           << : *genesis-test-parameters
   # macos-command-tests:

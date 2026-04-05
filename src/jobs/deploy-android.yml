@@ -18,10 +18,6 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to initialize submodules included in this repository.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   primary-branch:
     type: string
     default: "master"
@@ -50,17 +46,11 @@ parameters:
     type: steps
     default: []
     description: Additional steps to run as part of setup for this job
-  yarn-berry:
-    type: boolean
-    default: true
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - setup-android:
       init-submodules: << parameters.init-submodules >>
       app-dir: << parameters.app-dir >>
-      yarn-berry: << parameters.yarn-berry >>
-      nx-affected: << parameters.nx-affected >>
       primary-branch: << parameters.primary-branch >>
   - steps: << parameters.setup-apps-steps >>
   - steps: << parameters.setup-steps >>
