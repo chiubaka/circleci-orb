@@ -2,7 +2,7 @@ setup() {
   load "helpers/setup"
   _setup
 
-  NPMRC_PATH="$TEST_DIR"/examples/.npmrc
+  NPMRC_PATH="$TEST_DIR"/fixtures/.npmrc
 }
 
 teardown() {

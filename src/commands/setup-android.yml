@@ -18,10 +18,6 @@ parameters:
     type: boolean
     default: false
     description: Whether or not to initialize submodules included in this repository.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   platform-version:
     description: The platform version to use for the AVD
     type: string
@@ -30,18 +26,10 @@ parameters:
     type: string
     default: "master"
     description: The name of the primary branch.
-  setup-nx:
-    description: Whether or not to run Nx-specific setup commands
-    type: boolean
-    default: true
   with-emulator:
     description: Whether or not to setup this Android executor with an emulator for UI testing
     type: boolean
     default: false
-  yarn-berry:
-    type: boolean
-    default: true
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - checkout
@@ -56,10 +44,7 @@ steps:
       app-dir: << parameters.app-dir >>
       checkout: false
       init-submodules: << parameters.init-submodules >>
-      nx-affected: << parameters.nx-affected >>
       primary-branch: << parameters.primary-branch >>
-      setup-nx: << parameters.setup-nx >>
-      yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.with-emulator >>
       steps:

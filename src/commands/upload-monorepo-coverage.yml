@@ -6,6 +6,12 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
+  monorepo-root:
+    type: string
+    default: "."
+    description: >
+      Directory containing the pnpm workspace root (where `pnpm ls -r` should run).
+      Use when app-dir points at a nested package but the workspace lives at the repo root.
   coverage-dir:
     type: string
     default: reports/coverage
@@ -24,9 +30,6 @@ parameters:
     description: Any extra flags as provided by the bash uploader (e.g. `-v -Z`).
 
 steps:
-  - write-shared-script:
-      script-name: parseNxProjects.sh
-      script: << include(scripts/parseNxProjects.sh) >>
   - run:
       name: Download Codecov Uploader
       command: << include(scripts/downloadCodecovUploader.sh) >>
@@ -42,9 +45,9 @@ steps:
               VERSION: << parameters.version >>
   - run:
       name: Upload Monorepo Coverage Results
+      working_directory: << parameters.monorepo-root >>
       command: << include(scripts/uploadMonorepoCoverageResults.sh) >>
       environment:
-        WORKSPACE_JSON: << parameters.app-dir >>/workspace.json
+        MONOREPO_ROOT: << parameters.monorepo-root >>
         COVERAGE_DIR: << parameters.app-dir >>/<< parameters.coverage-dir >>
         XTRA_ARGS: << parameters.xtra_args >>
-        PARSE_NX_PROJECTS_SCRIPT: ../@chiubaka/circleci-orb/scripts/parseNxProjects.sh

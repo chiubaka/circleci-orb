@@ -13,6 +13,5 @@ orbs:
   continuation: circleci/continuation@1.0.0
   docker: circleci/docker@2.1.3
   macos: circleci/macos@2.4.0
-  node: circleci/node@5.0.2
-  nx: nrwl/nx@1.5.1
+  node: circleci/node@5.3.0
   ruby: circleci/ruby@2.1.0

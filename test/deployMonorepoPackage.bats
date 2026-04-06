@@ -3,11 +3,11 @@ setup() {
   _setup
 }
 
-@test "calls yarn deploy:ci for the correct package" {
+@test "calls pnpm deploy:ci for the correct package" {
   mock=$(mock_create)
 
   PARSE_MONOREPO_DEPLOY_TAG_SCRIPT="$PROJECT_ROOT/src/scripts/parseMonorepoDeployTag.sh" \
-  YARN_BINARY="${mock}" \
+  PNPM_BINARY="${mock}" \
   CIRCLE_TAG="nx-plugin-v0.0.1" \
   run deployMonorepoPackage.sh
 
@@ -20,7 +20,7 @@ setup() {
   mock=$(mock_create)
 
   PARSE_MONOREPO_DEPLOY_TAG_SCRIPT="$PROJECT_ROOT/src/scripts/parseMonorepoDeployTag.sh" \
-  YARN_BINARY="${mock}" \
+  PNPM_BINARY="${mock}" \
   CIRCLE_TAG="nx-plugin-v0.0.1" \
   DRY_RUN=true \
   run deployMonorepoPackage.sh

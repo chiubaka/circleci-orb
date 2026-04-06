@@ -14,18 +14,10 @@ parameters:
     type: string
     default: "."
     description: Path to the directory containing your package.json file. Not needed if package.json lives in the root.
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   primary-branch:
     type: string
     default: "master"
     description: The name of the primary branch.
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - when:
@@ -43,32 +35,13 @@ steps:
         - run:
             name: Initialize submodules
             command: git submodule update --init --recursive
-  - when:
-      condition: << parameters.nx-affected >>
-      steps:
-        - nx/set-shas:
-            main-branch-name: << parameters.primary-branch >>
-  - when:
-      condition: << parameters.nx-affected >>
-      steps:
-        - run:
-            name: Clean-up Nx set SHAs
-            working_directory: << parameters.app-dir >>
-            command: rm -f index.js
-  - when:
-      condition: << parameters.yarn-berry >>
-      steps:
-        - node/install-packages:
-            check-cache: always
-            pkg-manager: yarn-berry
-            with-cache: true
-            app-dir: << parameters.app-dir >>
-  - when:
-      condition:
-        not: << parameters.yarn-berry >>
-      steps:
-        - node/install-packages:
-            check-cache: always
-            pkg-manager: yarn
-            with-cache: true
-            app-dir: << parameters.app-dir >>
+  - run:
+      name: Set Turbo SCM base for affected detection
+      command: << include(scripts/setTurboScmBase.sh) >>
+      environment:
+        PRIMARY_BRANCH: << parameters.primary-branch >>
+  - node/install-packages:
+      check-cache: always
+      pkg-manager: pnpm
+      with-cache: true
+      app-dir: << parameters.app-dir >>

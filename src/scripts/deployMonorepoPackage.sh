@@ -6,11 +6,11 @@ source "$PARSE_MONOREPO_DEPLOY_TAG_SCRIPT"
 
 package_name="$(parse_package_name "$CIRCLE_TAG")"
 
-yarn=${YARN_BINARY:-"yarn"}
+pnpm_bin=${PNPM_BINARY:-"pnpm"}
 deploy_script=${DEPLOY_SCRIPT:-"deploy:ci"}
 
 if [ "$DRY_RUN" = true ]; then
-  $yarn "$deploy_script" "$package_name" --dry-run
+  $pnpm_bin "$deploy_script" "$package_name" --dry-run
 else
-  $yarn "$deploy_script" "$package_name"
+  $pnpm_bin "$deploy_script" "$package_name"
 fi

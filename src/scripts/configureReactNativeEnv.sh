@@ -2,7 +2,7 @@
 set -e
 
 {
-  echo "export PATH=\"$PATH:/usr/local/opt/node@$NODE_VERSION/bin:~/.yarn/bin:~/project/node_modules/.bin:~/project/example/node_modules/.bin\""
+  echo "export PATH=\"$PATH:/usr/local/opt/node@$NODE_VERSION/bin:~/project/node_modules/.bin:~/project/example/node_modules/.bin\""
   echo "export ANDROID_HOME=\"/usr/local/share/android-commandlinetools\""
   echo "export ANDROID_SDK_ROOT=\"/usr/local/share/android-commandlinetools\""
   echo "export PATH=\"$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/platform-tools:$PATH\""

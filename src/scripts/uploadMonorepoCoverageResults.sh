@@ -7,23 +7,28 @@ unset NODE_OPTIONS
 # shellcheck source=/dev/null
 source "$BASH_ENV"
 
-# shellcheck disable=1090,1091
-source "$PARSE_NX_PROJECTS_SCRIPT"
+monorepo_root=${MONOREPO_ROOT:-$(pwd)}
+cd "$monorepo_root" || {
+  echo "ERROR: MONOREPO_ROOT is not a directory: $monorepo_root" >&2
+  exit 1
+}
+monorepo_root=$(pwd)
 
-declare -A projects
-parse_nx_projects "$WORKSPACE_JSON" projects
+pnpm_bin=${PNPM_BINARY:-"pnpm"}
 
-[ -n "$XTRA_ARGS" ] && \
-  set - "${@}" "$XTRA_ARGS"
+xtra_args=()
+if [ -n "${XTRA_ARGS:-}" ]; then
+  # shellcheck disable=SC2206
+  read -r -a xtra_args <<< "$XTRA_ARGS"
+fi
 
-for project_name in "${!projects[@]}"
-do
-  project_path=${projects[$project_name]}
-  project_coverage_dir="$COVERAGE_DIR/$project_path"
+while IFS=$'\t' read -r pkg_name pkg_abs_path; do
+  pkg_rel_path="${pkg_abs_path#"$monorepo_root/"}"
+  project_coverage_dir="$COVERAGE_DIR/$pkg_rel_path"
 
   if [ ! -d "$project_coverage_dir" ]
   then
-    echo "Skipping coverage upload for $project_name because $project_coverage_dir does not exist"
+    echo "Skipping coverage upload for $pkg_name because $project_coverage_dir does not exist"
     continue
   fi
 
@@ -31,6 +36,7 @@ do
     -t "$CODECOV_TOKEN" \
     -n "$CIRCLE_BUILD_NUM" \
     --dir "$project_coverage_dir" \
-    -F "$project_name" \
+    -F "$pkg_name" \
+    "${xtra_args[@]}" \
     "$@"
-done
+done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')

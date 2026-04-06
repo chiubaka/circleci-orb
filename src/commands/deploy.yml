@@ -42,7 +42,7 @@ steps:
               - run:
                   name: << parameters.task-name >> (Dry Run)
                   working_directory: << parameters.app-dir >>
-                  command: yarn deploy:ci --dry-run
+                  command: pnpm deploy:ci --dry-run
         - when:
             condition:
               not: << parameters.dry-run >>
@@ -50,4 +50,4 @@ steps:
               - run:
                   name: << parameters.task-name >>
                   working_directory: << parameters.app-dir >>
-                  command: yarn deploy:ci
+                  command: pnpm deploy:ci

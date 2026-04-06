@@ -1,0 +1,10 @@
+version: 2.1
+
+# JS CI template — no React Native projects
+orbs:
+  chiubaka: chiubaka/circleci-orb@<<pipeline.parameters.dev-orb-version>>
+
+workflows:
+  ci:
+    jobs:
+      - chiubaka/js-ci

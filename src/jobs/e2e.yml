@@ -38,10 +38,6 @@ parameters:
     type: boolean
     default: true
     description: Whether or not this repo is a monorepo
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   primary-branch:
     type: string
     default: "master"
@@ -66,10 +62,6 @@ parameters:
     type: steps
     default: []
     description: Steps to run to verify that docker services are all ready. Pair with wait-for-docker-service command.
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - when:
@@ -79,9 +71,7 @@ steps:
   - setup:
       app-dir: << parameters.app-dir >>
       init-submodules: << parameters.init-submodules >>
-      nx-affected: << parameters.nx-affected >>
       primary-branch: << parameters.primary-branch >>
-      yarn-berry: << parameters.yarn-berry >>
   - steps: << parameters.setup-steps >>
   - when:
       condition: << parameters.docker-compose >>
@@ -99,7 +89,7 @@ steps:
   - run:
       name: Run E2E tests
       working_directory: << parameters.app-dir >>
-      command: yarn run e2e:ci
+      command: pnpm run e2e:ci
   - when:
       condition:
         not: << parameters.monorepo >>

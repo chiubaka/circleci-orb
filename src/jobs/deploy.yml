@@ -38,10 +38,6 @@ parameters:
     type: boolean
     default: true
     description: Whether or not this is a monorepo
-  nx-affected:
-    type: boolean
-    default: true
-    description: Whether or not to set up environment variables for `nx affected`.
   primary-branch:
     type: string
     default: "master"
@@ -66,18 +62,12 @@ parameters:
     type: string
     default: Deploy
     description: The name of this deploy task to display in the CircleCI UI
-  yarn-berry:
-    type: boolean
-    default: false
-    description: Whether or not to use Yarn berry for package management. Defaults to Yarn v1.
 
 steps:
   - setup:
       app-dir: << parameters.app-dir >>
       init-submodules: << parameters.init-submodules >>
-      nx-affected: << parameters.nx-affected >>
       primary-branch: << parameters.primary-branch >>
-      yarn-berry: << parameters.yarn-berry >>
   - when:
       condition: << parameters.configure-git-user >>
       steps:
@@ -89,9 +79,6 @@ steps:
   - run:
       name: Authenticate with NPM
       command: << include(scripts/authenticateWithNpm.sh) >>
-  - run:
-      name: Authenticate with Yarn
-      command: << include(scripts/authenticateWithYarn.sh) >>
   - deploy:
       app-dir: << parameters.app-dir >>
       dry-run: << parameters.dry-run >>
