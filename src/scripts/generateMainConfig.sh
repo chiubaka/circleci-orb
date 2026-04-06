@@ -1,6 +1,12 @@
 #! /usr/bin/env bash
 
 MONOREPO_ROOT="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
+if [ ! -d "$MONOREPO_ROOT" ]; then
+  echo "ERROR: MONOREPO_ROOT is not a directory: $MONOREPO_ROOT" >&2
+  exit 1
+fi
+cd "$MONOREPO_ROOT" || exit 1
+
 CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 
 # Make workspace-local binaries (e.g. turbo) available in this script's PATH.
@@ -21,6 +27,9 @@ print_generated_files() {
 # On the primary branch, run all packages. On other branches, restrict to
 # packages that changed relative to the merge-base with the primary branch.
 if [ "$CIRCLE_BRANCH" == "$PRIMARY_BRANCH" ]; then
+  affected_filter=""
+elif [ -z "${TURBO_SCM_BASE:-}" ]; then
+  echo "WARNING: TURBO_SCM_BASE is unset on non-primary branch; running turbo without affected filter (all packages). Ensure setTurboScmBase ran successfully." >&2
   affected_filter=""
 else
   affected_filter="--filter=[${TURBO_SCM_BASE}...HEAD]"
@@ -55,6 +64,10 @@ get_package_dir() {
   local pkg_name=$1
   local abs_path
   abs_path=$(echo "$all_packages_json" | jq -r --arg name "$pkg_name" '.[] | select(.name == $name) | .path' | head -1)
+  if [ -z "$abs_path" ] || [ "$abs_path" = "null" ]; then
+    echo "ERROR: could not resolve workspace path for package \"$pkg_name\" (pnpm ls)." >&2
+    exit 1
+  fi
   echo "${abs_path#"$MONOREPO_ROOT/"}"
 }
 

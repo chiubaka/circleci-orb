@@ -8,10 +8,19 @@ unset NODE_OPTIONS
 source "$BASH_ENV"
 
 monorepo_root=${MONOREPO_ROOT:-$(pwd)}
+cd "$monorepo_root" || {
+  echo "ERROR: MONOREPO_ROOT is not a directory: $monorepo_root" >&2
+  exit 1
+}
+monorepo_root=$(pwd)
+
 pnpm_bin=${PNPM_BINARY:-"pnpm"}
 
-[ -n "$XTRA_ARGS" ] && \
-  set - "${@}" "$XTRA_ARGS"
+xtra_args=()
+if [ -n "${XTRA_ARGS:-}" ]; then
+  # shellcheck disable=SC2206
+  read -r -a xtra_args <<< "$XTRA_ARGS"
+fi
 
 while IFS=$'\t' read -r pkg_name pkg_abs_path; do
   pkg_rel_path="${pkg_abs_path#"$monorepo_root/"}"
@@ -28,5 +37,6 @@ while IFS=$'\t' read -r pkg_name pkg_abs_path; do
     -n "$CIRCLE_BUILD_NUM" \
     --dir "$project_coverage_dir" \
     -F "$pkg_name" \
+    "${xtra_args[@]}" \
     "$@"
 done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')
