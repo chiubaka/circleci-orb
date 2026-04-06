@@ -23,6 +23,10 @@ workflows:
           filters: *filters
           path: ./test
           setup-steps:
+            # cimg/base:stable (bats orb default) does not include gettext-base; generateMainConfig.sh needs envsubst.
+            - run:
+                name: Install gettext (envsubst)
+                command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
             - node/install
             - run:
                 name: Enable pnpm
