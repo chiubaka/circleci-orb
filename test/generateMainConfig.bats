@@ -25,7 +25,7 @@ teardown() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -39,7 +39,7 @@ teardown() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -53,7 +53,7 @@ teardown() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -101,7 +101,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -116,7 +116,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -132,7 +132,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -153,7 +153,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -168,7 +168,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
@@ -184,7 +184,7 @@ setup_ios_fixture() {
   CIRCLE_WORKING_DIRECTORY="$MONOREPO_ROOT" \
   PRIMARY_BRANCH=main \
   CIRCLE_BRANCH=main \
-  CIRCLE_TAG= \
+  CIRCLE_TAG='' \
   TURBO_BINARY="${turbo_mock}" \
   PNPM_BINARY="${pnpm_mock}" \
   run generateMainConfig.sh
