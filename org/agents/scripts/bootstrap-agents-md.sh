@@ -71,8 +71,12 @@ if [[ ! -f "$ORG_SOURCE" ]]; then
 fi
 
 tmp_rendered="$(mktemp)"
+tmp_next=""
 cleanup() {
   rm -f "$tmp_rendered"
+  if [[ -n "${tmp_next:-}" ]]; then
+    rm -f "$tmp_next"
+  fi
 }
 trap cleanup EXIT
 
@@ -100,10 +104,6 @@ if [[ ! -f "$TARGET_AGENTS" ]]; then
 fi
 
 tmp_next="$(mktemp)"
-cleanup() {
-  rm -f "$tmp_rendered" "$tmp_next"
-}
-trap cleanup EXIT
 
 if ! awk -v orgStart="$ORG_START" -v orgEnd="$ORG_END" -v repoStart="$REPO_START" -v repoEnd="$REPO_END" '
 BEGIN {

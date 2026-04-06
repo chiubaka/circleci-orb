@@ -25,6 +25,9 @@ workflows:
           setup-steps:
             - node/install
             - run:
+                name: Enable pnpm
+                command: corepack enable && corepack prepare pnpm@10.0.0 --activate
+            - run:
                 name: Install test dependencies
                 command: pnpm install --frozen-lockfile
       - shellcheck/check:
