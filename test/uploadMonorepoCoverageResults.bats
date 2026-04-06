@@ -2,7 +2,7 @@ setup() {
   load "helpers/setup"
   _setup
 
-  COVERAGE_DIR="$TEST_DIR"/examples/coverage
+  COVERAGE_DIR="$TEST_DIR"/fixtures/coverage
   mkdir -p "$COVERAGE_DIR"/packages/nx-plugin
   mkdir -p "$COVERAGE_DIR"/e2e/nx-plugin-e2e
 
@@ -19,7 +19,7 @@ teardown() {
 @test "uploads one coverage report to Codecov per monorepo package" {
   codecov_mock=$(mock_create)
 
-  BASH_ENV=$TEST_DIR/examples/.bash_env \
+  BASH_ENV=$TEST_DIR/fixtures/.bash_env \
   CODECOV_BINARY="${codecov_mock}" \
   CODECOV_TOKEN=test-token \
   CIRCLE_BUILD_NUM=32 \
@@ -40,7 +40,7 @@ teardown() {
 
   codecov_mock=$(mock_create)
 
-  BASH_ENV=$TEST_DIR/examples/.bash_env \
+  BASH_ENV=$TEST_DIR/fixtures/.bash_env \
   CODECOV_BINARY="${codecov_mock}" \
   CODECOV_TOKEN=test-token \
   CIRCLE_BUILD_NUM=32 \
@@ -60,7 +60,7 @@ teardown() {
   codecov_mock=$(mock_create)
   mock_set_status "${codecov_mock}" 1 2
 
-  BASH_ENV=$TEST_DIR/examples/.bash_env \
+  BASH_ENV=$TEST_DIR/fixtures/.bash_env \
   CODECOV_BINARY="${codecov_mock}" \
   CODECOV_TOKEN=test-token \
   CIRCLE_BUILD_NUM=32 \

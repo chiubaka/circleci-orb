@@ -2,7 +2,7 @@ setup() {
   load "helpers/setup"
   _setup
 
-  SCRIPT_DIR="$TEST_DIR"/examples/@chiubaka/circleci-orb/scripts
+  SCRIPT_DIR="$TEST_DIR"/fixtures/@chiubaka/circleci-orb/scripts
   SCRIPT_PATH="$SCRIPT_DIR"/test.sh
 
   SCRIPT="echo foobar" SCRIPT_DIR=$SCRIPT_DIR SCRIPT_NAME=test.sh run writeSharedScript.sh

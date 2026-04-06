@@ -6,6 +6,9 @@ CIRCLECI_ROOT="$MONOREPO_ROOT/.circleci"
 # Make workspace-local binaries (e.g. turbo) available in this script's PATH.
 export PATH="$MONOREPO_ROOT/node_modules/.bin:$PATH"
 
+pnpm_bin=${PNPM_BINARY:-"pnpm"}
+turbo_bin=${TURBO_BINARY:-"turbo"}
+
 print_generated_files() {
   echo "Contents of $CIRCLECI_ROOT/main.yml:"
   cat "$CIRCLECI_ROOT/main.yml"
@@ -25,8 +28,8 @@ fi
 
 # Get all packages with run:ios / run:android scripts using turbo dry-run.
 # turbo discovers packages by scanning for the task in package.json scripts.
-all_ios_projects_json=$(turbo run run:ios --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
-all_android_projects_json=$(turbo run run:android --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
+all_ios_projects_json=$($turbo_bin run run:ios --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
+all_android_projects_json=$($turbo_bin run run:android --dry-run=json 2>/dev/null || echo '{"tasks":[]}')
 
 all_ios_projects=$(echo "$all_ios_projects_json" | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 all_android_projects=$(echo "$all_android_projects_json" | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
@@ -46,7 +49,7 @@ done
 all_react_native_projects=${!all_react_native_projects_map[*]}
 
 # Get all workspace package paths for looking up directories
-all_packages_json=$(pnpm ls --json -r 2>/dev/null || echo '[]')
+all_packages_json=$($pnpm_bin ls --json -r 2>/dev/null || echo '[]')
 
 get_package_dir() {
   local pkg_name=$1
@@ -72,17 +75,17 @@ echo "Detected React Native projects. Using React Native CI template."
 
 # Determine which platform-specific jobs are needed
 # shellcheck disable=SC2086
-[ -n "$(turbo run build:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_ios=true || build_ios=false
+[ -n "$($turbo_bin run build:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_ios=true || build_ios=false
 # shellcheck disable=SC2086
-[ -n "$(turbo run build:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_android=true || build_android=false
+[ -n "$($turbo_bin run build:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && build_android=true || build_android=false
 # shellcheck disable=SC2086
-[ -n "$(turbo run test:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_ios=true || test_ios=false
+[ -n "$($turbo_bin run test:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_ios=true || test_ios=false
 # shellcheck disable=SC2086
-[ -n "$(turbo run test:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_android=true || test_android=false
+[ -n "$($turbo_bin run test:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && test_android=true || test_android=false
 # shellcheck disable=SC2086
-[ -n "$(turbo run e2e:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_ios=true || e2e_ios=false
+[ -n "$($turbo_bin run e2e:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_ios=true || e2e_ios=false
 # shellcheck disable=SC2086
-[ -n "$(turbo run e2e:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_android=true || e2e_android=false
+[ -n "$($turbo_bin run e2e:android $affected_filter --dry-run=json 2>/dev/null | jq -r '.tasks[]' 2>/dev/null)" ] && e2e_android=true || e2e_android=false
 
 ios_semver_regex="/^(${all_ios_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
 android_semver_regex="/^(${all_android_projects// /|})-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/"
@@ -107,7 +110,7 @@ if [ -n "$ios_tag_match" ]; then
   e2e_ios=true
 else
   # shellcheck disable=SC2086
-  affected_ios_projects=$(turbo run run:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
+  affected_ios_projects=$($turbo_bin run run:ios $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 fi
 
 if [ -n "$android_tag_match" ]; then
@@ -120,7 +123,7 @@ if [ -n "$android_tag_match" ]; then
   e2e_android=true
 else
   # shellcheck disable=SC2086
-  affected_android_projects=$(turbo run run:android $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
+  affected_android_projects=$($turbo_bin run run:android $affected_filter --dry-run=json 2>/dev/null | jq -r '[.tasks[].package] | unique | .[]' 2>/dev/null | tr '\n' ' ' | xargs)
 fi
 
 setup_ios_apps_steps=""

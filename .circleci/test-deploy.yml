@@ -4,12 +4,8 @@ orbs:
   orb-tools: circleci/orb-tools@11.1
 
 test-parameters:
-  generated-typescript-package: &generated-typescript-package-test-parameters
-    init-submodules: true
-    app-dir: ~/project/samples/generated-typescript-package
-  genesis: &genesis-test-parameters
-    init-submodules: true
-    app-dir: ~/project/samples/genesis
+  pnpm-turbo-monorepo: &pnpm-turbo-monorepo-test-parameters
+    app-dir: ~/project/test/fixtures/generateMainConfig
   setup-and-cleanup: &setup-and-cleanup-test-parameters
     setup-steps:
       - run:
@@ -30,25 +26,21 @@ jobs:
     steps:
       - chiubaka/setup-android:
           with-emulator: true
-          << : *genesis-test-parameters
+          << : *pnpm-turbo-monorepo-test-parameters
   # macos-command-tests:
   #   executor:
   #     name: chiubaka/macos
   #   steps:
   #     - chiubaka/setup-macos:
-  #         # Need a real example repo in order to run the Nx commands
-  #         setup-nx: false
   #         with-simulator: true
   #         simulator-device: iPhone 14
   #         simulator-version: "16.4"
-  #         <<: *genesis-test-parameters
+  #         <<: *pnpm-turbo-monorepo-test-parameters
   command-tests:
     executor: chiubaka/docker-node
     steps:
       - chiubaka/setup:
-          <<: *generated-typescript-package-test-parameters
-      - chiubaka/setup:
-          <<: *genesis-test-parameters
+          <<: *pnpm-turbo-monorepo-test-parameters
 
 workflows:
   test-publish:
