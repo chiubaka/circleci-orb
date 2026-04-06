@@ -2,7 +2,7 @@ version: 2.1
 setup: true
 orbs:
   bats: circleci/bats@1.0.0
-  node: circleci/node@5.0.2
+  node: circleci/node@5.2.0
   orb-tools: circleci/orb-tools@11.1
   shellcheck: circleci/shellcheck@3.1
 
@@ -24,8 +24,9 @@ workflows:
           path: ./test
           setup-steps:
             - node/install
-            - node/install-packages:
-                pkg-manager: pnpm
+            - run:
+                name: Install test dependencies
+                command: pnpm install --frozen-lockfile
       - shellcheck/check:
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
           filters: *filters

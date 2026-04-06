@@ -10,7 +10,7 @@
     "lint": "pnpm lint:scripts && pnpm lint:yml",
     "lint:yml": "yamllint ./src",
     "lint:scripts": "shellcheck src/scripts/*.sh test/*.bats test/helpers/*.bash",
-    "build": "circleci local execute orb-tools/pack",
+    "build": "circleci local execute --skip-checkout orb-tools/pack",
     "prepare": "husky install",
     "test": "bats test"
   },
@@ -38,5 +38,8 @@
     "husky": "^8.0.1",
     "shellcheck": "^1.1.0"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["shellcheck"]
+  }
 }

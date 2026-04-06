@@ -2,7 +2,6 @@ setup() {
   load "helpers/setup"
   _setup
 
-  MONOREPO_ROOT="$TEST_DIR"
   COVERAGE_DIR="$TEST_DIR"/examples/coverage
   mkdir -p "$COVERAGE_DIR"/packages/nx-plugin
   mkdir -p "$COVERAGE_DIR"/e2e/nx-plugin-e2e
