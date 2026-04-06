@@ -233,13 +233,13 @@ Examples:
 **Allowed** (illustrative `~/` usage inside one client package per [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md)):
 
 ```ts
-import { UserAvatar, UserSummaryCard } from '~/users';
+import { UserAvatar, UserSummaryCard } from "~/users";
 ```
 
 **Not allowed:**
 
 ```ts
-import { InternalUserRow } from '~/users/presentation/components/InternalUserRow';
+import { InternalUserRow } from "~/users/presentation/components/InternalUserRow";
 ```
 
 **Cross-package** consumption uses **`@scope/pkg`** public APIs, not `~/` paths into another package’s filesystem.
@@ -478,7 +478,7 @@ invoices/presentation/components/InvoiceStatusBadge.tsx
 
 ```ts
 // invoices/application/InvoicesClient.ts
-import type { Invoice } from '~/invoices/domain';
+import type { Invoice } from "~/invoices/domain";
 
 export interface InvoicesClient {
   getInvoiceDetail(invoiceId: string): Promise<Invoice | null>;
@@ -488,8 +488,8 @@ export interface InvoicesClient {
 
 ```ts
 // invoices/application/InvoicesService.ts
-import { canArchiveInvoice } from '~/invoices/domain';
-import type { InvoicesClient } from './InvoicesClient';
+import { canArchiveInvoice } from "~/invoices/domain";
+import type { InvoicesClient } from "./InvoicesClient";
 
 export class InvoicesService {
   public constructor(private readonly invoicesClient: InvoicesClient) {}
@@ -502,11 +502,11 @@ export class InvoicesService {
     const invoice = await this.invoicesClient.getInvoiceDetail(input.invoiceId);
 
     if (!invoice) {
-      throw new Error('Invoice not found.');
+      throw new Error("Invoice not found.");
     }
 
     if (!canArchiveInvoice(invoice)) {
-      throw new Error('Invoice cannot be archived.');
+      throw new Error("Invoice cannot be archived.");
     }
 
     await this.invoicesClient.archiveInvoice(invoice.id);
@@ -518,9 +518,9 @@ export class InvoicesService {
 
 ```tsx
 // invoices/presentation/context/InvoicesProvider.tsx
-import { createContext, useMemo, type ReactNode } from 'react';
-import { InvoicesService } from '~/invoices/application';
-import { RestApiInvoicesClient } from '~/invoices/infrastructure';
+import { createContext, useMemo, type ReactNode } from "react";
+import { InvoicesService } from "~/invoices/application";
+import { RestApiInvoicesClient } from "~/invoices/infrastructure";
 
 export const InvoicesContext = createContext<InvoicesService | null>(null);
 
@@ -544,14 +544,14 @@ export function InvoicesProvider({ children }: InvoicesProviderProps) {
 
 ```ts
 // invoices/presentation/hooks/useInvoices.ts
-import { useContext } from 'react';
-import { InvoicesContext } from '../context/InvoicesContext';
+import { useContext } from "react";
+import { InvoicesContext } from "../context/InvoicesContext";
 
 export function useInvoices() {
   const invoicesService = useContext(InvoicesContext);
 
   if (!invoicesService) {
-    throw new Error('useInvoices must be used within an InvoicesProvider.');
+    throw new Error("useInvoices must be used within an InvoicesProvider.");
   }
 
   return invoicesService;
@@ -560,9 +560,9 @@ export function useInvoices() {
 
 ```tsx
 // invoices/presentation/screens/InvoiceDetailScreen.tsx
-import { InvoiceLineItemsTable } from '../components/InvoiceLineItemsTable';
-import { InvoiceStatusBadge } from '../components/InvoiceStatusBadge';
-import { useInvoiceDetail } from '../hooks/useInvoiceDetail';
+import { InvoiceLineItemsTable } from "../components/InvoiceLineItemsTable";
+import { InvoiceStatusBadge } from "../components/InvoiceStatusBadge";
+import { useInvoiceDetail } from "../hooks/useInvoiceDetail";
 
 export function InvoiceDetailScreen() {
   const invoiceDetailQuery = useInvoiceDetail();
@@ -591,10 +591,10 @@ export function InvoiceDetailScreen() {
 
 ```tsx
 // app/presentation/screens/AccountOverviewScreen.tsx
-import { PageHeader } from '~/core';
-import { SignOutButton } from '~/auth';
-import { InvoiceSummaryCard } from '~/invoices';
-import { UserSummaryCard } from '~/users';
+import { PageHeader } from "~/core";
+import { SignOutButton } from "~/auth";
+import { InvoiceSummaryCard } from "~/invoices";
+import { UserSummaryCard } from "~/users";
 
 export function AccountOverviewScreen() {
   return (
@@ -614,30 +614,30 @@ Even when a screen is owned by a responsibility area, route registration stays c
 
 ```tsx
 // app/navigation/routes.tsx
-import { AccountOverviewScreen } from '~/app';
-import { OrganizationOnboardingScreen } from '~/onboarding';
-import { InvoiceDetailScreen, InvoiceListScreen } from '~/invoices';
-import { UserProfileScreen } from '~/users';
+import { AccountOverviewScreen } from "~/app";
+import { OrganizationOnboardingScreen } from "~/onboarding";
+import { InvoiceDetailScreen, InvoiceListScreen } from "~/invoices";
+import { UserProfileScreen } from "~/users";
 
 export const routes = [
   {
-    path: '/account',
+    path: "/account",
     element: <AccountOverviewScreen />,
   },
   {
-    path: '/invoices',
+    path: "/invoices",
     element: <InvoiceListScreen />,
   },
   {
-    path: '/invoices/:invoiceId',
+    path: "/invoices/:invoiceId",
     element: <InvoiceDetailScreen />,
   },
   {
-    path: '/profile',
+    path: "/profile",
     element: <UserProfileScreen />,
   },
   {
-    path: '/onboarding',
+    path: "/onboarding",
     element: <OrganizationOnboardingScreen />,
   },
 ];
@@ -649,25 +649,25 @@ export const routes = [
 
 ```ts
 // users/presentation/index.ts
-export { UsersContext } from './context/UsersContext';
-export { UsersProvider } from './context/UsersProvider';
-export { UserAvatar } from './components/UserAvatar';
-export { UserBadge } from './components/UserBadge';
-export { UserSummaryCard } from './components/UserSummaryCard';
-export { useUsers } from './hooks/useUsers';
-export { useUserProfile } from './hooks/useUserProfile';
-export { useUpdateUserProfile } from './hooks/useUpdateUserProfile';
-export { UserProfileScreen } from './screens/UserProfileScreen';
+export { UsersContext } from "./context/UsersContext";
+export { UsersProvider } from "./context/UsersProvider";
+export { UserAvatar } from "./components/UserAvatar";
+export { UserBadge } from "./components/UserBadge";
+export { UserSummaryCard } from "./components/UserSummaryCard";
+export { useUsers } from "./hooks/useUsers";
+export { useUserProfile } from "./hooks/useUserProfile";
+export { useUpdateUserProfile } from "./hooks/useUpdateUserProfile";
+export { UserProfileScreen } from "./screens/UserProfileScreen";
 ```
 
 **Feature root** re-exports **from layer barrels** (aggregate only what may leave the module):
 
 ```ts
 // users/index.ts
-export type { User, UserProfile } from './domain';
-export { getDisplayName, isInvitableUser } from './domain';
-export { UsersService, UsersClient } from './application';
-export { RestApiUsersClient } from './infrastructure';
+export type { User, UserProfile } from "./domain";
+export { getDisplayName, isInvitableUser } from "./domain";
+export { UsersService, UsersClient } from "./application";
+export { RestApiUsersClient } from "./infrastructure";
 export {
   UsersContext,
   UsersProvider,
@@ -678,7 +678,7 @@ export {
   useUserProfile,
   useUpdateUserProfile,
   UserProfileScreen,
-} from './presentation';
+} from "./presentation";
 ```
 
 Keep this surface **small**; avoid turning the feature root into a full catalog (see [ADR 0008](0008-barrel-files-public-api-boundaries.md)).
@@ -687,7 +687,7 @@ Keep this surface **small**; avoid turning the feature root into a full catalog 
 
 ```tsx
 // invoices/presentation/components/InvoiceOwnerSummary.tsx
-import { UserAvatar } from '~/users';
+import { UserAvatar } from "~/users";
 
 export interface InvoiceOwnerSummaryProps {
   ownerName: string;
