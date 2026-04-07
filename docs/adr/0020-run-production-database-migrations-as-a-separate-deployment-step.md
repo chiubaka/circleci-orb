@@ -85,3 +85,8 @@ Justification: production migrations are operational changes to shared state and
 This ADR is specifically about production expectations. Local development may deliberately optimize for one-command setup. In particular, a root development bootstrap such as `pnpm dev` may bring up local infrastructure and apply migrations before starting watch processes so developers do not have to run a separate migration command by hand.
 
 That local convenience does not change the production rule: migrations in production still belong in an explicit, coordinated deploy or release step rather than application startup or artifact creation.
+
+## Related ADRs
+
+* [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — phased coordinated deploys; migration execution SHOULD be ordered explicitly relative to application artifact rollout
+* [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — promotion tags and manifest-driven deploys
