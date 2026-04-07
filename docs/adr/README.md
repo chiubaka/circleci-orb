@@ -43,6 +43,8 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0029-standardize-on-pnpm.md`
 - `0030-coordinated-release-model-release-manifests-and-promotion-tags.md`
 - `0031-separation-of-artifact-tags-and-environment-promotion-tags.md`
+- `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
+- `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

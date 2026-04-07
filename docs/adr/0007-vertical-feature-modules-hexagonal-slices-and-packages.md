@@ -74,7 +74,7 @@ When a service contract or adapter grows into a distinct capability area, prefer
 
 Within a feature:
 
-- Put business/request/value shapes in `domain/` (for example `chat/domain/ChatRequest`).
+- Put **transport-agnostic** business and value shapes in `domain/`. **HTTP/RPC request and response DTOs** (wire-only envelopes, pagination wrappers, endpoint-specific bodies) belong in **`@<scope>/contracts/*`** or equivalent contract modules per [ADR 0032](0032-monorepo-package-taxonomy-naming-and-domain-contracts.md), not in `domain/`. (The earlier example name `ChatRequest` is misleading if it is really an HTTP body—prefer a domain name in `domain/` and a contract schema for the wire shape.)
 - Keep `application/` focused on use-case orchestration and explicit abstractions (for example a narrow `ConceptExtractor` port file).
 - Group related adapter implementations under one technology bucket when that improves scanability (for example `masteryEvaluation/infrastructure/llm/...` with subfolders by concern).
 
@@ -137,6 +137,7 @@ For readers familiar with NestJS, **feature modules** here are organized in a **
 
 ## More Information
 
+- [ADR 0032](0032-monorepo-package-taxonomy-naming-and-domain-contracts.md) — monorepo **package taxonomy and naming**; shared **`@<scope>/domain`** vs **`@<scope>/contracts/*`** and how that relates to feature-local `domain/`.
 - [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.md) — **superseded** by this ADR for layout; retained for history and for the original DDD naming rationale.
 - [ADR 0005](0005-composition-roots-and-wiring-boundaries.md) — composition roots at **edges**; applies to server host apps wiring backend packages to HTTP adapters.
 - [ADR 0006](0006-consistency-and-extension-for-new-features.md) — extend features by **matching idioms** within this structure unless an exception is documented.
