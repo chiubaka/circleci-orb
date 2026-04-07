@@ -36,6 +36,7 @@ Exact scope strings (`@protectiva/…`, `@l3xo/…`) are **illustrative**; the *
 - **Orchestration:** [ADR 0012](0012-classes-as-primary-responsibility-boundaries.md), [ADR 0013](0013-use-of-classes-vs-module-level-functions-and-interfaces.md).
 - **Frontend layout** (`frontend/core` vs `frontend/react`) and relationship to ADR 0016: [ADR 0033](0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md).
 - **Monorepo tooling** (pnpm, Turborepo): [ADR 0022](0022-standardize-monorepos-to-pnpm-turbo.md).
+- **Private registry and published names:** [ADR 0034](0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md) uses **GitHub Packages** with a single scope **`@chiubaka/*`**. [ADR 0036](0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md) defines **ecosystem-prefixed** published names (`@chiubaka/<ecosystem>-…`). The **`@<scope>/…` and `@<product>/…` patterns** in the tables below remain **logical** roles and layouts; **published** names follow ADR 0036 when artifacts are distributed via that registry.
 
 ### Alignment with ADR 0007 (feature `domain/` vs workspace packages)
 
