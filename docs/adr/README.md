@@ -33,6 +33,18 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0019-vendor-specific-infrastructure-slices.md`
 - `0020-run-production-database-migrations-as-a-separate-deployment-step.md`
 - `0021-code-first-drizzle-schema-and-migrations.md`
+- `0022-standardize-monorepos-to-pnpm-turbo.md`
+- `0023-lockstep-versioning-for-related-package-groups.md`
+- `0024-use-changesets-for-library-monorepos.md`
+- `0025-versioning-plugins-vs-core.md`
+- `0026-use-changesets-for-application-releases.md`
+- `0027-use-single-changesets-workflow-in-hybrid-monorepos.md`
+- `0028-version-only-deployable-artifacts-by-default.md`
+- `0029-standardize-on-pnpm.md`
+- `0030-coordinated-release-model-release-manifests-and-promotion-tags.md`
+- `0031-separation-of-artifact-tags-and-environment-promotion-tags.md`
+- `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
+- `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
