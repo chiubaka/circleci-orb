@@ -144,3 +144,5 @@ It reflects a key distinction:
 * [ADR 0025](0025-versioning-plugins-vs-core.md)
 * [ADR 0026](0026-use-changesets-for-application-releases.md)
 * [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md)
+* [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — coordinated deploys pin immutable **artifact tags** named in the manifest; those tags correspond to versioned deployable artifacts in this policy
+* [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — artifact tags vs environment promotion tags

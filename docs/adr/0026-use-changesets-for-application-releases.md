@@ -108,3 +108,4 @@ This extends the library-side decision to use Changesets with explicit release i
 - See [ADR 0024](0024-use-changesets-for-library-monorepos.md) for the library-side release tooling that already captures explicit intent.
 - See [ADR 0025](0025-versioning-plugins-vs-core.md) for how optional plugins and adapters relate to the core ecosystem surface.
 - See [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) for the unified workflow that keeps application and library release tooling aligned.
+- See [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) and [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) for coordinated multi-artifact deployment orchestration (release manifests and promotion tags). Changesets remain the source of truth for artifact version bumps; manifests pin which immutable artifact tags deploy together.
