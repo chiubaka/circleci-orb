@@ -2,8 +2,6 @@
 status: accepted
 date: 2026-04-07
 decision-makers: Daniel Chiu
-consulted: -
-informed: -
 ---
 
 # ADR 0033: Frontend package split as an application of ADR 0032 and ADR 0016

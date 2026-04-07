@@ -2,8 +2,6 @@
 status: accepted
 date: 2026-04-07
 decision-makers: Daniel Chiu
-consulted: -
-informed: -
 ---
 
 # ADR 0032: Monorepo package taxonomy, naming, and domain vs contract packages
