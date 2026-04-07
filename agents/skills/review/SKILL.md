@@ -1,8 +1,9 @@
 ---
 name: review
 description: >-
-  Checklist-driven code review focused on regressions, architecture boundaries,
-  security, and guidance alignment.
+  Default completion gate: checklist-driven review for regressions, architecture
+  boundaries, security, naming, and guidance alignment. Run before handoff unless
+  the change is trivial.
 ---
 
 # Code review checklist
@@ -13,7 +14,7 @@ Catch quality, consistency, and correctness issues that automated checks miss be
 
 ## When to use this skill
 
-Use after finishing a meaningful code change and before pushing or asking for human review.
+Run by default after any non-trivial code change and **before** you tell the user work is complete, request review, or push. Skip only for trivial edits (typo-only, obvious one-liners). If you ran `pnpm lint` / `pnpm test` but skipped this checklist, the handoff is not done—automation does not cover the same items.
 
 ## Core findings
 
@@ -49,12 +50,15 @@ Use after finishing a meaningful code change and before pushing or asking for hu
 
 ## Style and naming
 
+- [ ] **Test stand-in naming (review-time):** Prefer **mock** terminology in test code (`createFooMock`, `*TestMocks` modules) over “double” naming (`*Double`, `*TestDoubles`). Reserve *double* for prose when you mean the general testing concept.
 - [ ] Prefer full, descriptive names over short abbreviations for variables, parameters, instance fields, and destructured bindings.
 - [ ] Apply that preference consistently across all scopes (local variables, function parameters, and class members) unless a conventional short name is more recognizable within the domain.
 - [ ] When clarifying the guidance, examples such as `dependencies` over `deps`, `llmService` over `llm`, and `configuration` over `config` are helpful; list exceptions explicitly so reviewers can justify departures.
 - [ ] When a module's primary public export is a single PascalCase symbol, prefer matching file basenames (for example `ChatContext.ts`); allow standard exceptions (`index.ts`, tooling/config files, and multi-export modules with no single owner).
 - [ ] Favor self-documenting code via clear naming and decomposition; avoid comments or JSDoc used only to compensate for unclear structure.
 - [ ] Keep existing JSDoc-related lint expectations stable in routine feature work unless a task explicitly changes lint policy.
+- [ ] **UI layout naming (review-time):** Prefer **descriptive** component and hook names over generic **Shell** (`AppLayout`, `RootLayout`, `RouteLayout`, `NavigationDrawer`, `MainContent`, or React Router’s `Layout` / `<Outlet />` vocabulary) unless **Shell** is unavoidable (for example, matching a documented industry term in prose such as PWA “app shell,” not as a default component basename). Generic `Shell` / `AppShell` / `NavigationShell` tends to blur scope and invite junk-drawer components; flag it when a more specific name would clarify what is fixed versus what swaps per route.
+- [ ] **React component decomposition (review-time):** Prefer **single responsibility** per component: one cohesive UI slice or behavior, **one primary reason to change**—similar in spirit to narrow application services. Avoid **monolith** components that cram multiple unrelated concerns into one file (for example mixing route/param resolution, app-wide layout chrome, several unrelated data domains, and large feature markup without seams). Prefer a thin **container** or **layout** that composes hooks and passes narrow props, plus **leaf** presentational components (lists, panels, forms, headers) with explicit names. Flag new or expanded “god” screen components; if an exception is warranted, the review should state why decomposition was deferred.
 
 ## API design and repository consistency
 
