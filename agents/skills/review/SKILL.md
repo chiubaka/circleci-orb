@@ -63,6 +63,7 @@ Run by default after any non-trivial code change and **before** you tell the use
 ## API design and repository consistency
 
 - [ ] For small closed discriminant sets, prefer `enum` or const-object-plus-derived-type over open string unions unless openness is intentional.
+- [ ] Disallow default exports in production modules; prefer named exports to keep API surfaces explicit and refactor-safe.
 
 ## Repository naming and mapping review
 

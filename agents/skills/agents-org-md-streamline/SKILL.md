@@ -40,7 +40,7 @@ If you created or renamed org skills as part of the same task, also run:
 
 Ensure the following file exists:
 
-```
+```text
 org/agents/skills/review/SKILL.md
 ```
 
@@ -194,7 +194,7 @@ If uncertain, prefer moving to review skill and leaving a short org-level handof
 
 Append to:
 
-```
+```text
 org/agents/skills/review/SKILL.md
 ```
 
