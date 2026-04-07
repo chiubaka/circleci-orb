@@ -38,7 +38,7 @@ Keep **transport and wire-format concerns** in a dedicated **API client** layer,
 
 **Avoids:**
 
-- Business rules, Zod validation of *application* DTOs, or mapping from domain models **unless** that mapping is purely “API DTO ↔ JSON” for that provider.
+- Business rules, Zod validation of _application_ DTOs, or mapping from domain models **unless** that mapping is purely “API DTO ↔ JSON” for that provider.
 
 ## Service / adapter layer
 
@@ -65,9 +65,14 @@ Thin adapters are fine: if the port maps 1:1 to one client call, the service may
 ```ts
 // infrastructure/vendor/VendorApiClient.ts
 export class VendorApiClient {
-  constructor(private readonly fetchImpl: typeof fetch, private readonly baseUrl: string) {}
+  constructor(
+    private readonly fetchImpl: typeof fetch,
+    private readonly baseUrl: string,
+  ) {}
 
-  async createWidget(request: { title: string }): Promise<{ id: string; title: string }> {
+  async createWidget(request: {
+    title: string;
+  }): Promise<{ id: string; title: string }> {
     const response = await this.fetchImpl(`${this.baseUrl}/widgets`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -75,7 +80,9 @@ export class VendorApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Vendor API createWidget failed with status ${response.status}`);
+      throw new Error(
+        `Vendor API createWidget failed with status ${response.status}`,
+      );
     }
 
     const json = (await response.json()) as { id: string; title: string };
@@ -87,13 +94,18 @@ export class VendorApiClient {
 export class WidgetService {
   constructor(private readonly vendorClient: VendorApiClient) {}
 
-  async create(command: { name: string }): Promise<{ widgetId: string; displayName: string }> {
-    const apiResult = await this.vendorClient.createWidget({ title: command.name });
+  async create(command: {
+    name: string;
+  }): Promise<{ widgetId: string; displayName: string }> {
+    const apiResult = await this.vendorClient.createWidget({
+      title: command.name,
+    });
     return { widgetId: apiResult.id, displayName: apiResult.title };
   }
 }
 ```
 
 The point of the split:
+
 - `VendorApiClient` owns HTTP details and raw provider DTO shape.
 - `WidgetService` owns app-level command/result shape and business-facing mapping.

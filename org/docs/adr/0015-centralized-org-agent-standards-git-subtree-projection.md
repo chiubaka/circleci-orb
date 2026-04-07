@@ -132,11 +132,11 @@ Exact remote names and branches are a repository concern; the prefix and subtree
 
 Org guidance is split between a subtree-held **authoring source** and a repository-root **consumption file** that agents and editors typically open. Projection from source to root is performed by a **bootstrap script** (name and flags are implementation details; they must satisfy the contract below).
 
-| Role | Path |
-|------|------|
-| Org source of truth | `org/agents/AGENTS.org.md` |
-| Repo-facing file (what agents read) | `AGENTS.md` at repository root |
-| Projection entrypoint | A script under `org/agents/scripts/` that applies org guidance into root `AGENTS.md` |
+| Role                                | Path                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------ |
+| Org source of truth                 | `org/agents/AGENTS.org.md`                                                           |
+| Repo-facing file (what agents read) | `AGENTS.md` at repository root                                                       |
+| Projection entrypoint               | A script under `org/agents/scripts/` that applies org guidance into root `AGENTS.md` |
 
 **Ownership (marker boundaries):**
 

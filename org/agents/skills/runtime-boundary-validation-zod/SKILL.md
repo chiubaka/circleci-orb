@@ -69,7 +69,10 @@ const WidgetSchema = z.object({
   title: z.string(),
 });
 
-export function parseWidgetPayload(raw: unknown): { id: string; title: string } {
+export function parseWidgetPayload(raw: unknown): {
+  id: string;
+  title: string;
+} {
   const parsed = WidgetSchema.safeParse(raw);
   if (!parsed.success) {
     throw new Error("Invalid widget payload at API boundary");

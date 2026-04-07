@@ -22,22 +22,23 @@ The fundamental question is:
 
 ## Decision Drivers
 
-* Explicit, reviewable release intent
-* Support for batched releases across multiple PRs
-* Strong support for monorepo and ecosystem/grouped packages
-* Avoid dependence on perfect commit discipline
-* Keep tooling lightweight and avoid heavy platform coupling
-* Maintain flexibility to adapt release tooling as ecosystems evolve
+- Explicit, reviewable release intent
+- Support for batched releases across multiple PRs
+- Strong support for monorepo and ecosystem/grouped packages
+- Avoid dependence on perfect commit discipline
+- Keep tooling lightweight and avoid heavy platform coupling
+- Maintain flexibility to adapt release tooling as ecosystems evolve
 
 ## Considered Options
 
-* Changesets (explicit change files with release intent)
-* Release Please (release behavior inferred from commit history)
-* semantic-release (commit-history-driven, repo-centric automation)
-* Nx Release (monorepo-aware but tied to Nx platform)
-* Commit-history-driven vs explicit release intent (cross-cutting concern)
+- Changesets (explicit change files with release intent)
+- Release Please (release behavior inferred from commit history)
+- semantic-release (commit-history-driven, repo-centric automation)
+- Nx Release (monorepo-aware but tied to Nx platform)
+- Commit-history-driven vs explicit release intent (cross-cutting concern)
 
 ## Decision Outcome
+
 Chosen option: “Changesets with explicit release intent”.
 
 Justification: Explicit release intent via changesets keeps release decisions visible in every PR, supports ecosystem-level grouping and batched release workflows, decouples release semantics from commit hygiene, and avoids introducing platform dependencies such as Nx. This approach serves Hyperdrive and any other library-oriented monorepo looking for predictable, reviewable releases.
@@ -48,13 +49,13 @@ Justification: Explicit release intent via changesets keeps release decisions vi
 
 Each PR includes a `.changeset` file describing semver impact and changelog content.
 
-* Good, because release intent is explicit and visible during review
-* Good, because batching releases is natural (changesets accumulate)
-* Good, because supports ecosystem-level grouping directly
-* Good, because decouples release semantics from commit messages
-* Good, because handles complex multi-package changes cleanly
-* Bad, because adds workflow overhead (extra files)
-* Bad, because contributors must remember to add changesets
+- Good, because release intent is explicit and visible during review
+- Good, because batching releases is natural (changesets accumulate)
+- Good, because supports ecosystem-level grouping directly
+- Good, because decouples release semantics from commit messages
+- Good, because handles complex multi-package changes cleanly
+- Bad, because adds workflow overhead (extra files)
+- Bad, because contributors must remember to add changesets
 
 👉 Chosen because it provides the most robust and explicit model for complex library-oriented monorepos.
 
@@ -64,13 +65,13 @@ Each PR includes a `.changeset` file describing semver impact and changelog cont
 
 Infers release behavior from Conventional Commit history.
 
-* Good, because reduces PR ceremony (no change files)
-* Good, because integrates well with GitHub release PR workflows
-* Good, because supports monorepos via manifest configuration
-* Bad, because release intent is implicit in commit history
-* Bad, because depends heavily on commit discipline
-* Bad, because squash commits can distort intent
-* Bad, because nuanced release scenarios are harder to express
+- Good, because reduces PR ceremony (no change files)
+- Good, because integrates well with GitHub release PR workflows
+- Good, because supports monorepos via manifest configuration
+- Bad, because release intent is implicit in commit history
+- Bad, because depends heavily on commit discipline
+- Bad, because squash commits can distort intent
+- Bad, because nuanced release scenarios are harder to express
 
 👉 Rejected because implicit release intent is too fragile for complex monorepos.
 
@@ -80,11 +81,11 @@ Infers release behavior from Conventional Commit history.
 
 Fully automated release from commit history.
 
-* Good, because highly automated
-* Good, because minimal manual steps
-* Bad, because assumes repo = single releasable unit
-* Bad, because lacks strong monorepo support
-* Bad, because incompatible with ecosystem grouping model
+- Good, because highly automated
+- Good, because minimal manual steps
+- Bad, because assumes repo = single releasable unit
+- Bad, because lacks strong monorepo support
+- Bad, because incompatible with ecosystem grouping model
 
 👉 Rejected due to poor fit for library-oriented monorepos.
 
@@ -94,11 +95,11 @@ Fully automated release from commit history.
 
 Monorepo-aware release system integrated into Nx.
 
-* Good, because supports release groups and advanced workflows
-* Good, because can unify multiple artifact types
-* Bad, because introduces Nx as a platform dependency
-* Bad, because Nx tends to expand scope beyond initial use
-* Bad, because conflicts with preference for lightweight tooling
+- Good, because supports release groups and advanced workflows
+- Good, because can unify multiple artifact types
+- Bad, because introduces Nx as a platform dependency
+- Bad, because Nx tends to expand scope beyond initial use
+- Bad, because conflicts with preference for lightweight tooling
 
 👉 Rejected due to coupling and platform concerns.
 
@@ -108,12 +109,12 @@ Monorepo-aware release system integrated into Nx.
 
 Use Conventional Commits as the authoritative source of release behavior.
 
-* Good, because reduces explicit metadata
-* Good, because enables automation
-* Bad, because commit messages become overloaded with meaning
-* Bad, because release intent is not directly reviewable in PR diffs
-* Bad, because multi-package and nuanced changes are hard to encode
-* Bad, because errors in commit formatting propagate into releases
+- Good, because reduces explicit metadata
+- Good, because enables automation
+- Bad, because commit messages become overloaded with meaning
+- Bad, because release intent is not directly reviewable in PR diffs
+- Bad, because multi-package and nuanced changes are hard to encode
+- Bad, because errors in commit formatting propagate into releases
 
 👉 Rejected because release intent should be explicit and reviewable.
 
@@ -123,28 +124,28 @@ Use Conventional Commits as the authoritative source of release behavior.
 
 Use explicit files (e.g. changesets) to declare release behavior.
 
-* Good, because release intent is visible and reviewable
-* Good, because supports complex scenarios cleanly
-* Good, because batching is natural and predictable
-* Good, because decouples commit hygiene from release semantics
-* Bad, because adds process overhead
-* Bad, because requires contributor discipline
+- Good, because release intent is visible and reviewable
+- Good, because supports complex scenarios cleanly
+- Good, because batching is natural and predictable
+- Good, because decouples commit hygiene from release semantics
+- Bad, because adds process overhead
+- Bad, because requires contributor discipline
 
 👉 Chosen because it provides clarity and robustness at scale.
 
 ## Consequences
 
-* Release intent is explicitly captured in PRs
-* Contributors must include changesets for releasable changes
-* Releases are batched by consuming accumulated changesets
-* Commit messages (even if Conventional Commits) are not the source of release truth
+- Release intent is explicitly captured in PRs
+- Contributors must include changesets for releasable changes
+- Releases are batched by consuming accumulated changesets
+- Commit messages (even if Conventional Commits) are not the source of release truth
 
 ## Confirmation
 
-* PRs affecting publishable packages include `.changeset` files
-* Release PRs correctly reflect accumulated changesets
-* Version bumps and changelogs align with intended semver behavior
-* Release behavior does not depend on commit message parsing
+- PRs affecting publishable packages include `.changeset` files
+- Release PRs correctly reflect accumulated changesets
+- Version bumps and changelogs align with intended semver behavior
+- Release behavior does not depend on commit message parsing
 
 ## More Information
 
@@ -157,6 +158,6 @@ This separation preserves flexibility and avoids overloading commit messages wit
 
 ## Related ADRs
 
-* [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) – defines the ecosystem grouping policy that informs how release intent is batched.
-* [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) – explains the unified Changesets workflow that connects libraries and applications.
-* [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) – explains how application monorepos only version deployable artifacts by default.
+- [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) – defines the ecosystem grouping policy that informs how release intent is batched.
+- [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) – explains the unified Changesets workflow that connects libraries and applications.
+- [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) – explains how application monorepos only version deployable artifacts by default.

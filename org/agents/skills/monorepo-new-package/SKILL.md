@@ -77,7 +77,7 @@ description: >-
   - **`include`**: **`["eslint.config.ts"]`** only.
 - Wire **`typecheck`** so this file is checked in CI:  
   `"typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.eslint-config.json --noEmit"`  
-  (Packages whose main `tsconfig.json` already enables `allowImportingTsExtensions` may use one dedicated project for `tsc` instead of `tsconfig.eslint-config.json`. For example **`@chiubaka/eslint-config`** uses **`tsconfig.typecheck.json`** with a **narrow `include`**—helpers, presets, `eslint.config.ts`, and Vitest config—because its default `tsconfig.json` also pulls in **`test/fixtures/**`** files that are intentionally invalid TypeScript for lint tests.)
+  (Packages whose main `tsconfig.json` already enables `allowImportingTsExtensions` may use one dedicated project for `tsc` instead of `tsconfig.eslint-config.json`. For example **`@chiubaka/eslint-config`** uses **`tsconfig.typecheck.json`** with a **narrow `include`**—helpers, presets, `eslint.config.ts`, and Vitest config—because its default `tsconfig.json` also pulls in files under `test/fixtures/` that are intentionally invalid TypeScript for lint tests.)
 
 - Add package-local import-boundary rules that reflect ADRs and repository practice:
   - **Protect production from test imports (ADR 0011):** in `files: ["src/**/*.ts", "src/**/*.tsx"]` (when the package uses TSX), forbid:

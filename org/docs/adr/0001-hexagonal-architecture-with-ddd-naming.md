@@ -3,6 +3,7 @@ status: superseded-by-ADR-0007
 date: 2026-03-19
 decision-makers: Daniel Chiu
 ---
+
 # ADR 0001: Hexagonal Architecture with DDD Naming
 
 > **Superseded:** Layout and decomposition for this repository are defined by [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) (vertical feature modules, per-slice layers, packages, and `core`). This ADR remains useful for **historical context** and for the original **DDD naming vs. hexagonal vocabulary** tradeoff.
@@ -51,16 +52,15 @@ Justification: This best satisfies the decision drivers by enforcing dependency 
 
 ### Hexagonal vocabulary (`*Port` / `*Adapter`) everywhere
 
-* Good, because the architecture intent matches the terminology used by hexagonal.
-* Bad, because it forces a non-DDD vocabulary onto contracts that may otherwise be clearer with `*Service`/`*Repository`.
+- Good, because the architecture intent matches the terminology used by hexagonal.
+- Bad, because it forces a non-DDD vocabulary onto contracts that may otherwise be clearer with `*Service`/`*Repository`.
 
 ### Adopted approach: hexagonal boundaries + DDD naming
 
-* Good, because boundaries still enforce hexagonal dependency direction.
-* Good, because `*Service`/`*Repository` naming stays consistent with DDD conventions.
-* Bad, because the hexagonal terms (`Port`/`Adapter`) are implicit rather than explicit in naming.
+- Good, because boundaries still enforce hexagonal dependency direction.
+- Good, because `*Service`/`*Repository` naming stays consistent with DDD conventions.
+- Bad, because the hexagonal terms (`Port`/`Adapter`) are implicit rather than explicit in naming.
 
 ## More Information
 
 This ADR is intentionally historical and vocabulary-focused. For repository-local layout illustrations, see `org/docs/adr/examples/feature-module-layout-example.md` and `org/docs/adr/examples/composition-root-example.md`.
-

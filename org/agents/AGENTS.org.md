@@ -47,5 +47,5 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 ## Style and readability
 
 - Keep `org/agents/AGENTS.org.md` focused on structural and generation-time constraints.
-- After completing implementation, run a dedicated review pass with `org/agents/skills/review/SKILL.md` for consistency, lint-policy, naming, and verification checks.
+- **Review before handoff (mandatory default):** Before concluding work, telling the user a task is finished, opening a PR, or pushing, run the checklist in `org/agents/skills/review/SKILL.md` unless the change is trivial (for example typo-only or a single obvious one-line fix). Treat it as part of the same completion bar as repo-root verification—lint and tests do not replace it. Run it after each meaningful slice of implementation, not only at the end of large tasks or when explicitly asked.
 - During planning for major behavior changes, consult `org/agents/skills/test-driven-development/SKILL.md` to drive a test-first implementation loop.
