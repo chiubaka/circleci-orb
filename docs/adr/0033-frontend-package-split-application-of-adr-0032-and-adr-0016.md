@@ -91,13 +91,13 @@ In **Mode B**, ADR 0016 is **not** irrelevant: it governs **folder and barrel st
 
 ## Mapping ADR 0016 concepts in Mode B (concise)
 
-| ADR 0016 idea | Mode A (single package) | Mode B (0032 split) |
-|---------------|-------------------------|---------------------|
-| Responsibility area | Top-level folder under `src/` | **Same area name** under `packages/frontend/core/src/` **and** `packages/frontend/react/src/` (presentation-only in `react`) |
-| `domain/` … `infrastructure/` | Under each area | **Primarily** in **`frontend/core`** (plus shared **`@<scope>/domain`** per ADR 0032) |
-| `presentation/` | Under each area | **Primarily** in **`frontend/react`** |
-| `app/` host | `src/app/` | **`apps/<name>/`** (thin host: routes, global providers, cross-area shell) |
-| `core/` cross-cutting | `src/core/` | **Either** a subtree of **`apps/*`**, a small shared package, or **`frontend/react`** shared presentation primitives—same **high bar** as ADR 0016 |
+| ADR 0016 idea                 | Mode A (single package)       | Mode B (0032 split)                                                                                                                                |
+| ----------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Responsibility area           | Top-level folder under `src/` | **Same area name** under `packages/frontend/core/src/` **and** `packages/frontend/react/src/` (presentation-only in `react`)                       |
+| `domain/` … `infrastructure/` | Under each area               | **Primarily** in **`frontend/core`** (plus shared **`@<scope>/domain`** per ADR 0032)                                                              |
+| `presentation/`               | Under each area               | **Primarily** in **`frontend/react`**                                                                                                              |
+| `app/` host                   | `src/app/`                    | **`apps/<name>/`** (thin host: routes, global providers, cross-area shell)                                                                         |
+| `core/` cross-cutting         | `src/core/`                   | **Either** a subtree of **`apps/*`**, a small shared package, or **`frontend/react`** shared presentation primitives—same **high bar** as ADR 0016 |
 
 This table is **guidance**, not a mandate to duplicate every area in **`react`** if an area has **no** UI yet—skip **`presentation/`** until needed, consistent with ADR 0016’s judgment-based placement.
 

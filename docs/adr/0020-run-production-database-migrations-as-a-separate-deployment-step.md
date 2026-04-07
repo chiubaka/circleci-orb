@@ -88,5 +88,5 @@ That local convenience does not change the production rule: migrations in produc
 
 ## Related ADRs
 
-* [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — phased coordinated deploys; migration execution SHOULD be ordered explicitly relative to application artifact rollout
-* [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — promotion tags and manifest-driven deploys
+- [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — phased coordinated deploys; migration execution SHOULD be ordered explicitly relative to application artifact rollout
+- [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — promotion tags and manifest-driven deploys

@@ -23,19 +23,19 @@ Our library-facing ADRs already capture explicit release intent via [ADR 0024](0
 
 ## Decision Drivers
 
-* Explicit, reviewable release intent captured at PR time
-* High-quality user-facing release communication
-* Avoid reliance on commit history inference
-* Support batched releases across multiple PRs
-* Maintain consistency with library-side workflows
-* Avoid building custom release tooling
+- Explicit, reviewable release intent captured at PR time
+- High-quality user-facing release communication
+- Avoid reliance on commit history inference
+- Support batched releases across multiple PRs
+- Maintain consistency with library-side workflows
+- Avoid building custom release tooling
 
 ## Considered Options
 
-* Changesets (explicit change files with summaries)
-* Commit-history-driven tools (e.g. git-cliff)
-* Release Please (commit-based automation)
-* Manual release note writing at release time
+- Changesets (explicit change files with summaries)
+- Commit-history-driven tools (e.g. git-cliff)
+- Release Please (commit-based automation)
+- Manual release note writing at release time
 
 ## Decision Outcome
 
@@ -47,56 +47,56 @@ Justification: Changesets provides an explicit, PR-reviewable mechanism for capt
 
 ### Changesets (explicit release intent)
 
-* Good, because release intent is explicit and reviewable in PRs
-* Good, because summaries can be written for users rather than engineers
-* Good, because batching releases is natural and predictable
-* Good, because it decouples commit hygiene from release semantics
-* Good, because it aligns application releases with library monorepo workflows
-* Bad, because it introduces additional workflow overhead
-* Bad, because it requires discipline in writing good summaries
+- Good, because release intent is explicit and reviewable in PRs
+- Good, because summaries can be written for users rather than engineers
+- Good, because batching releases is natural and predictable
+- Good, because it decouples commit hygiene from release semantics
+- Good, because it aligns application releases with library monorepo workflows
+- Bad, because it introduces additional workflow overhead
+- Bad, because it requires discipline in writing good summaries
 
 👉 Chosen because it provides clarity, consistency, and scalability.
 
 ### Commit-history-driven tools
 
-* Good, because they are lightweight
-* Bad, because they rely on implicit intent
-* Bad, because they produce poor user-facing output
-* Bad, because commit discipline is unreliable
+- Good, because they are lightweight
+- Bad, because they rely on implicit intent
+- Bad, because they produce poor user-facing output
+- Bad, because commit discipline is unreliable
 
 👉 Rejected due to poor quality and lack of explicit intent.
 
 ### Release Please
 
-* Good, because it automates release PRs
-* Bad, because it relies on commit history inference
-* Bad, because it introduces branching complexity
-* Bad, because nuanced release intent is hard to express
+- Good, because it automates release PRs
+- Bad, because it relies on commit history inference
+- Bad, because it introduces branching complexity
+- Bad, because nuanced release intent is hard to express
 
 👉 Rejected due to implicitness and reduced control.
 
 ### Manual release notes
 
-* Good, because quality can be high
-* Bad, because it does not scale
-* Bad, because it is error-prone and inconsistent
+- Good, because quality can be high
+- Bad, because it does not scale
+- Bad, because it is error-prone and inconsistent
 
 👉 Rejected due to lack of scalability.
 
 ## Consequences
 
-* All releasable application changes must include a Changeset
-* Changeset summaries must be written in user-facing language
-* Version numbers become the authoritative identifier of releases
-* Release notes are generated directly from curated summaries
-* Commit messages are not used as the source of release truth
+- All releasable application changes must include a Changeset
+- Changeset summaries must be written in user-facing language
+- Version numbers become the authoritative identifier of releases
+- Release notes are generated directly from curated summaries
+- Commit messages are not used as the source of release truth
 
 ## Confirmation
 
-* App repos contain a `.changeset/` directory
-* PRs that affect user-visible behavior include Changesets
-* Generated release notes are suitable for external communication
-* No reliance on commit parsing for release behavior
+- App repos contain a `.changeset/` directory
+- PRs that affect user-visible behavior include Changesets
+- Generated release notes are suitable for external communication
+- No reliance on commit parsing for release behavior
 
 ## More Information
 

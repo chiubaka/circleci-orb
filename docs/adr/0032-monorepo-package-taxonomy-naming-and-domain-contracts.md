@@ -58,30 +58,30 @@ Library-oriented monorepos ship **reusable** backends and frontends (for example
 
 ### Backend
 
-| Path (illustrative) | Role | Typical npm name (illustrative) |
-|---------------------|------|--------------------------------|
-| `packages/backend/core` | **Core backend API** — ports, facades, and behavior **agnostic** of deployment environment (web server vs CLI) and **agnostic** of specific databases or vendors. | `@<product>/<product>` (e.g. `@protectiva/protectiva`) |
-| `packages/backend/plugins/*` | **Plugins** — implementations of core ports for **specific** infrastructure choices (Drizzle + Postgres, SuperTokens, …). | `@<scope>/plugin-<name>` (e.g. `@protectiva/plugin-drizzle-postgres`, `@protectiva/plugin-supertokens`) |
-| `packages/backend/integrations/*` | **Integrations** — **wiring** for a **specific backend environment or framework** (not “a database,” but “how this API is exposed in Hono,” etc.). | `@<scope>/<integration-name>` (e.g. `@protectiva/hono-rest`) |
+| Path (illustrative)               | Role                                                                                                                                                              | Typical npm name (illustrative)                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `packages/backend/core`           | **Core backend API** — ports, facades, and behavior **agnostic** of deployment environment (web server vs CLI) and **agnostic** of specific databases or vendors. | `@<product>/<product>` (e.g. `@protectiva/protectiva`)                                                  |
+| `packages/backend/plugins/*`      | **Plugins** — implementations of core ports for **specific** infrastructure choices (Drizzle + Postgres, SuperTokens, …).                                         | `@<scope>/plugin-<name>` (e.g. `@protectiva/plugin-drizzle-postgres`, `@protectiva/plugin-supertokens`) |
+| `packages/backend/integrations/*` | **Integrations** — **wiring** for a **specific backend environment or framework** (not “a database,” but “how this API is exposed in Hono,” etc.).                | `@<scope>/<integration-name>` (e.g. `@protectiva/hono-rest`)                                            |
 
 **Dependency direction (intended):** integrations and plugins **depend on** core (and often on **contracts** where the integration exposes HTTP). Core **must not** depend on plugins or integrations.
 
 ### Shared cross-stack
 
-| Path | Role | Typical npm name |
-|------|------|------------------|
-| `packages/domain` | **Shared domain** — core **typings and concepts** used by **both** frontend and backend. **Intentionally thin.** Mirrors the **semantic role** of slice **`domain/`** in ADR 0007/0016, but for **cross-cutting** concepts that are not owned by a single vertical slice. **No** API-only or transport-only DTOs; **no** dumping ground for “backend types the frontend should not see” or the reverse—leave room for each side to extend in its own packages. | `@<scope>/domain` |
-| `packages/contracts/*` | **Contracts** — how data and remote APIs are expressed **on the wire** (REST with **ts-rest**, GraphQL shapes validated at boundaries, etc.). Owns **transport-specific** DTOs, request/response envelopes, pagination, and endpoint-scoped payloads. | `@<scope>/<contract-name>` (e.g. `@protectiva/rest-api`) |
+| Path                   | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Typical npm name                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `packages/domain`      | **Shared domain** — core **typings and concepts** used by **both** frontend and backend. **Intentionally thin.** Mirrors the **semantic role** of slice **`domain/`** in ADR 0007/0016, but for **cross-cutting** concepts that are not owned by a single vertical slice. **No** API-only or transport-only DTOs; **no** dumping ground for “backend types the frontend should not see” or the reverse—leave room for each side to extend in its own packages. | `@<scope>/domain`                                        |
+| `packages/contracts/*` | **Contracts** — how data and remote APIs are expressed **on the wire** (REST with **ts-rest**, GraphQL shapes validated at boundaries, etc.). Owns **transport-specific** DTOs, request/response envelopes, pagination, and endpoint-scoped payloads.                                                                                                                                                                                                          | `@<scope>/<contract-name>` (e.g. `@protectiva/rest-api`) |
 
 This split is the **canonical answer** to replacing a monolithic **`schemas`** package: **domain vocabulary** vs **wire contracts**, not “types vs schemas.”
 
 ### Frontend
 
-| Path | Role | Typical npm name |
-|------|------|------------------|
-| `packages/frontend/core` | **Core frontend API** — environment- and presentation-agnostic **client** surface (ports, facades, orchestration entry points). Often **parallels** the backend core API in spirit but **must not** over-assume REST vs local storage vs other transports at the type level. | `@<scope>/frontend` (e.g. `@protectiva/frontend`) |
-| `packages/frontend/plugins/*` | **Plugins** — concrete implementations of frontend core ports (Expo Secure Store, REST client bindings, …). | `@<scope>/frontend-plugin-<name>` (e.g. `@protectiva/frontend-plugin-expo-secure-store`, `@protectiva/frontend-plugin-rest`) |
-| `packages/frontend/react` | **React binding** — components, hooks, providers, and wrappers making the **frontend core** idiomatic in **React**. | `@<scope>/react` (e.g. `@protectiva/react`) |
+| Path                          | Role                                                                                                                                                                                                                                                                         | Typical npm name                                                                                                             |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `packages/frontend/core`      | **Core frontend API** — environment- and presentation-agnostic **client** surface (ports, facades, orchestration entry points). Often **parallels** the backend core API in spirit but **must not** over-assume REST vs local storage vs other transports at the type level. | `@<scope>/frontend` (e.g. `@protectiva/frontend`)                                                                            |
+| `packages/frontend/plugins/*` | **Plugins** — concrete implementations of frontend core ports (Expo Secure Store, REST client bindings, …).                                                                                                                                                                  | `@<scope>/frontend-plugin-<name>` (e.g. `@protectiva/frontend-plugin-expo-secure-store`, `@protectiva/frontend-plugin-rest`) |
+| `packages/frontend/react`     | **React binding** — components, hooks, providers, and wrappers making the **frontend core** idiomatic in **React**.                                                                                                                                                          | `@<scope>/react` (e.g. `@protectiva/react`)                                                                                  |
 
 **Future (optional, same pattern):** `packages/frontend/react-native`, `packages/frontend/react-web` for integration that does not belong in the shared `react` package.
 
@@ -89,8 +89,8 @@ This split is the **canonical answer** to replacing a monolithic **`schemas`** p
 
 ### Apps (all monorepo flavors)
 
-| Path | Role |
-|------|------|
+| Path     | Role                                                                                                                                                      |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/*` | **Deployable, thin** compositions: wire env/config, pick plugins, mount integrations. Examples: `apps/web` (`@l3xo/web`), `apps/server` (`@l3xo/server`). |
 
 Apps **should stay thin**: they integrate **packages**, not duplicate **domain** or **contract** ownership.
