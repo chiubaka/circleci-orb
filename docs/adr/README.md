@@ -46,6 +46,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
 - `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
 - `0034-use-npm-private-packages-for-internal-and-external-package-distribution.md`
+- `0035-trial-adoption-of-conventional-commits.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
