@@ -45,8 +45,9 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0031-separation-of-artifact-tags-and-environment-promotion-tags.md`
 - `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
 - `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
-- `0034-use-npm-private-packages-for-internal-and-external-package-distribution.md`
+- `0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md`
 - `0035-trial-adoption-of-conventional-commits.md`
+- `0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
