@@ -1,0 +1,21 @@
+description: >
+  On each push to the default branch, run changesets-release-pr to open or refresh a PR from
+  release/<default-branch> when there are pending .changeset/*.md files. Provide GITHUB_TOKEN via a
+  context (repo contents, pull requests, workflow; push access to release/* branches). Use squash merge
+  on that PR so the gated publish job can match the commit subject prefix.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+
+  workflows:
+    release-pr:
+      jobs:
+        - chiubaka/changesets-release-pr:
+            context:
+              - github-release-pr-bot
+            primary-branch: main
+            filters:
+              branches:
+                only: main

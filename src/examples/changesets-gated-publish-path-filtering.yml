@@ -1,0 +1,38 @@
+description: >
+  Use circleci/path-filtering + continuation so changesets-gated-publish only runs when
+  release-related paths change, then assert-release-merge matches the squash subject before publish.
+  Enable "Dynamic Config using setup workflows" in CircleCI project settings. Place your main pipeline
+  (including chiubaka/changesets-gated-publish) in the continuation config file referenced below.
+
+usage:
+  version: 2.1
+  setup: true
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+    path-filtering: circleci/path-filtering@3.0.0
+
+  workflows:
+    setup:
+      jobs:
+        - path-filtering/filter:
+            base-revision: main
+            config-path: .circleci/continue_config.yml
+            mapping: |
+              .*package\.json run-changesets-publish true
+              .*CHANGELOG\.md run-changesets-publish true
+              .changeset/.* run-changesets-publish true
+  # Example continuation file `.circleci/continue_config.yml` (snippet):
+  #   version: 2.1
+  #   parameters:
+  #     run-changesets-publish:
+  #       type: boolean
+  #       default: false
+  #   orbs:
+  #     chiubaka: chiubaka/circleci-orb@0.11.4
+  #   workflows:
+  #     publish:
+  #       when: << pipeline.parameters.run-changesets-publish >>
+  #       jobs:
+  #         - chiubaka/changesets-gated-publish:
+  #             context: [github-packages-publish]
+  #             primary-branch: main

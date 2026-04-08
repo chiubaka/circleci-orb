@@ -1,0 +1,23 @@
+description: >
+  PR check that Changesets are valid (pnpm exec changeset status). If pnpm install pulls private
+  @chiubaka packages from GitHub Packages, pass pre-install-steps with setup-npm-registry-auth and
+  a context providing GITHUB_TOKEN (read:packages). Hybrid monorepos: org ADR 0027.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+
+  workflows:
+    pr:
+      jobs:
+        - chiubaka/verify-changesets:
+            context:
+              - github-packages-read
+            pre-install-steps:
+              - chiubaka/setup-npm-registry-auth:
+                  registry-backend: github-packages
+                  registry-access: read
+            filters:
+              branches:
+                ignore: master

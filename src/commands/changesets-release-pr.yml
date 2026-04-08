@@ -1,0 +1,24 @@
+description: >
+  If .changeset/ contains pending changesets, run changeset version, commit on
+  release/<primary-branch>, push, and open or update one GitHub PR into the default branch via gh.
+  Requires GITHUB_TOKEN (contents, pull requests; push to release/*). Install gh first (see job) or
+  use an image that includes gh.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the monorepo root (contains .changeset/ and package.json).
+  primary-branch:
+    type: string
+    default: "master"
+    description: Default branch name; release branch will be release/<this value>.
+
+steps:
+  - run:
+      name: Changesets release PR (version + push + gh)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runChangesetsReleasePr.sh) >>
+      environment:
+        APP_DIR: .
+        PRIMARY_BRANCH: << parameters.primary-branch >>

@@ -1,0 +1,20 @@
+description: >
+  Library monorepo release using the publish job with GitHub Packages auth (ADR 0034), Changesets
+  (org ADR 0024, related 0023–0028), default build:ci, and pnpm exec changeset publish (install
+  @changesets/cli). Provide GITHUB_TOKEN with write:packages via a context. Optional: set
+  publish-script to ci:publish if the repo wraps publish in a script.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+
+  workflows:
+    release:
+      jobs:
+        - chiubaka/publish:
+            context:
+              - github-packages-publish
+            filters:
+              branches:
+                only: master

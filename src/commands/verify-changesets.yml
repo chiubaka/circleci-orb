@@ -1,0 +1,22 @@
+description: >
+  Verify there are no undeployed changesets (or run a repo script). By default runs
+  pnpm exec changeset status. Release intent and Changesets policy: org ADR 0024 and related 0023–0028.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing package.json.
+  verify-script:
+    type: string
+    default: ""
+    description: >
+      If empty, runs pnpm exec changeset status. If set, runs pnpm run <verify-script> instead.
+
+steps:
+  - run:
+      name: Verify changesets
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runVerifyChangesets.sh) >>
+      environment:
+        VERIFY_SCRIPT: << parameters.verify-script >>

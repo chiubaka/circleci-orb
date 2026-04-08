@@ -1,0 +1,29 @@
+description: >
+  Assert the latest commit subject matches the release-merge prefix (default: squash PR
+  title from the changesets release PR). Optional check that .changeset files were deleted on merge.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Working directory (repository root containing .git).
+  release-merge-subject-regex:
+    type: string
+    default: "^chore\\(release\\): version packages"
+    description: >
+      Extended regex (ERE) matched against git log -1 subject (bash [[ =~ ]]); default matches the
+      release PR title prefix before the parenthetical package list.
+  verify-changeset-deletions:
+    type: boolean
+    default: false
+    description: >
+      When true, require at least one deleted path under .changeset/ in HEAD (git name-status).
+
+steps:
+  - run:
+      name: Assert release merge commit (changesets gate)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/assertReleaseMerge.sh) >>
+      environment:
+        RELEASE_MERGE_SUBJECT_REGEX: << parameters.release-merge-subject-regex >>
+        VERIFY_CHANGESET_DELETIONS: << parameters.verify-changeset-deletions >>
