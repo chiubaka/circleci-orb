@@ -23,8 +23,20 @@ if [ -n "${XTRA_ARGS:-}" ]; then
 fi
 
 while IFS=$'\t' read -r pkg_name pkg_abs_path; do
-  pkg_rel_path="${pkg_abs_path#"$monorepo_root/"}"
-  project_coverage_dir="$COVERAGE_DIR/$pkg_rel_path"
+  # pnpm emits absolute paths with no trailing slash. For the workspace root
+  # package, pkg_abs_path equals monorepo_root, so "${path#$root/}" does not
+  # strip (there is no "/suffix") and pkg_rel_path would incorrectly stay
+  # absolute — e.g. COVERAGE_DIR + / + /home/circleci/project (double slash).
+  if [[ "$pkg_abs_path" == "$monorepo_root" ]]; then
+    project_coverage_dir="$COVERAGE_DIR"
+  else
+    pkg_rel_path="${pkg_abs_path#"$monorepo_root/"}"
+    if [[ "$pkg_rel_path" == "$pkg_abs_path" ]]; then
+      echo "ERROR: package path is not under MONOREPO_ROOT ($monorepo_root): $pkg_abs_path" >&2
+      exit 1
+    fi
+    project_coverage_dir="$COVERAGE_DIR/$pkg_rel_path"
+  fi
 
   if [ ! -d "$project_coverage_dir" ]
   then
