@@ -1,6 +1,6 @@
 description: >
-  Ensures the GitHub CLI (gh) is available on PATH (installs via official script when missing).
-  Use before changesets-release-pr or other steps that call gh.
+  Ensures the GitHub CLI (gh) is available on PATH (installs via official GitHub apt or Alpine
+  packages when missing). Use before changesets-release-pr or other steps that call gh.
 
 steps:
   - run:
