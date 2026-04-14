@@ -1,7 +1,9 @@
 description: >
   On pushes to the default branch, open or update a release PR when Changesets has pending
-  work (install gh, then changeset version + release/<primary> + gh). Filter the workflow to
-  primary-branch only on the client side. Requires GITHUB_TOKEN with repo scopes; see command docs.
+  work that produces version bumps (install gh, then changeset version + release/<primary> + gh).
+  Skips cleanly when there are no bumps (e.g. empty or verification-only changesets). Filter the
+  workflow to primary-branch only on the client side. Requires GITHUB_TOKEN with repo scopes; see
+  command docs.
 
 executor:
   name: docker-node

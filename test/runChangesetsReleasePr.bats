@@ -41,6 +41,18 @@ setup() {
   assert_equal "$title" 'chore(release): version packages (@scope/a@1.1.0, @scope/b@2.1.0)'
 }
 
+@test "build_title returns non-success when changeset version left no package.json diff" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  git init -b main
+  git config user.email test@test
+  git config user.name Test
+  printf '%s\n' '{"name":"@scope/a","version":"1.0.0"}' >package.json
+  git add . && git commit -m "init"
+
+  run build_title
+  assert_failure
+}
+
 @test "extract_changelog_top returns first version section body" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   cat >CL.md <<'EOF'

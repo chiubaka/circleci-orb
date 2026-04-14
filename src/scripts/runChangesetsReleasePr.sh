@@ -34,14 +34,14 @@ build_title() {
     lines+=("$line")
   done < <(git diff --name-only | grep -E '(^|/)package\.json$' || true)
   if [[ ${#lines[@]} -eq 0 ]]; then
-    echo "runChangesetsReleasePr: changeset version produced no package.json changes; refusing to open an empty-titled PR." >&2
-    exit 1
+    return 1
   fi
   mapfile -t lines < <(printf '%s\n' "${lines[@]}" | LC_ALL=C sort -u)
   local joined
   joined=$(printf '%s, ' "${lines[@]}")
   joined=${joined%, }
   printf '%s' "chore(release): version packages (${joined})"
+  return 0
 }
 
 extract_changelog_top() {
@@ -112,7 +112,10 @@ run_changesets_release_pr_main() {
 
   "$pnpm_bin" exec changeset version
 
-  title=$(build_title)
+  if ! title=$(build_title); then
+    echo "runChangesetsReleasePr: changeset version produced no package.json changes (e.g. empty or verification-only changesets); skipping release PR."
+    exit 0
+  fi
   if [[ -n "${BODY_FILE:-}" ]]; then
     body_file=$BODY_FILE
   else
