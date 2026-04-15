@@ -98,3 +98,19 @@ EOF
   assert_success
   rm -f "$body"
 }
+
+@test "mktemp EXIT cleanup keeps body_file non-local so trap survives function return (set -u)" {
+  # Regression: local body_file + trap 'rm -f "$body_file"' on EXIT — after f returns the
+  # local is gone and set -u errors on "unbound variable" when the trap runs.
+  run bash -euo pipefail -c '
+    f() {
+      local x
+      x=1
+      body_file=$(mktemp)
+      trap '\''rm -f "$body_file"'\'' EXIT
+    }
+    f
+    exit 0
+  '
+  assert_success
+}

@@ -54,7 +54,7 @@ teardown() {
 }
 
 @test "fails when github-packages and GITHUB_TOKEN missing" {
-  NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages run setupNpmRegistryAuth.sh
+  run env -u GITHUB_TOKEN NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages setupNpmRegistryAuth.sh
 
   assert_failure
   assert_output --partial 'GITHUB_TOKEN must be set'

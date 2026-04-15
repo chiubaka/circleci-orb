@@ -86,7 +86,8 @@ build_pr_body_file() {
 }
 
 run_changesets_release_pr_main() {
-  local pnpm_bin app_dir primary pending title body_file release_branch repo_slug u r pr_num
+  local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num
+  # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}
   primary=${PRIMARY_BRANCH:?PRIMARY_BRANCH is required}
