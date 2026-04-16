@@ -57,14 +57,14 @@ The release PR is **updated in place** on that branch; the **title and commit su
 **Implemented (partial):**
 
 - [`src/scripts/setupNpmRegistryAuth.sh`](../../src/scripts/setupNpmRegistryAuth.sh) + [`src/commands/setup-npm-registry-auth.yml`](../../src/commands/setup-npm-registry-auth.yml): npmjs + GitHub Packages auth.
-- [`src/scripts/runPublish.sh`](../../src/scripts/runPublish.sh) + [`src/commands/publish.yml`](../../src/commands/publish.yml): today defaults to **`pnpm run ci:publish`** — **differs from org target** above; a follow-up should switch the default to **`pnpm exec changeset publish`** and keep **`publish-script`** / equivalent as override.
+- [`src/scripts/runPublish.sh`](../../src/scripts/runPublish.sh) + [`src/commands/publish.yml`](../../src/commands/publish.yml): default **`pnpm exec changeset publish`** (matches org target above); **`publish-script`** / equivalent runs **`pnpm run <script>`** when set.
+- [`src/scripts/runChangesetsReleasePr.sh`](../../src/scripts/runChangesetsReleasePr.sh) + [`src/commands/changesets-release-pr.yml`](../../src/commands/changesets-release-pr.yml) + [`src/jobs/changesets-release-pr.yml`](../../src/jobs/changesets-release-pr.yml): **`changeset version`**, commit on **`release/<primary>`**, **`git push`** + **`gh`** create/update PR (see also [`src/commands/install-github-cli.yml`](../../src/commands/install-github-cli.yml)).
 - [`src/jobs/publish.yml`](../../src/jobs/publish.yml), [`src/jobs/verify-changesets.yml`](../../src/jobs/verify-changesets.yml), [`src/commands/verify-changesets.yml`](../../src/commands/verify-changesets.yml); [`src/commands/setup.yml`](../../src/commands/setup.yml) extended with `pre-install-steps`, `skip-pnpm-install`, `attach-workspace`.
 - Examples under [`src/examples/`](../../src/examples/).
 
 **Still gaps (this plan):**
 
-- **Release PR** automation (`changeset version` + GitHub PR create/update on default branch when pending).
-- **Gated publish** workflow (path filtering + squash message gate + default `changeset publish` command/job surface).
+- **Gated publish** workflow (path filtering + squash message gate; publish default path is already `changeset publish`).
 - **Deploy:** [`src/jobs/deploy.yml`](../../src/jobs/deploy.yml) → tag-style deploys unchanged.
 - **Manifests / promotion tags** — Stage 3.
 

@@ -3,14 +3,15 @@
 set -euo pipefail
 
 count_pending_changesets() {
-  local n=0 f
+  local n=0 f nullglob_restore
+  nullglob_restore=$(shopt -p nullglob)
   shopt -s nullglob
   for f in .changeset/*.md; do
     [[ -f "$f" ]] || continue
     [[ "$(basename "$f")" == "README.md" ]] && continue
     n=$((n + 1))
   done
-  shopt -u nullglob
+  eval "$nullglob_restore"
   printf '%s' "$n"
 }
 
@@ -65,7 +66,7 @@ build_pr_body_file() {
   while IFS= read -r cl; do
     [[ -n "$cl" ]] || continue
     [[ -f "$cl" ]] || continue
-    local pkg_json dir name
+    local pkg_json dir name=""
     dir=$(dirname "$cl")
     pkg_json="${dir}/package.json"
     if [[ -f "$pkg_json" ]]; then
@@ -86,7 +87,7 @@ build_pr_body_file() {
 }
 
 run_changesets_release_pr_main() {
-  local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num
+  local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header
   # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}
@@ -145,9 +146,9 @@ run_changesets_release_pr_main() {
     exit 1
   fi
 
-  git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo_slug}.git"
-
-  git push -u origin "$release_branch" --force-with-lease
+  auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
+  git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+    push -u "https://github.com/${repo_slug}.git" "$release_branch" --force-with-lease
 
   if ! command -v gh >/dev/null 2>&1; then
     echo "runChangesetsReleasePr: gh CLI not found on PATH after install step." >&2

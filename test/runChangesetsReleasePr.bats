@@ -25,6 +25,16 @@ setup() {
   assert_equal "$n" "1"
 }
 
+@test "count_pending_changesets restores prior nullglob setting" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p .changeset
+  shopt -s nullglob
+  n=$(count_pending_changesets)
+  assert_equal "$n" "0"
+  run shopt -p nullglob
+  assert_output --partial "-s nullglob"
+}
+
 @test "build_title joins sorted unique name@version from changed package.json files" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   git init -b main

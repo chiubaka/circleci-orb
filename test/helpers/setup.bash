@@ -9,7 +9,7 @@ _setup() {
     fi
     PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
   done
-  if [[ ! -f "$PROJECT_ROOT/package.json" ]]; then
+  if [[ ! -f "$PROJECT_ROOT/package.json" || ! -d "$PROJECT_ROOT/src" ]]; then
     echo "_setup: could not locate repo root (package.json + src/) from ${TEST_DIR}" >&2
     exit 1
   fi
