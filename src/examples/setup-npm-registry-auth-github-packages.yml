@@ -1,0 +1,27 @@
+description: >
+  Route @chiubaka scoped packages to GitHub Packages using GITHUB_TOKEN (read:packages for install;
+  add write:packages for publish). Public packages still use the default npm registry.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+  jobs:
+    install:
+      docker:
+        - image: cimg/node:20.12
+      steps:
+        - checkout
+        - chiubaka/setup-npm-registry-auth:
+            registry-backend: github-packages
+            owner: chiubaka
+            registry-access: read
+        - run:
+            name: Install
+            command: pnpm install --frozen-lockfile
+  workflows:
+    ci:
+      jobs:
+        - install:
+            context:
+              - github-packages-read

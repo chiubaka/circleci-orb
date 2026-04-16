@@ -1,0 +1,53 @@
+description: >
+  Append npm authentication lines to the user npmrc for registry.npmjs.org and/or
+  GitHub Packages (npm.pkg.github.com). For GitHub Packages, only the configured
+  scope (default @chiubaka) is routed to npm.pkg.github.com; public packages still
+  resolve from the default registry. Use a CircleCI context whose token has
+  read:packages for installs and write:packages (plus contents:read where needed) for publish.
+
+parameters:
+  registry-backend:
+    type: enum
+    enum:
+      - npmjs
+      - github-packages
+    default: npmjs
+    description: >
+      npmjs: append //registry.npmjs.org/:_authToken using NPM_TOKEN.
+      github-packages: map @<owner> to npm.pkg.github.com and authenticate with GITHUB_TOKEN.
+  owner:
+    type: string
+    default: chiubaka
+    description: >
+      GitHub username/org scope for the @owner:registry line when registry-backend is github-packages.
+  always-auth:
+    type: boolean
+    default: true
+    description: >
+      When true, append :always-auth=true for the active registry host. Default true helps GitHub
+      Packages installs; pass false for npmjs-only auth to match legacy authenticateWithNpm (token line only).
+  registry-access:
+    type: enum
+    enum:
+      - read
+      - publish
+    default: read
+    description: >
+      Documents the intended CI token capability for operators (does not change .npmrc lines).
+      read: GitHub read:packages (install). publish: GitHub write:packages and any repo scopes your publish flow needs.
+  npmrc-path:
+    type: string
+    default: ""
+    description: >
+      If non-empty, sets NPMRC_PATH for the auth script. If empty, the script uses ~/.npmrc.
+
+steps:
+  - run:
+      name: Setup npm registry authentication
+      command: << include(scripts/setupNpmRegistryAuth.sh) >>
+      environment:
+        REGISTRY_BACKEND: << parameters.registry-backend >>
+        NPM_OWNER: << parameters.owner >>
+        ALWAYS_AUTH: << parameters.always-auth >>
+        REGISTRY_ACCESS: << parameters.registry-access >>
+        NPMRC_PATH: << parameters.npmrc-path >>

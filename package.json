@@ -12,7 +12,7 @@
     "lint:scripts": "bash scripts/run-shellcheck.sh",
     "build": "circleci local execute --skip-checkout orb-tools/pack",
     "prepare": "husky install",
-    "test": "bats test"
+    "test": "bats -r ./test"
   },
   "repository": {
     "type": "git",

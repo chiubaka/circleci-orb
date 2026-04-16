@@ -18,6 +18,27 @@ parameters:
     type: string
     default: "master"
     description: The name of the primary branch.
+  skip-pnpm-install:
+    type: boolean
+    default: false
+    description: >
+      When true, skip node/install-packages. Use when dependencies are restored from a workspace
+      or another cache strategy upstream.
+  attach-workspace:
+    type: boolean
+    default: false
+    description: >
+      When true, attach a persisted workspace before installing dependencies (after checkout and SCM setup).
+  workspace-at:
+    type: string
+    default: "."
+    description: Path passed to attach_workspace when attach-workspace is true.
+  pre-install-steps:
+    type: steps
+    default: []
+    description: >
+      Steps after checkout/SCM setup and optional workspace attach, before pnpm install.
+      Use for registry authentication (setup-npm-registry-auth) when installing private packages.
 
 steps:
   - when:
@@ -40,8 +61,18 @@ steps:
       command: << include(scripts/setTurboScmBase.sh) >>
       environment:
         PRIMARY_BRANCH: << parameters.primary-branch >>
-  - node/install-packages:
-      check-cache: always
-      pkg-manager: pnpm
-      with-cache: true
-      app-dir: << parameters.app-dir >>
+  - when:
+      condition: << parameters.attach-workspace >>
+      steps:
+        - attach_workspace:
+            at: << parameters.workspace-at >>
+  - steps: << parameters.pre-install-steps >>
+  - when:
+      condition:
+        not: << parameters.skip-pnpm-install >>
+      steps:
+        - node/install-packages:
+            check-cache: always
+            pkg-manager: pnpm
+            with-cache: true
+            app-dir: << parameters.app-dir >>

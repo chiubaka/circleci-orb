@@ -1,0 +1,32 @@
+description: >
+  Publish packages: default is pnpm exec changeset publish (install @changesets/cli in the repo).
+  Set publish-script to a non-empty package.json script name to use pnpm run instead (escape hatch).
+  Policy: org ADRs 0023–0028 and client .changeset/ (org ADR 0024). Orb defaults: docs/adr/0001.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing package.json.
+  dry-run:
+    type: boolean
+    default: false
+    description: >
+      When true, runs pnpm exec changeset publish --dry-run (default mode) or pnpm run
+      publish-script -- --dry-run (script mode). Requires a @changesets/cli build whose
+      "changeset publish --help" lists --dry-run for default mode.
+  publish-script:
+    type: string
+    default: ""
+    description: >
+      If non-empty, run pnpm run <publish-script> instead of pnpm exec changeset publish.
+      Leave empty for the default Changesets publish command.
+
+steps:
+  - run:
+      name: Publish packages
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runPublish.sh) >>
+      environment:
+        DRY_RUN: << parameters.dry-run >>
+        PUBLISH_SCRIPT: << parameters.publish-script >>

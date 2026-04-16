@@ -1,0 +1,157 @@
+description: >
+  End-to-end library publish: checkout/setup, optional workspace attach, optional install and build,
+  npm/GitHub Packages auth, then pnpm exec changeset publish by default (or pnpm run publish-script).
+  Self-contained by default; use skip-install / skip-build / attach-workspace to compose with upstream
+  jobs. Policy: org ADRs 0023–0028; orb defaults: docs/adr/0001.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing package.json.
+  attach-workspace:
+    type: boolean
+    default: false
+    description: When true, attach a persisted workspace before install (see workspace-at).
+  build-script:
+    type: string
+    default: "build:ci"
+    description: package.json script for the build step (skipped when skip-build is true).
+  checkout:
+    type: boolean
+    default: true
+    description: Whether setup performs checkout first.
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps to run after publish.
+  configure-git-user:
+    type: boolean
+    default: true
+    description: Configure global git user (often required for Changesets tagging).
+  dry-run:
+    type: boolean
+    default: false
+    description: Passes through to the publish command (changeset publish --dry-run or script -- --dry-run).
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Git user email when configure-git-user is true.
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Git user name when configure-git-user is true.
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether to initialize git submodules during setup.
+  npmrc-path:
+    type: string
+    default: ""
+    description: Passed to setup-npm-registry-auth when non-empty.
+  owner:
+    type: string
+    default: chiubaka
+    description: GitHub Packages scope owner when registry-backend is github-packages.
+  pre-publish-steps:
+    type: steps
+    default: []
+    description: Steps after build and before publish (e.g. custom checks).
+  primary-branch:
+    type: string
+    default: "master"
+    description: Primary branch name for setup.
+  publish-script:
+    type: string
+    default: ""
+    description: >
+      If non-empty, pnpm run this script for publish; if empty (default), pnpm exec changeset publish.
+  registry-access:
+    type: enum
+    enum:
+      - read
+      - publish
+    default: publish
+    description: Documents intended token scope for operators (see setup-npm-registry-auth).
+  registry-backend:
+    type: enum
+    enum:
+      - npmjs
+      - github-packages
+    default: github-packages
+    description: npmjs or GitHub Packages (ADR 0034).
+  resource-class:
+    default: medium
+    description: Resource class for docker-node.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Extra steps after setup and before git user configuration.
+  skip-build:
+    type: boolean
+    default: false
+    description: Skip the build step when artifacts already exist.
+  skip-install:
+    type: boolean
+    default: false
+    description: Skip pnpm install during setup (use with workspace or external cache).
+  always-auth:
+    type: boolean
+    default: true
+    description: Passed to setup-npm-registry-auth.
+  workspace-at:
+    type: string
+    default: "."
+    description: attach_workspace path when attach-workspace is true.
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      attach-workspace: << parameters.attach-workspace >>
+      checkout: << parameters.checkout >>
+      init-submodules: << parameters.init-submodules >>
+      pre-install-steps:
+        - setup-npm-registry-auth:
+            always-auth: << parameters.always-auth >>
+            npmrc-path: << parameters.npmrc-path >>
+            owner: << parameters.owner >>
+            registry-access: << parameters.registry-access >>
+            registry-backend: << parameters.registry-backend >>
+      primary-branch: << parameters.primary-branch >>
+      skip-pnpm-install: << parameters.skip-install >>
+      workspace-at: << parameters.workspace-at >>
+  - steps: << parameters.setup-steps >>
+  - when:
+      condition: << parameters.configure-git-user >>
+      steps:
+        - run:
+            name: Configure git user
+            working_directory: << parameters.app-dir >>
+            command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
+  - when:
+      condition:
+        not: << parameters.skip-build >>
+      steps:
+        - run:
+            name: Build before publish
+            working_directory: << parameters.app-dir >>
+            command: pnpm run << parameters.build-script >>
+  - steps: << parameters.pre-publish-steps >>
+  - publish:
+      app-dir: << parameters.app-dir >>
+      dry-run: << parameters.dry-run >>
+      publish-script: << parameters.publish-script >>
+  - steps: << parameters.cleanup-steps >>

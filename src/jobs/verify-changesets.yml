@@ -1,0 +1,62 @@
+description: >
+  Checkout, install, and verify Changesets state (pnpm exec changeset status by default). Use on PRs
+  to ensure change files exist. Policy: org ADR 0024; related ADRs 0023–0028.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Path to the directory containing package.json.
+  cleanup-steps:
+    type: steps
+    default: []
+    description: Steps after verify.
+  init-submodules:
+    type: boolean
+    default: false
+    description: Whether to initialize git submodules during setup.
+  primary-branch:
+    type: string
+    default: "master"
+    description: Primary branch name for setup.
+  pre-install-steps:
+    type: steps
+    default: []
+    description: >
+      Steps before pnpm install (e.g. setup-npm-registry-auth when dependencies include private GitHub Packages).
+  resource-class:
+    default: medium
+    description: Resource class for docker-node.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Extra steps after setup.
+  verify-script:
+    type: string
+    default: ""
+    description: Passed to verify-changesets command (empty uses pnpm exec changeset status).
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      init-submodules: << parameters.init-submodules >>
+      pre-install-steps: << parameters.pre-install-steps >>
+      primary-branch: << parameters.primary-branch >>
+  - steps: << parameters.setup-steps >>
+  - verify-changesets:
+      app-dir: << parameters.app-dir >>
+      verify-script: << parameters.verify-script >>
+  - steps: << parameters.cleanup-steps >>

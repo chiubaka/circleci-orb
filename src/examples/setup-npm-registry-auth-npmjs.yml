@@ -1,0 +1,25 @@
+description: >
+  Authenticate to registry.npmjs.org for publish or install using NPM_TOKEN from a CircleCI context.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.11.4
+  jobs:
+    release:
+      docker:
+        - image: cimg/node:20.12
+      steps:
+        - checkout
+        - chiubaka/setup-npm-registry-auth:
+            registry-backend: npmjs
+            always-auth: false
+        - run:
+            name: Publish
+            command: npm publish
+  workflows:
+    release:
+      jobs:
+        - release:
+            context:
+              - npm-publishing

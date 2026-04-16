@@ -1,7 +1,6 @@
 version: 2.1
 setup: true
 orbs:
-  bats: circleci/bats@1.0.0
   node: circleci/node@5.2.0
   orb-tools: circleci/orb-tools@11.1
   shellcheck: circleci/shellcheck@3.1
@@ -9,6 +8,31 @@ orbs:
 filters: &filters
   tags:
     only: /.*/
+
+jobs:
+  bats-tests:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install gettext (envsubst)
+          command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
+      - node/install:
+          install-yarn: false
+      - run:
+          name: Enable pnpm
+          command: corepack enable && corepack prepare pnpm@10.0.0 --activate
+      - run:
+          name: Install test dependencies
+          command: pnpm install --frozen-lockfile
+      - run:
+          name: Install CircleCI CLI (orb pack integration tests)
+          command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Run Bats tests (recursive, includes test/integration)
+          command: pnpm exec bats -r ./test
 
 workflows:
   lint-pack:
@@ -19,21 +43,8 @@ workflows:
           filters: *filters
       - orb-tools/review:
           filters: *filters
-      - bats/run:
+      - bats-tests:
           filters: *filters
-          path: ./test
-          setup-steps:
-            # cimg/base:stable (bats orb default) does not include gettext-base; generateMainConfig.sh needs envsubst.
-            - run:
-                name: Install gettext (envsubst)
-                command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
-            - node/install
-            - run:
-                name: Enable pnpm
-                command: corepack enable && corepack prepare pnpm@10.0.0 --activate
-            - run:
-                name: Install test dependencies
-                command: pnpm install --frozen-lockfile
       - shellcheck/check:
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
           filters: *filters
@@ -45,7 +56,7 @@ workflows:
             - orb-tools/review
             - orb-tools/pack
             - shellcheck/check
-            - bats/run
+            - bats-tests
           # Use a context to hold your publishing token.
           context: orb-publishing
           filters: *filters

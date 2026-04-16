@@ -1,0 +1,128 @@
+description: >
+  On pushes to the default branch, open or update a release PR when Changesets has pending
+  work that produces version bumps (install gh, then changeset version + release/<primary> + gh).
+  Skips cleanly when there are no bumps (e.g. empty or verification-only changesets). Filter the
+  workflow to primary-branch only on the client side. Requires GITHUB_TOKEN with repo scopes; see
+  command docs.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Monorepo root containing package.json and .changeset/.
+  attach-workspace:
+    type: boolean
+    default: false
+    description: Attach a persisted workspace before install.
+  checkout:
+    type: boolean
+    default: true
+    description: Whether setup performs checkout first.
+  configure-git-user:
+    type: boolean
+    default: true
+    description: Configure git user for commits on the release branch.
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Git user email when configure-git-user is true.
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Git user name when configure-git-user is true.
+  init-submodules:
+    type: boolean
+    default: false
+    description: Initialize git submodules during setup.
+  npmrc-path:
+    type: string
+    default: ""
+    description: Passed to setup-npm-registry-auth when non-empty.
+  owner:
+    type: string
+    default: chiubaka
+    description: GitHub Packages scope owner when registry-backend is github-packages.
+  pre-release-pr-steps:
+    type: steps
+    default: []
+    description: Steps after install and before install-github-cli (e.g. code generation).
+  primary-branch:
+    type: string
+    default: "master"
+    description: Default branch; release branch is release/<primary-branch>.
+  registry-access:
+    type: enum
+    enum:
+      - read
+      - publish
+    default: read
+    description: Intended token use for private installs during setup.
+  registry-backend:
+    type: enum
+    enum:
+      - npmjs
+      - github-packages
+    default: github-packages
+    description: Registry for setup-npm-registry-auth during install.
+  resource-class:
+    default: medium
+    description: Resource class for docker-node.
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+    description: Extra steps after setup and before git user configuration.
+  skip-install:
+    type: boolean
+    default: false
+    description: Skip pnpm install (use with workspace or external cache).
+  always-auth:
+    type: boolean
+    default: true
+    description: Passed to setup-npm-registry-auth.
+  workspace-at:
+    type: string
+    default: "."
+    description: attach_workspace path when attach-workspace is true.
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      attach-workspace: << parameters.attach-workspace >>
+      checkout: << parameters.checkout >>
+      init-submodules: << parameters.init-submodules >>
+      pre-install-steps:
+        - setup-npm-registry-auth:
+            always-auth: << parameters.always-auth >>
+            npmrc-path: << parameters.npmrc-path >>
+            owner: << parameters.owner >>
+            registry-access: << parameters.registry-access >>
+            registry-backend: << parameters.registry-backend >>
+      primary-branch: << parameters.primary-branch >>
+      skip-pnpm-install: << parameters.skip-install >>
+      workspace-at: << parameters.workspace-at >>
+  - steps: << parameters.setup-steps >>
+  - when:
+      condition: << parameters.configure-git-user >>
+      steps:
+        - run:
+            name: Configure git user
+            working_directory: << parameters.app-dir >>
+            command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
+  - steps: << parameters.pre-release-pr-steps >>
+  - install-github-cli
+  - changesets-release-pr:
+      app-dir: << parameters.app-dir >>
+      primary-branch: << parameters.primary-branch >>

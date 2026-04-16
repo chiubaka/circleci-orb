@@ -1,0 +1,8 @@
+description: >
+  Ensures the GitHub CLI (gh) is available on PATH (installs via official GitHub apt or Alpine
+  packages when missing). Use before changesets-release-pr or other steps that call gh.
+
+steps:
+  - run:
+      name: Install GitHub CLI (gh)
+      command: << include(scripts/installGithubCli.sh) >>
