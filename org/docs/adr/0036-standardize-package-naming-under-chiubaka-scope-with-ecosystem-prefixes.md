@@ -53,10 +53,10 @@ All **published** private packages must:
 
 ### Examples
 
-| Prior illustrative multi-scope name | Published name under this ADR |
-| --------------------------------- | ----------------------------- |
-| `@solarijs/frontend` | `@chiubaka/solari-frontend` |
-| `@solarijs/react` | `@chiubaka/solari-react` |
+| Prior illustrative multi-scope name   | Published name under this ADR                  |
+| ------------------------------------- | ---------------------------------------------- |
+| `@solarijs/frontend`                  | `@chiubaka/solari-frontend`                    |
+| `@solarijs/react`                     | `@chiubaka/solari-react`                       |
 | `@protectiva/plugin-drizzle-postgres` | `@chiubaka/protectiva-plugin-drizzle-postgres` |
 
 Naming should still reflect **role** from ADR 0032 (e.g. `plugin-*`, `frontend-plugin-*`) after the ecosystem prefix.

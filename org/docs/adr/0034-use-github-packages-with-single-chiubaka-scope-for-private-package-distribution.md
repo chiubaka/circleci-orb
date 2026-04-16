@@ -12,7 +12,7 @@ On **2026-04-07**, this ADR was first drafted to choose **npm private packages**
 
 Further analysis the same day showed a material constraint: **npm’s pricing model** makes **multiple organization-scoped namespaces** for private packages expensive in practice—each scope aligned with a product or ecosystem (for example distinct `@solarijs/*`, `@protectiva/*` namespaces) effectively pushes toward **multiple paid npm organizations** for private publishing, which does not scale affordably with a multi-ecosystem architecture.
 
-Rather than add a new ADR number to supersede a decision made hours earlier, **this ADR is updated in place**. The **superseded outcome** was: *npm private packages*. The **current outcome** is: **GitHub Packages** with **one** npm registry scope under **`@chiubaka/*`**. The sections below reflect the **final** decision and rationale; the conflict above is the historical record of why the registry choice changed the same day.
+Rather than add a new ADR number to supersede a decision made hours earlier, **this ADR is updated in place**. The **superseded outcome** was: _npm private packages_. The **current outcome** is: **GitHub Packages** with **one** npm registry scope under **`@chiubaka/*`**. The sections below reflect the **final** decision and rationale; the conflict above is the historical record of why the registry choice changed the same day.
 
 ## Context and Problem Statement
 
