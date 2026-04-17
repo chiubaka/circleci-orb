@@ -31,18 +31,11 @@ parameters:
 
 steps:
   - run:
-      name: Download Codecov Uploader
-      command: << include(scripts/downloadCodecovUploader.sh) >>
+      name: Prepare Codecov uploader for monorepo uploads
+      command: << include(scripts/setupCodecovLegacyUploader.sh) >>
       environment:
         VERSION: << parameters.version >>
-  - when:
-      condition: << parameters.validate >>
-      steps:
-        - run:
-            name: Validate Codecov Uploader
-            command: << include(scripts/validateCodecovUploader.sh) >>
-            environment:
-              VERSION: << parameters.version >>
+        RUN_VALIDATE: << parameters.validate >>
   - run:
       name: Upload Monorepo Coverage Results
       working_directory: << parameters.monorepo-root >>
