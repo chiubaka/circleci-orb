@@ -13,6 +13,46 @@ _**Edit this area to include a custom title and description.**_
 
 ---
 
+## Migration Notes
+
+### v0.15.0
+
+`v0.15.0` includes a Codecov upgrade and a breaking API change for monorepo coverage uploads.
+
+- Upgraded Codecov orb from `codecov/codecov@3.2.3` to `codecov/codecov@5.4.3`.
+- Updated `upload-monorepo-coverage` to explicit Codecov options and removed legacy passthrough parameters.
+
+`upload-monorepo-coverage` parameter migration:
+
+- Removed: `validate`, `version`, `xtra_args`
+- Added: `codecov-cli-version`, `fail-on-error`, `verbose`, `disable-search`, `files`
+
+Before:
+
+```yaml
+- chiubaka/upload-monorepo-coverage:
+    app-dir: .
+    monorepo-root: .
+    coverage-dir: reports/coverage
+    validate: true
+    version: latest
+    xtra_args: "-v -Z"
+```
+
+After:
+
+```yaml
+- chiubaka/upload-monorepo-coverage:
+    app-dir: .
+    monorepo-root: .
+    coverage-dir: reports/coverage
+    codecov-cli-version: latest
+    fail-on-error: true
+    verbose: true
+    disable-search: true
+    files: "coverage.xml,coverage-final.json"
+```
+
 ## Resources
 
 [CircleCI Orb Registry Page](https://circleci.com/orbs/registry/orb/chiubaka/circleci-orb) - The official registry page of this orb for all versions, executors, commands, and jobs described.

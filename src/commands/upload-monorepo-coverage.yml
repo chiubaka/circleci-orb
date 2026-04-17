@@ -16,26 +16,34 @@ parameters:
     type: string
     default: reports/coverage
     description: Path relative to app-dir where coverage reports can be found
-  validate:
-    type: boolean
-    default: true
-    description: Validate the uploader before uploading the codecov result.
-  version:
+  codecov-cli-version:
     type: string
     default: latest
-    description: Version of the Codecov uploader to use
-  xtra_args:
+    description: Version of the Codecov uploader/CLI binary to use
+  fail-on-error:
+    type: boolean
+    default: false
+    description: Exit non-zero when an upload fails.
+  verbose:
+    type: boolean
+    default: false
+    description: Enable verbose Codecov logs.
+  disable-search:
+    type: boolean
+    default: false
+    description: Disable automatic coverage file search for each package upload.
+  files:
     type: string
     default: ""
-    description: Any extra flags as provided by the bash uploader (e.g. `-v -Z`).
+    description: Comma-separated list of explicit files to upload per package.
 
 steps:
   - run:
       name: Prepare Codecov uploader for monorepo uploads
       command: << include(scripts/setupCodecovLegacyUploader.sh) >>
       environment:
-        VERSION: << parameters.version >>
-        RUN_VALIDATE: << parameters.validate >>
+        VERSION: << parameters.codecov-cli-version >>
+        RUN_VALIDATE: true
   - run:
       name: Upload Monorepo Coverage Results
       working_directory: << parameters.monorepo-root >>
@@ -43,4 +51,7 @@ steps:
       environment:
         MONOREPO_ROOT: << parameters.monorepo-root >>
         COVERAGE_DIR: << parameters.app-dir >>/<< parameters.coverage-dir >>
-        XTRA_ARGS: << parameters.xtra_args >>
+        CODECOV_FAIL_ON_ERROR: << parameters.fail-on-error >>
+        CODECOV_VERBOSE: << parameters.verbose >>
+        CODECOV_DISABLE_SEARCH: << parameters.disable-search >>
+        CODECOV_FILES: << parameters.files >>

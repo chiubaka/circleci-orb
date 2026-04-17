@@ -33,7 +33,10 @@ teardown() {
   CIRCLE_BUILD_NUM=32 \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR=$COVERAGE_DIR \
-  XTRA_ARGS="" \
+  CODECOV_FAIL_ON_ERROR=false \
+  CODECOV_VERBOSE=false \
+  CODECOV_DISABLE_SEARCH=false \
+  CODECOV_FILES="" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageResults.sh
 
@@ -52,14 +55,17 @@ teardown() {
   CIRCLE_BUILD_NUM=32 \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR=$COVERAGE_DIR \
-  XTRA_ARGS="--extra extra-arg" \
+  CODECOV_FAIL_ON_ERROR=true \
+  CODECOV_VERBOSE=true \
+  CODECOV_DISABLE_SEARCH=true \
+  CODECOV_FILES="coverage.xml,coverage-final.json" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageResults.sh
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --extra extra-arg"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "-t test-token -n 32 --dir $COVERAGE_DIR/e2e/nx-plugin-e2e -F nx-plugin-e2e --extra extra-arg"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --fail-on-error --verbose --disable-search --files coverage.xml,coverage-final.json"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "-t test-token -n 32 --dir $COVERAGE_DIR/e2e/nx-plugin-e2e -F nx-plugin-e2e --fail-on-error --verbose --disable-search --files coverage.xml,coverage-final.json"
 }
 
 @test "skips upload gracefully if a project coverage directory does not exist" {
@@ -73,14 +79,17 @@ teardown() {
   CIRCLE_BUILD_NUM=32 \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR=$COVERAGE_DIR \
-  XTRA_ARGS="--extra extra-arg" \
+  CODECOV_FAIL_ON_ERROR=true \
+  CODECOV_VERBOSE=true \
+  CODECOV_DISABLE_SEARCH=true \
+  CODECOV_FILES="" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageResults.sh
 
   assert_success
   assert_output "Skipping coverage upload for nx-plugin-e2e because $COVERAGE_DIR/e2e/nx-plugin-e2e does not exist"
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --extra extra-arg"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --fail-on-error --verbose --disable-search"
 }
 
 @test "exits with an error if Codecov upload fails" {
@@ -93,12 +102,15 @@ teardown() {
   CIRCLE_BUILD_NUM=32 \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR=$COVERAGE_DIR \
-  XTRA_ARGS="--extra extra-arg" \
+  CODECOV_FAIL_ON_ERROR=true \
+  CODECOV_VERBOSE=true \
+  CODECOV_DISABLE_SEARCH=true \
+  CODECOV_FILES="" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageResults.sh
 
   assert_failure
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --extra extra-arg"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "-t test-token -n 32 --dir $COVERAGE_DIR/e2e/nx-plugin-e2e -F nx-plugin-e2e --extra extra-arg"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "-t test-token -n 32 --dir $COVERAGE_DIR/packages/nx-plugin -F nx-plugin --fail-on-error --verbose --disable-search"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "-t test-token -n 32 --dir $COVERAGE_DIR/e2e/nx-plugin-e2e -F nx-plugin-e2e --fail-on-error --verbose --disable-search"
 }

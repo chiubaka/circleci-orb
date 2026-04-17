@@ -16,10 +16,18 @@ monorepo_root=$(pwd)
 
 pnpm_bin=${PNPM_BINARY:-"pnpm"}
 
-xtra_args=()
-if [ -n "${XTRA_ARGS:-}" ]; then
-  # shellcheck disable=SC2206
-  read -r -a xtra_args <<< "$XTRA_ARGS"
+codecov_args=()
+if [[ "${CODECOV_FAIL_ON_ERROR:-false}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-0}" == "1" ]]; then
+  codecov_args+=(--fail-on-error)
+fi
+if [[ "${CODECOV_VERBOSE:-false}" == "true" ]] || [[ "${CODECOV_VERBOSE:-0}" == "1" ]]; then
+  codecov_args+=(--verbose)
+fi
+if [[ "${CODECOV_DISABLE_SEARCH:-false}" == "true" ]] || [[ "${CODECOV_DISABLE_SEARCH:-0}" == "1" ]]; then
+  codecov_args+=(--disable-search)
+fi
+if [[ -n "${CODECOV_FILES:-}" ]]; then
+  codecov_args+=(--files "$CODECOV_FILES")
 fi
 
 while IFS=$'\t' read -r pkg_name pkg_abs_path; do
@@ -49,6 +57,6 @@ while IFS=$'\t' read -r pkg_name pkg_abs_path; do
     -n "$CIRCLE_BUILD_NUM" \
     --dir "$project_coverage_dir" \
     -F "$pkg_name" \
-    "${xtra_args[@]}" \
+    "${codecov_args[@]}" \
     "$@"
 done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')
