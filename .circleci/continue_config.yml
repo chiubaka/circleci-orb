@@ -1,0 +1,145 @@
+%YAML 1.1
+---
+version: 2.1
+
+# Continuation pipeline after setup (see src/scripts/computeChangesetsPublishParameters.sh).
+# Pipeline parameter run-changesets-publish gates chiubaka/changesets-gated-publish on master.
+
+parameters:
+  run-changesets-publish:
+    type: boolean
+    default: false
+
+orbs:
+  chiubaka: chiubaka/circleci-orb@dev:<< pipeline.git.revision >>
+  node: circleci/node@5.2.0
+  orb-tools: circleci/orb-tools@11.1
+  shellcheck: circleci/shellcheck@3.1
+
+test-parameters:
+  pnpm-turbo-monorepo: &pnpm-turbo-monorepo-test-parameters
+    app-dir: ~/project/test/fixtures/generateMainConfig
+
+filters: &filters
+  tags:
+    only: /.*/
+
+jobs:
+  bats-tests:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install gettext (envsubst)
+          command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
+      - node/install:
+          install-yarn: false
+      - run:
+          name: Enable pnpm
+          command: corepack enable && corepack prepare pnpm@10.0.0 --activate
+      - run:
+          name: Install test dependencies
+          command: pnpm install --frozen-lockfile
+      - run:
+          name: Install CircleCI CLI (orb pack integration tests)
+          command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Run Bats tests (recursive, includes test/integration)
+          command: pnpm exec bats -r ./test
+
+  command-tests:
+    executor: chiubaka/docker-node
+    steps:
+      - chiubaka/setup:
+          <<: *pnpm-turbo-monorepo-test-parameters
+
+workflows:
+  lint-pack:
+    jobs:
+      - chiubaka/verify-changesets:
+          name: verify-changesets
+          primary-branch: master
+          filters:
+            branches:
+              ignore: /^(master|release\/.*)$/
+            tags:
+              ignore: /.*/
+      - orb-tools/lint:
+          filters: *filters
+      - orb-tools/pack:
+          filters: *filters
+      - orb-tools/review:
+          filters: *filters
+      - bats-tests:
+          filters: *filters
+      - shellcheck/check:
+          exclude: SC2148,SC2038,SC2086,SC2002,SC2016
+          filters: *filters
+      - orb-tools/publish:
+          orb-name: chiubaka/circleci-orb
+          vcs-type: << pipeline.project.type >>
+          requires:
+            - orb-tools/lint
+            - orb-tools/review
+            - orb-tools/pack
+            - shellcheck/check
+            - bats-tests
+          context: orb-publishing
+          filters: *filters
+      - chiubaka/changesets-gated-publish:
+          name: push-orb-version-tag
+          context:
+            - github-release-pr-bot
+          primary-branch: master
+          registry-backend: npmjs
+          registry-access: read
+          publish-script: release:orb
+          skip-build: true
+          verify-changeset-deletions: true
+          requires:
+            - orb-tools/publish
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+          when:
+            and:
+              - equal: [master, << pipeline.git.branch >>]
+              - equal: [true, << pipeline.parameters.run-changesets-publish >>]
+
+  release-pr:
+    jobs:
+      - chiubaka/changesets-release-pr:
+          name: changesets-release-pr
+          context:
+            - github-release-pr-bot
+          primary-branch: master
+          registry-backend: npmjs
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+
+  test-publish:
+    jobs:
+      - command-tests:
+          filters: *filters
+      - orb-tools/pack:
+          filters: *filters
+      - orb-tools/publish:
+          orb-name: chiubaka/circleci-orb
+          vcs-type: << pipeline.project.type >>
+          pub-type: production
+          requires:
+            - orb-tools/pack
+            - command-tests
+          context: orb-publishing
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/

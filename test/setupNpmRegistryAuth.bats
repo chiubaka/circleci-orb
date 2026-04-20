@@ -46,11 +46,19 @@ teardown() {
   refute_line --partial 'always-auth'
 }
 
-@test "fails when npmjs and NPM_TOKEN missing" {
-  NPMRC_PATH=$NPMRC_PATH run setupNpmRegistryAuth.sh
+@test "fails when npmjs and NPM_TOKEN missing and registry-access is publish" {
+  NPMRC_PATH=$NPMRC_PATH REGISTRY_ACCESS=publish run setupNpmRegistryAuth.sh
 
   assert_failure
   assert_output --partial 'NPM_TOKEN must be set'
+}
+
+@test "npmjs read without NPM_TOKEN skips auth" {
+  NPMRC_PATH=$NPMRC_PATH REGISTRY_ACCESS=read run setupNpmRegistryAuth.sh
+
+  assert_success
+  assert_output --partial 'skipping npmjs auth'
+  [[ ! -e "$NPMRC_PATH" ]]
 }
 
 @test "fails when github-packages and GITHUB_TOKEN missing" {
