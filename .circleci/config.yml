@@ -35,4 +35,7 @@ jobs:
 workflows:
   setup:
     jobs:
-      - setup-merge-continue
+      - setup-merge-continue:
+          filters:
+            tags:
+              only: /.*/
