@@ -21,6 +21,13 @@ git fetch origin "$BASE_REVISION"
 
 MERGE_BASE=""
 if ! MERGE_BASE=$(git merge-base "origin/${BASE_REVISION}" "$CIRCLE_SHA1" 2>/dev/null) || [[ -z "$MERGE_BASE" ]]; then
+  if [[ "$(git rev-parse --is-shallow-repository 2>/dev/null || echo false)" == "true" ]]; then
+    git fetch --unshallow origin 2>/dev/null || true
+  else
+    git fetch --deepen=1 origin 2>/dev/null || true
+  fi
+fi
+if ! MERGE_BASE=$(git merge-base "origin/${BASE_REVISION}" "$CIRCLE_SHA1" 2>/dev/null) || [[ -z "$MERGE_BASE" ]]; then
   echo '{"run-changesets-publish": false}' >"$OUTPUT_PATH"
   echo "Unable to compute merge-base for origin/${BASE_REVISION} and ${CIRCLE_SHA1}: wrote false to ${OUTPUT_PATH}" >&2
   exit 0

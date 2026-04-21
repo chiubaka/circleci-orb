@@ -6,7 +6,7 @@ set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 cd "$root"
 
-version=$(jq -r '.version // empty' package.json)
+version=$(node -p "try { require('./package.json').version || '' } catch { '' }")
 if [[ -z "$version" ]]; then
   echo "push-orb-release-tag: package.json missing .version" >&2
   exit 1
