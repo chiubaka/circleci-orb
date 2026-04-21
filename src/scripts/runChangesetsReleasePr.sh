@@ -58,7 +58,7 @@ list_changed_changelog_paths() {
   {
     git diff --name-only
     git ls-files --others --exclude-standard
-  } | grep -E '(^|/)CHANGELOG\.md$' | LC_ALL=C sort -u
+  } | { grep -E '(^|/)CHANGELOG\.md$' || :; } | LC_ALL=C sort -u
 }
 
 build_pr_body_file() {
