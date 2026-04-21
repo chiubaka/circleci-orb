@@ -12,6 +12,10 @@ parameters:
     default: ""
     description: >
       If empty, runs pnpm exec changeset status. If set, runs pnpm run <verify-script> instead.
+  primary-branch:
+    type: string
+    default: "master"
+    description: Branch used as the PR diff base for changeset file checks.
 
 steps:
   - run:
@@ -20,3 +24,4 @@ steps:
       command: << include(scripts/runVerifyChangesets.sh) >>
       environment:
         VERIFY_SCRIPT: << parameters.verify-script >>
+        PRIMARY_BRANCH: << parameters.primary-branch >>
