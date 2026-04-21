@@ -89,8 +89,12 @@ build_pr_body_file() {
 build_force_with_lease_arg() {
   local remote_url branch remote_head=""
   remote_url=$1
+  : "$remote_url"
   branch=$2
-  remote_head=$(git ls-remote --heads "$remote_url" "$branch" | awk 'NR==1 { print $1 }' || true)
+  # Keep remote_url in the signature for backward compatibility with callers.
+  if git fetch --quiet origin "$branch" >/dev/null 2>&1; then
+    remote_head=$(git rev-parse --verify "refs/remotes/origin/${branch}" 2>/dev/null || true)
+  fi
   if [[ -n "$remote_head" ]]; then
     printf '%s' "--force-with-lease=${branch}:${remote_head}"
   else
@@ -160,7 +164,7 @@ run_changesets_release_pr_main() {
 
   push_url="https://github.com/${repo_slug}.git"
 
-  # Refresh both default and release heads so lease checks use current remote state.
+  # Refresh release head so lease checks use current remote state.
   git fetch origin "$release_branch" || true
 
   auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
@@ -170,6 +174,7 @@ run_changesets_release_pr_main() {
     printf '%s\n' "$push_output" >&2
     if [[ "$push_output" == *"stale info"* ]]; then
       # Retry once with a fresh lease in case branch state moved since earlier fetch.
+      git fetch origin "$release_branch" || true
       lease_arg=$(build_force_with_lease_arg "$push_url" "$release_branch")
       git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
         push -u "$push_url" "$release_branch" "$lease_arg"

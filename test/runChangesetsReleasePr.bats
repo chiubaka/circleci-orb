@@ -135,9 +135,11 @@ EOF
   git commit -m "init"
 
   git clone --bare . remote.git
+  git remote add origin "$BATS_TEST_TMPDIR/remote.git"
+  git fetch origin main
   remote_sha=$(git rev-parse HEAD)
 
-  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "'"$BATS_TEST_TMPDIR"'/remote.git" "main"'
+  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "https://github.com/example/repo.git" "main"'
   assert_success
   assert_output "--force-with-lease=main:${remote_sha}"
 }
@@ -152,8 +154,9 @@ EOF
   git commit -m "init"
 
   git clone --bare . remote.git
+  git remote add origin "$BATS_TEST_TMPDIR/remote.git"
 
-  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "'"$BATS_TEST_TMPDIR"'/remote.git" "release/main"'
+  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "https://github.com/example/repo.git" "release/main"'
   assert_success
   assert_output "--force-with-lease"
 }
