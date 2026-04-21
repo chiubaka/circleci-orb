@@ -16,10 +16,6 @@ parameters:
     type: string
     default: reports/coverage
     description: Path relative to app-dir where coverage reports can be found
-  codecov-cli-version:
-    type: string
-    default: latest
-    description: Version of the Codecov CLI used by codecov/upload
   fail-on-error:
     type: boolean
     default: false
@@ -42,12 +38,15 @@ parameters:
     description: Comma-separated list of Codecov flags for this upload.
 
 steps:
-  - codecov/upload:
-      version: << parameters.codecov-cli-version >>
-      dir: << parameters.app-dir >>/<< parameters.coverage-dir >>
-      fail_on_error: << parameters.fail-on-error >>
-      verbose: << parameters.verbose >>
-      disable_search: << parameters.disable-search >>
-      files: << parameters.files >>
-      flags: << parameters.flags >>
-      network_root_folder: << parameters.monorepo-root >>
+  - run:
+      name: Upload monorepo coverage per package using Codecov CLI
+      working_directory: << parameters.monorepo-root >>
+      command: << include(scripts/uploadMonorepoCoverageWithCodecovCli.sh) >>
+      environment:
+        MONOREPO_ROOT: << parameters.monorepo-root >>
+        COVERAGE_DIR: << parameters.app-dir >>/<< parameters.coverage-dir >>
+        CODECOV_FAIL_ON_ERROR: << parameters.fail-on-error >>
+        CODECOV_VERBOSE: << parameters.verbose >>
+        CODECOV_DISABLE_SEARCH: << parameters.disable-search >>
+        CODECOV_FILES: << parameters.files >>
+        CODECOV_FLAGS: << parameters.flags >>
