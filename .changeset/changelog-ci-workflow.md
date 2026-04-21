@@ -2,4 +2,7 @@
 "@chiubaka/circleci-orb": patch
 ---
 
-Add Changesets changelog workflow, dynamic CircleCI continuation, and `compute-changesets-publish-parameters` command for reuse across repositories.
+Add reusable Changesets changelog CI workflow.
+
+Includes dynamic CircleCI continuation and the
+`compute-changesets-publish-parameters` command for reuse across repositories.
