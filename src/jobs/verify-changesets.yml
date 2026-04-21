@@ -22,7 +22,7 @@ parameters:
   primary-branch:
     type: string
     default: "master"
-    description: Primary branch name for setup.
+    description: Primary branch name for setup and verify-changesets diff base.
   pre-install-steps:
     type: steps
     default: []
