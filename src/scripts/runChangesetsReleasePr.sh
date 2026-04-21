@@ -54,6 +54,13 @@ extract_changelog_top() {
   ' "$file"
 }
 
+list_changed_changelog_paths() {
+  {
+    git diff --name-only
+    git ls-files --others --exclude-standard
+  } | grep -E '(^|/)CHANGELOG\.md$' | LC_ALL=C sort -u
+}
+
 build_pr_body_file() {
   local out=$1
   {
@@ -81,7 +88,7 @@ build_pr_body_file() {
       printf '%s\n' "$excerpt"
       echo
     } >>"$out"
-  done < <(git diff --name-only | grep -E '(^|/)CHANGELOG\.md$' || true)
+  done < <(list_changed_changelog_paths || true)
 
   node -e 'const fs=require("fs");const p=process.argv[1];const m=55000;let t=fs.readFileSync(p,"utf8");if(t.length>m){t=t.slice(0,m)+"\n\n_(body truncated for GitHub length limits)_\n";fs.writeFileSync(p,t);}' "$out" 2>/dev/null || true
 }
