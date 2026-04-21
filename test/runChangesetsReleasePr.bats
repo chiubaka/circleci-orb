@@ -109,6 +109,30 @@ EOF
   rm -f "$body"
 }
 
+@test "build_pr_body_file includes excerpt from newly added untracked CHANGELOG.md" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  git init -b main
+  git config user.email test@test
+  git config user.name Test
+  printf '%s\n' '{"name":"@t/root","version":"1.0.0"}' >package.json
+  git add package.json && git commit -m "init"
+
+  cat >CHANGELOG.md <<'EOF'
+# @t/root
+## 1.1.0
+### Patch Changes
+- include untracked changelog excerpt
+EOF
+
+  body=$(mktemp)
+  build_pr_body_file "$body"
+  run grep -F "@t/root" "$body"
+  assert_success
+  run grep -F "include untracked changelog excerpt" "$body"
+  assert_success
+  rm -f "$body"
+}
+
 @test "mktemp EXIT cleanup keeps body_file non-local so trap survives function return (set -u)" {
   # Regression: local body_file + trap 'rm -f "$body_file"' on EXIT — after f returns the
   # local is gone and set -u errors on "unbound variable" when the trap runs.
