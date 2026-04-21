@@ -107,13 +107,20 @@ workflows:
           pre-steps:
             - checkout
             - run:
-                name: Skip job unless release-path diff (CHANGELOG or package.json version vs master)
+                name: Skip job unless release-path diff and release-merge commit
                 command: |
                   set -euo pipefail
                   sudo apt-get update -qq && sudo apt-get install -y -qq jq
                   BASE_REVISION=master SAME_BASE_RUN=true bash src/scripts/computeChangesetsPublishParameters.sh
                   if jq -e '.["run-changesets-publish"] == false' /tmp/pipeline-parameters.json >/dev/null; then
                     echo "Skipping push-orb-version-tag (not a release-path merge)."
+                    circleci step halt
+                  fi
+                  release_subject_regex='^chore\(release\): version packages'
+                  commit_subject=$(git show -s --format=%s "${CIRCLE_SHA1}")
+                  if [[ ! "${commit_subject}" =~ ${release_subject_regex} ]]; then
+                    echo "Skipping push-orb-version-tag (commit subject does not match release merge pattern)."
+                    echo "  subject: ${commit_subject}"
                     circleci step halt
                   fi
           requires:
