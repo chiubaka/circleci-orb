@@ -26,16 +26,23 @@ fi
 
 case "$registry_backend" in
   npmjs)
-    if [[ -z "${NPM_TOKEN:-}" ]]; then
-      echo "setupNpmRegistryAuth: NPM_TOKEN must be set when registry-backend is npmjs." >&2
-      exit 1
-    fi
-    {
-      echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
-      if [[ "$always_auth" == "true" ]]; then
-        echo "//registry.npmjs.org/:always-auth=true"
+    if [[ -n "${NPM_TOKEN:-}" ]]; then
+      {
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+        if [[ "$always_auth" == "true" ]]; then
+          echo "//registry.npmjs.org/:always-auth=true"
+        fi
+      } >>"$npmrc_path"
+    else
+      registry_access=${REGISTRY_ACCESS:-publish}
+      access_lower=$(printf '%s' "$registry_access" | tr '[:upper:]' '[:lower:]')
+      if [[ "$access_lower" == "read" ]]; then
+        echo "setupNpmRegistryAuth: NPM_TOKEN unset; skipping npmjs auth lines (public registry install)." >&2
+      else
+        echo "setupNpmRegistryAuth: NPM_TOKEN must be set when registry-backend is npmjs (or use registry-access read for tokenless public installs)." >&2
+        exit 1
       fi
-    } >>"$npmrc_path"
+    fi
     ;;
   github-packages)
     if [[ -z "${GITHUB_TOKEN:-}" ]]; then

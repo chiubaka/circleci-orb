@@ -33,8 +33,9 @@ parameters:
       - publish
     default: read
     description: >
-      Documents the intended CI token capability for operators (does not change .npmrc lines).
-      read: GitHub read:packages (install). publish: GitHub write:packages and any repo scopes your publish flow needs.
+      Controls tokenless npmjs behavior when NPM_TOKEN is not set and documents intended CI token capability.
+      read: allow npmjs public installs without writing auth lines; use GitHub read:packages for GitHub Packages installs.
+      publish: require auth for npmjs (NPM_TOKEN) and use GitHub write:packages plus any repo scopes your publish flow needs.
   npmrc-path:
     type: string
     default: ""

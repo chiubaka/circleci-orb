@@ -1,68 +1,38 @@
 version: 2.1
 setup: true
-orbs:
-  node: circleci/node@5.2.0
-  orb-tools: circleci/orb-tools@11.1
-  shellcheck: circleci/shellcheck@3.1
 
-filters: &filters
-  tags:
-    only: /.*/
+# Merge inline chiubaka orb + continue_config.yml, validate, then continue (see mergeContinueWithInlineOrb.py).
+# Enable "Dynamic config using setup workflows" in CircleCI project settings.
+# https://circleci.com/docs/guides/orchestrate-auth-workflows-with-dynamic-config/
+
+orbs:
+  continuation: circleci/continuation@2.0.1
 
 jobs:
-  bats-tests:
+  setup-merge-continue:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.12
     resource_class: small
     steps:
       - checkout
       - run:
-          name: Install gettext (envsubst)
-          command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
-      - node/install:
-          install-yarn: false
-      - run:
-          name: Enable pnpm
-          command: corepack enable && corepack prepare pnpm@10.0.0 --activate
-      - run:
-          name: Install test dependencies
-          command: pnpm install --frozen-lockfile
-      - run:
-          name: Install CircleCI CLI (orb pack integration tests)
+          name: Install CircleCI CLI
           command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
       - run:
-          name: Run Bats tests (recursive, includes test/integration)
-          command: pnpm exec bats -r ./test
+          name: Install ruamel.yaml (merge inline orb into continuation config)
+          command: pip install --user 'ruamel.yaml>=0.18.0'
+      - run:
+          name: Merge inline chiubaka orb into continuation config
+          command: |
+            export PATH="$HOME/.local/bin:$PATH"
+            python3 src/scripts/mergeContinueWithInlineOrb.py
+      - run:
+          name: Validate merged continuation config
+          command: circleci config validate .circleci/continue_merged.yml
+      - continuation/continue:
+          configuration_path: .circleci/continue_merged.yml
 
 workflows:
-  lint-pack:
+  setup:
     jobs:
-      - orb-tools/lint:
-          filters: *filters
-      - orb-tools/pack:
-          filters: *filters
-      - orb-tools/review:
-          filters: *filters
-      - bats-tests:
-          filters: *filters
-      - shellcheck/check:
-          exclude: SC2148,SC2038,SC2086,SC2002,SC2016
-          filters: *filters
-      - orb-tools/publish:
-          orb-name: chiubaka/circleci-orb
-          vcs-type: << pipeline.project.type >>
-          requires:
-            - orb-tools/lint
-            - orb-tools/review
-            - orb-tools/pack
-            - shellcheck/check
-            - bats-tests
-          # Use a context to hold your publishing token.
-          context: orb-publishing
-          filters: *filters
-      # Triggers the next workflow in the Orb Development Kit.
-      - orb-tools/continue:
-          pipeline-number: << pipeline.number >>
-          vcs-type: << pipeline.project.type >>
-          requires: [orb-tools/publish]
-          filters: *filters
+      - setup-merge-continue

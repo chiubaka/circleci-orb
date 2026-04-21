@@ -1,26 +1,43 @@
 description: >
-  Use circleci/path-filtering + continuation so changesets-gated-publish only runs when
-  release-related paths change, then assert-release-merge matches the squash subject before publish.
-  Enable "Dynamic Config using setup workflows" in CircleCI project settings. Place your main pipeline
-  (including chiubaka/changesets-gated-publish) in the continuation config file referenced below.
+  Dynamic setup workflow: compute pipeline parameter run-changesets-publish from git diff
+  (CHANGELOG.md or package.json version field changes), then continue to a main config that gates
+  chiubaka/changesets-gated-publish (for example with pipeline.parameters or with a pre-step that
+  runs the same script and circleci step halt). Uses chiubaka/compute-changesets-publish-parameters
+  (same logic as src/scripts/computeChangesetsPublishParameters.sh). Orb repos that must not resolve
+  chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before publish can merge an inline orb in
+  setup (see mergeContinueWithInlineOrb.py in this repository). Enable "Dynamic Config using setup
+  workflows" in CircleCI project settings.
 
 usage:
   version: 2.1
   setup: true
   orbs:
-    chiubaka: chiubaka/circleci-orb@0.11.4
-    path-filtering: circleci/path-filtering@3.0.0
+    chiubaka: chiubaka/circleci-orb@0.15.0
+    continuation: circleci/continuation@2.0.1
+    jq: circleci/jq@3.0.2
+
+  jobs:
+    setup-publish-parameters:
+      docker:
+        - image: cimg/base:stable
+      resource_class: small
+      steps:
+        - checkout
+        - jq/install
+        - chiubaka/compute-changesets-publish-parameters:
+            base-revision: master
+        - continuation/continue:
+            configuration_path: .circleci/continue_config.yml
+            parameters: /tmp/pipeline-parameters.json
 
   workflows:
     setup:
       jobs:
-        - path-filtering/filter:
-            base-revision: main
-            config-path: .circleci/continue_config.yml
-            mapping: |
-              .*package\.json run-changesets-publish true
-              .*CHANGELOG\.md run-changesets-publish true
-              .changeset/.* run-changesets-publish true
+        - setup-publish-parameters
+
+  # Alternate: circleci/path-filtering mapping to the same pipeline parameter name
+  # run-changesets-publish (coarser than diff-based version checks). See CircleCI path-filtering docs.
+
   # Example continuation file `.circleci/continue_config.yml` (snippet):
   #   version: 2.1
   #   parameters:
@@ -28,11 +45,14 @@ usage:
   #       type: boolean
   #       default: false
   #   orbs:
-  #     chiubaka: chiubaka/circleci-orb@0.11.4
+  #     chiubaka: chiubaka/circleci-orb@0.15.0
   #   workflows:
-  #     publish:
-  #       when: << pipeline.parameters.run-changesets-publish >>
+  #     master-publish:
+  #       when:
+  #         and:
+  #           - equal: [master, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.run-changesets-publish >>]
   #       jobs:
   #         - chiubaka/changesets-gated-publish:
   #             context: [github-packages-publish]
-  #             primary-branch: main
+  #             primary-branch: master

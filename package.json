@@ -1,6 +1,7 @@
 {
   "name": "@chiubaka/circleci-orb",
   "version": "0.0.1",
+  "private": true,
   "description": "CircleCI Orb for common Chiubaka Technologies CI/CD tasks",
   "main": "index.js",
   "directories": {
@@ -12,6 +13,7 @@
     "lint:scripts": "bash scripts/run-shellcheck.sh",
     "build": "circleci local execute --skip-checkout orb-tools/pack",
     "prepare": "husky install",
+    "release:orb": "bash scripts/push-orb-release-tag.sh",
     "test": "bats -r ./test"
   },
   "repository": {
@@ -30,6 +32,7 @@
   },
   "homepage": "https://github.com/chiubaka/circleci-orb#readme",
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "bats": "^1.7.0",
     "bats-assert": "^2.0.0",
     "bats-file": "bats-core/bats-file#c7df56c",

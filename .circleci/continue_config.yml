@@ -1,0 +1,162 @@
+%YAML 1.1
+---
+version: 2.1
+
+# Continuation pipeline after setup merges this file with an inline chiubaka orb (mergeContinueWithInlineOrb.py)
+# so CI does not resolve chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before that dev label exists.
+#
+# Release-path gating for push-orb-version-tag uses computeChangesetsPublishParameters.sh + circleci step halt
+# (workflow job `when` is not valid for this inline-orb job in the compiler).
+
+# chiubaka orb is injected as an inline orb at setup time (see mergeContinueWithInlineOrb.py) so CI
+# does not resolve chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before orb-tools/publish exists.
+orbs:
+  node: circleci/node@5.2.0
+  orb-tools: circleci/orb-tools@11.1
+  shellcheck: circleci/shellcheck@3.1
+
+test-parameters:
+  pnpm-turbo-monorepo: &pnpm-turbo-monorepo-test-parameters
+    app-dir: ~/project/test/fixtures/generateMainConfig
+
+filters: &filters
+  tags:
+    only: /.*/
+
+jobs:
+  bats-tests:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install gettext (envsubst)
+          command: sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
+      - node/install:
+          install-yarn: false
+      - run:
+          name: Enable pnpm
+          command: corepack enable && corepack prepare pnpm@10.0.0 --activate
+      - run:
+          name: Install test dependencies
+          command: pnpm install --frozen-lockfile
+      - run:
+          name: Install CircleCI CLI (orb pack integration tests)
+          command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Run Bats tests (recursive, includes test/integration)
+          command: pnpm exec bats -r ./test
+
+  command-tests:
+    executor: chiubaka/docker-node
+    steps:
+      - chiubaka/setup:
+          <<: *pnpm-turbo-monorepo-test-parameters
+
+workflows:
+  lint-pack:
+    jobs:
+      - chiubaka/verify-changesets:
+          name: verify-changesets
+          primary-branch: master
+          filters:
+            branches:
+              ignore: /^(master|release\/.*)$/
+            tags:
+              ignore: /.*/
+      - orb-tools/lint:
+          name: lint-orb
+          filters: *filters
+      - orb-tools/pack:
+          name: pack-orb
+          filters: *filters
+      - orb-tools/review:
+          name: review-orb
+          filters: *filters
+      - bats-tests:
+          name: test-bats
+          filters: *filters
+      - shellcheck/check:
+          name: lint-shellcheck
+          exclude: SC2148,SC2038,SC2086,SC2002,SC2016
+          filters: *filters
+      - orb-tools/publish:
+          name: publish-dev-orb
+          orb-name: chiubaka/circleci-orb
+          vcs-type: << pipeline.project.type >>
+          requires:
+            - lint-orb
+            - review-orb
+            - pack-orb
+            - lint-shellcheck
+            - test-bats
+          context: orb-publishing
+          filters: *filters
+      - chiubaka/changesets-gated-publish:
+          name: push-orb-version-tag
+          context:
+            - github-release-pr-bot
+          primary-branch: master
+          registry-backend: npmjs
+          registry-access: read
+          publish-script: release:orb
+          skip-build: true
+          verify-changeset-deletions: true
+          checkout: false
+          pre-steps:
+            - checkout
+            - run:
+                name: Skip job unless release-path diff (CHANGELOG or package.json version vs master)
+                command: |
+                  set -euo pipefail
+                  sudo apt-get update -qq && sudo apt-get install -y -qq jq
+                  BASE_REVISION=master SAME_BASE_RUN=true bash src/scripts/computeChangesetsPublishParameters.sh
+                  if jq -e '.["run-changesets-publish"] == false' /tmp/pipeline-parameters.json >/dev/null; then
+                    echo "Skipping push-orb-version-tag (not a release-path merge)."
+                    circleci step halt
+                  fi
+          requires:
+            - publish-dev-orb
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+
+  release-pr:
+    jobs:
+      - chiubaka/changesets-release-pr:
+          name: changesets-release-pr
+          context:
+            - github-release-pr-bot
+          primary-branch: master
+          registry-backend: npmjs
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+
+  test-publish:
+    jobs:
+      - command-tests:
+          name: test-commands
+          filters: *filters
+      - orb-tools/pack:
+          name: pack-orb-production
+          filters: *filters
+      - orb-tools/publish:
+          name: publish-production-orb
+          orb-name: chiubaka/circleci-orb
+          vcs-type: << pipeline.project.type >>
+          pub-type: production
+          requires:
+            - pack-orb-production
+            - test-commands
+          context: orb-publishing
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/

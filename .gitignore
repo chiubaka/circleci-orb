@@ -3,3 +3,6 @@ orb.yml
 .DS_Store
 
 node_modules
+
+# Generated in CI by mergeContinueWithInlineOrb.py (inline orb + continue_config.yml).
+.circleci/continue_merged.yml
