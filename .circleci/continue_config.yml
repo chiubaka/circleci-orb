@@ -66,25 +66,31 @@ workflows:
             tags:
               ignore: /.*/
       - orb-tools/lint:
+          name: lint-orb
           filters: *filters
       - orb-tools/pack:
+          name: pack-orb
           filters: *filters
       - orb-tools/review:
+          name: review-orb
           filters: *filters
       - bats-tests:
+          name: test-bats
           filters: *filters
       - shellcheck/check:
+          name: lint-shellcheck
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
           filters: *filters
       - orb-tools/publish:
+          name: publish-dev-orb
           orb-name: chiubaka/circleci-orb
           vcs-type: << pipeline.project.type >>
           requires:
-            - orb-tools/lint
-            - orb-tools/review
-            - orb-tools/pack
-            - shellcheck/check
-            - bats-tests
+            - lint-orb
+            - review-orb
+            - pack-orb
+            - lint-shellcheck
+            - test-bats
           context: orb-publishing
           filters: *filters
       - chiubaka/changesets-gated-publish:
@@ -111,7 +117,7 @@ workflows:
                     circleci step halt
                   fi
           requires:
-            - orb-tools/publish
+            - publish-dev-orb
           filters:
             branches:
               only: master
@@ -135,16 +141,19 @@ workflows:
   test-publish:
     jobs:
       - command-tests:
+          name: test-commands
           filters: *filters
       - orb-tools/pack:
+          name: pack-orb-production
           filters: *filters
       - orb-tools/publish:
+          name: publish-production-orb
           orb-name: chiubaka/circleci-orb
           vcs-type: << pipeline.project.type >>
           pub-type: production
           requires:
-            - orb-tools/pack
-            - command-tests
+            - pack-orb-production
+            - test-commands
           context: orb-publishing
           filters:
             branches:
