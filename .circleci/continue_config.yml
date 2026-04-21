@@ -2,16 +2,15 @@
 ---
 version: 2.1
 
-# Continuation pipeline after setup (see src/scripts/computeChangesetsPublishParameters.sh).
-# Pipeline parameter run-changesets-publish gates chiubaka/changesets-gated-publish on master.
+# Continuation pipeline after setup merges this file with an inline chiubaka orb (mergeContinueWithInlineOrb.py)
+# so CI does not resolve chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before that dev label exists.
+#
+# Release-path gating for push-orb-version-tag uses computeChangesetsPublishParameters.sh + circleci step halt
+# (workflow job `when` is not valid for this inline-orb job in the compiler).
 
-parameters:
-  run-changesets-publish:
-    type: boolean
-    default: false
-
+# chiubaka orb is injected as an inline orb at setup time (see mergeContinueWithInlineOrb.py) so CI
+# does not resolve chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before orb-tools/publish exists.
 orbs:
-  chiubaka: chiubaka/circleci-orb@dev:<< pipeline.git.revision >>
   node: circleci/node@5.2.0
   orb-tools: circleci/orb-tools@11.1
   shellcheck: circleci/shellcheck@3.1
@@ -98,6 +97,19 @@ workflows:
           publish-script: release:orb
           skip-build: true
           verify-changeset-deletions: true
+          checkout: false
+          pre-steps:
+            - checkout
+            - run:
+                name: Skip job unless release-path diff (CHANGELOG or package.json version vs master)
+                command: |
+                  set -euo pipefail
+                  sudo apt-get update -qq && sudo apt-get install -y -qq jq
+                  BASE_REVISION=master SAME_BASE_RUN=true bash src/scripts/computeChangesetsPublishParameters.sh
+                  if jq -e '.["run-changesets-publish"] == false' /tmp/pipeline-parameters.json >/dev/null; then
+                    echo "Skipping push-orb-version-tag (not a release-path merge)."
+                    circleci step halt
+                  fi
           requires:
             - orb-tools/publish
           filters:
@@ -105,10 +117,6 @@ workflows:
               only: master
             tags:
               ignore: /.*/
-          when:
-            and:
-              - equal: [master, << pipeline.git.branch >>]
-              - equal: [true, << pipeline.parameters.run-changesets-publish >>]
 
   release-pr:
     jobs:

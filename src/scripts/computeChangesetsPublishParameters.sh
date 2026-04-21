@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Emit pipeline parameter run-changesets-publish for dynamic config continuation.
+# Emit JSON {"run-changesets-publish": true|false} (default path below) for continuation parameters
+# and for the push-orb-version-tag pre-step gate (see .circleci/continue_config.yml).
 # Mirrors merge-base / same-revision behavior from circleci/path-filtering create-parameters.sh,
 # but sets the flag only when:
 #   - any CHANGELOG.md path changed in the diff, or

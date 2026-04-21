@@ -1,35 +1,38 @@
 version: 2.1
 setup: true
 
-# Compute whether this push is release-related, then continue to continue_config.yml.
+# Merge inline chiubaka orb + continue_config.yml, validate, then continue (see mergeContinueWithInlineOrb.py).
 # Enable "Dynamic config using setup workflows" in CircleCI project settings.
 # https://circleci.com/docs/guides/orchestrate-auth-workflows-with-dynamic-config/
 
 orbs:
   continuation: circleci/continuation@2.0.1
-  jq: circleci/jq@3.0.2
 
 jobs:
-  setup-publish-parameters:
+  setup-merge-continue:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.12
     resource_class: small
     steps:
       - checkout
-      - jq/install
       - run:
-          name: Set run-changesets-publish from diff
-          environment:
-            BASE_REVISION: master
-            SAME_BASE_RUN: "true"
-          # Bootstrap note: this orb repo cannot consume its own new command here
-          # before publish; keep setup using the source script in-repo.
-          command: bash src/scripts/computeChangesetsPublishParameters.sh
+          name: Install CircleCI CLI
+          command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Install ruamel.yaml (merge inline orb into continuation config)
+          command: pip install --user 'ruamel.yaml>=0.18.0'
+      - run:
+          name: Merge inline chiubaka orb into continuation config
+          command: |
+            export PATH="$HOME/.local/bin:$PATH"
+            python3 src/scripts/mergeContinueWithInlineOrb.py
+      - run:
+          name: Validate merged continuation config
+          command: circleci config validate .circleci/continue_merged.yml
       - continuation/continue:
-          configuration_path: .circleci/continue_config.yml
-          parameters: /tmp/pipeline-parameters.json
+          configuration_path: .circleci/continue_merged.yml
 
 workflows:
   setup:
     jobs:
-      - setup-publish-parameters
+      - setup-merge-continue

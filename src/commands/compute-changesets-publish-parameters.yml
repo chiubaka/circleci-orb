@@ -1,10 +1,10 @@
 description: >
   Write /tmp/pipeline-parameters.json (or OUTPUT_PATH) with {"run-changesets-publish": true|false}
   from git diff against origin/<base-revision>, matching release-related paths (CHANGELOG.md or
-  package.json top-level version changes). Pair with circleci/continuation continue and a
-  continuation config that declares pipeline parameter run-changesets-publish (boolean). Requires
-  git, jq, and fetch access to origin. Install jq first (for example circleci/jq jq/install) when
-  using minimal images such as cimg/base.
+  package.json top-level version changes). Pair with circleci/continuation continue (optional
+  pipeline parameter run-changesets-publish) and/or a gated-publish job pre-step that reads the same
+  JSON. Requires git, jq, and fetch access to origin. Install jq first (for example circleci/jq
+  jq/install) when using minimal images such as cimg/base.
 
 parameters:
   base-revision:

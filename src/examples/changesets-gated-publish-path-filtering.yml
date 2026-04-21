@@ -1,9 +1,12 @@
 description: >
   Dynamic setup workflow: compute pipeline parameter run-changesets-publish from git diff
   (CHANGELOG.md or package.json version field changes), then continue to a main config that gates
-  chiubaka/changesets-gated-publish. Uses chiubaka/compute-changesets-publish-parameters (same logic
-  as src/scripts/computeChangesetsPublishParameters.sh). Enable "Dynamic Config using setup workflows"
-  in CircleCI project settings.
+  chiubaka/changesets-gated-publish (for example with pipeline.parameters or with a pre-step that
+  runs the same script and circleci step halt). Uses chiubaka/compute-changesets-publish-parameters
+  (same logic as src/scripts/computeChangesetsPublishParameters.sh). Orb repos that must not resolve
+  chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before publish can merge an inline orb in
+  setup (see mergeContinueWithInlineOrb.py in this repository). Enable "Dynamic Config using setup
+  workflows" in CircleCI project settings.
 
 usage:
   version: 2.1
