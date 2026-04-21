@@ -86,8 +86,20 @@ build_pr_body_file() {
   node -e 'const fs=require("fs");const p=process.argv[1];const m=55000;let t=fs.readFileSync(p,"utf8");if(t.length>m){t=t.slice(0,m)+"\n\n_(body truncated for GitHub length limits)_\n";fs.writeFileSync(p,t);}' "$out" 2>/dev/null || true
 }
 
+build_force_with_lease_arg() {
+  local remote_url branch remote_head=""
+  remote_url=$1
+  branch=$2
+  remote_head=$(git ls-remote --heads "$remote_url" "$branch" | awk 'NR==1 { print $1 }' || true)
+  if [[ -n "$remote_head" ]]; then
+    printf '%s' "--force-with-lease=${branch}:${remote_head}"
+  else
+    printf '%s' "--force-with-lease"
+  fi
+}
+
 run_changesets_release_pr_main() {
-  local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header
+  local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header push_url lease_arg push_output
   # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}
@@ -146,9 +158,27 @@ run_changesets_release_pr_main() {
     exit 1
   fi
 
+  push_url="https://github.com/${repo_slug}.git"
+
+  # Refresh both default and release heads so lease checks use current remote state.
+  git fetch origin "$release_branch" || true
+
   auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
-  git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-    push -u "https://github.com/${repo_slug}.git" "$release_branch" --force-with-lease
+  lease_arg=$(build_force_with_lease_arg "$push_url" "$release_branch")
+  if ! push_output=$(git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+    push -u "$push_url" "$release_branch" "$lease_arg" 2>&1); then
+    printf '%s\n' "$push_output" >&2
+    if [[ "$push_output" == *"stale info"* ]]; then
+      # Retry once with a fresh lease in case branch state moved since earlier fetch.
+      lease_arg=$(build_force_with_lease_arg "$push_url" "$release_branch")
+      git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+        push -u "$push_url" "$release_branch" "$lease_arg"
+    else
+      exit 1
+    fi
+  else
+    printf '%s\n' "$push_output"
+  fi
 
   if ! command -v gh >/dev/null 2>&1; then
     echo "runChangesetsReleasePr: gh CLI not found on PATH after install step." >&2

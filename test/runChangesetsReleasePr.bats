@@ -4,7 +4,7 @@ setup() {
   CHANGESETS_RELEASE_PR_SOURCE_ONLY=true
   # shellcheck disable=SC1091
   source "$PROJECT_ROOT/src/scripts/runChangesetsReleasePr.sh"
-  export -f count_pending_changesets pkg_at_version build_title extract_changelog_top build_pr_body_file
+  export -f count_pending_changesets pkg_at_version build_title extract_changelog_top build_pr_body_file build_force_with_lease_arg
 }
 
 @test "count_pending_changesets is zero without .changeset markdown files" {
@@ -123,4 +123,37 @@ EOF
     exit 0
   '
   assert_success
+}
+
+@test "build_force_with_lease_arg returns sha-pinned lease when remote branch exists" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  git init -b main
+  git config user.email test@test
+  git config user.name Test
+  printf '%s\n' 'first' >README.md
+  git add README.md
+  git commit -m "init"
+
+  git clone --bare . remote.git
+  remote_sha=$(git rev-parse HEAD)
+
+  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "'"$BATS_TEST_TMPDIR"'/remote.git" "main"'
+  assert_success
+  assert_output "--force-with-lease=main:${remote_sha}"
+}
+
+@test "build_force_with_lease_arg returns default lease when remote branch is absent" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  git init -b main
+  git config user.email test@test
+  git config user.name Test
+  printf '%s\n' 'first' >README.md
+  git add README.md
+  git commit -m "init"
+
+  git clone --bare . remote.git
+
+  run bash -c 'cd "'"$BATS_TEST_TMPDIR"'" && build_force_with_lease_arg "'"$BATS_TEST_TMPDIR"'/remote.git" "release/main"'
+  assert_success
+  assert_output "--force-with-lease"
 }
