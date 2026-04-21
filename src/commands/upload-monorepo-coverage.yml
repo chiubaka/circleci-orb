@@ -19,7 +19,7 @@ parameters:
   codecov-cli-version:
     type: string
     default: latest
-    description: Version of the Codecov uploader/CLI binary to use
+    description: Version of the Codecov CLI used by codecov/upload
   fail-on-error:
     type: boolean
     default: false
@@ -35,23 +35,19 @@ parameters:
   files:
     type: string
     default: ""
-    description: Comma-separated list of explicit files to upload per package.
+    description: Comma-separated list of explicit files to upload.
+  flags:
+    type: string
+    default: ""
+    description: Comma-separated list of Codecov flags for this upload.
 
 steps:
-  - run:
-      name: Prepare Codecov uploader for monorepo uploads
-      command: << include(scripts/setupCodecovLegacyUploader.sh) >>
-      environment:
-        VERSION: << parameters.codecov-cli-version >>
-        RUN_VALIDATE: true
-  - run:
-      name: Upload Monorepo Coverage Results
-      working_directory: << parameters.monorepo-root >>
-      command: << include(scripts/uploadMonorepoCoverageResults.sh) >>
-      environment:
-        MONOREPO_ROOT: << parameters.monorepo-root >>
-        COVERAGE_DIR: << parameters.app-dir >>/<< parameters.coverage-dir >>
-        CODECOV_FAIL_ON_ERROR: << parameters.fail-on-error >>
-        CODECOV_VERBOSE: << parameters.verbose >>
-        CODECOV_DISABLE_SEARCH: << parameters.disable-search >>
-        CODECOV_FILES: << parameters.files >>
+  - codecov/upload:
+      version: << parameters.codecov-cli-version >>
+      dir: << parameters.app-dir >>/<< parameters.coverage-dir >>
+      fail_on_error: << parameters.fail-on-error >>
+      verbose: << parameters.verbose >>
+      disable_search: << parameters.disable-search >>
+      files: << parameters.files >>
+      flags: << parameters.flags >>
+      network_root_folder: << parameters.monorepo-root >>

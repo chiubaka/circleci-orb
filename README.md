@@ -20,12 +20,12 @@ _**Edit this area to include a custom title and description.**_
 `v0.16.0` includes a Codecov upgrade and a breaking API change for monorepo coverage uploads.
 
 - Upgraded Codecov orb from `codecov/codecov@3.2.3` to `codecov/codecov@5.4.3`.
-- Updated `upload-monorepo-coverage` to explicit Codecov options and removed legacy passthrough parameters.
+- Migrated `upload-monorepo-coverage` to native `codecov/upload` mechanics with explicit Codecov options.
 
 `upload-monorepo-coverage` parameter migration:
 
 - Removed: `validate`, `version`, `xtra_args`
-- Added: `codecov-cli-version`, `fail-on-error`, `verbose`, `disable-search`, `files`
+- Added: `codecov-cli-version`, `fail-on-error`, `verbose`, `disable-search`, `files`, `flags`
 
 Before:
 
@@ -51,6 +51,7 @@ After:
     verbose: true
     disable-search: true
     files: "coverage.xml,coverage-final.json"
+    flags: "unit,monorepo"
 ```
 
 ## Resources
