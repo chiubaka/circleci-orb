@@ -15,9 +15,9 @@ _**Edit this area to include a custom title and description.**_
 
 ## Migration Notes
 
-### v0.15.0
+### v0.16.0
 
-`v0.15.0` includes a Codecov upgrade and a breaking API change for monorepo coverage uploads.
+`v0.16.0` includes a Codecov upgrade and a breaking API change for monorepo coverage uploads.
 
 - Upgraded Codecov orb from `codecov/codecov@3.2.3` to `codecov/codecov@5.4.3`.
 - Updated `upload-monorepo-coverage` to explicit Codecov options and removed legacy passthrough parameters.
