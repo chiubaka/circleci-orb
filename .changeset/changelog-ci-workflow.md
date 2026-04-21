@@ -1,5 +1,5 @@
 ---
-"@chiubaka/circleci-orb": patch
+"@chiubaka/circleci-orb": minor
 ---
 
 Add reusable Changesets changelog CI workflow.
