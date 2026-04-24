@@ -12,7 +12,7 @@ description: >-
 
 Use **[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)** for every commit message this org touches:
 
-```
+```text
 <type>[(scope)][!]: <short description>
 
 [optional body]
@@ -48,7 +48,7 @@ See [ADR 0035: Trial adoption of Conventional Commits](../../../docs/adr/0035-tr
 
 ## Examples
 
-```
+```text
 feat(api): add idempotency key header validation
 
 fix: handle null payload in legacy adapter

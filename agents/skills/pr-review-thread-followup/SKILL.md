@@ -86,7 +86,7 @@ For each unresolved thread, collect at least:
 
 - Path and line / diff context.
 - **All** comment bodies in chronological order (original review, follow-ups, bots).
-- A **REST comment id** (or equivalent) for **replying** in that thread via `gh api`.
+- A **REST comment id** (`databaseId` from GraphQL matches the REST **integer** `id` on pull review comments) for **replying** in that thread via `gh api`.
 
 If a first query shape fails, adjust the GraphQL or `gh api` invocation and retry—do not skip threads silently.
 
@@ -103,7 +103,25 @@ For **each** thread (not just the first note):
 
 ### 4. Reply **in thread** for every thread
 
-For **each** unresolved thread you triaged, post **one** reply on GitHub **in that review thread** using **`gh api`** (for example the pull request review comment reply endpoint), not only a single top-level `gh pr comment` unless threading truly requires it.
+For **each** unresolved thread you triaged, post **one** reply on GitHub **in that review thread** using **`gh api`**, not only a single top-level `gh pr comment` unless threading truly requires it.
+
+#### Correct REST path for threaded replies (mandatory)
+
+GitHub creates a **threaded** reply only when you call the reply endpoint that includes the **pull request number** in the URL path.
+
+- **Correct:** `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`
+- **Wrong:** `POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/replies` — this path omits `pulls/{pull_number}`; it does **not** create the in-PR threaded reply you want. Agents have mistaken this before; **never** use it for follow-up.
+
+Use the **top-level** review comment’s numeric `comment_id` (the thread root), not a reply’s id.
+
+**`gh` example** (replace placeholders; capture `pull_number` from `gh pr view` and `comment_id` from GraphQL `databaseId` or REST):
+
+```bash
+gh api -X POST "repos/OWNER/REPO/pulls/PULL_NUMBER/comments/COMMENT_ID/replies" \
+  -f body='Your reply text (include human-delegation prefix when required).'
+```
+
+After posting, confirm the response JSON includes `in_reply_to_id` equal to the root comment id, or spot-check the thread on the **Files changed** tab.
 
 Start the comment body with the **human-delegation prefix** when **Commenting identity** requires it; otherwise start with the substantive text only. The body should make one of these outcomes obvious:
 
