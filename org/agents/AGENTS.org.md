@@ -36,6 +36,12 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Keep org-level guidance source in `org/agents/AGENTS.org.md`; sync root `AGENTS.md` via `org/agents/scripts/bootstrap-agents-md.sh`.
 - Validate guidance sync drift with `org/agents/scripts/bootstrap-agents-md.sh --check`.
 
+## Versioning and changelog (Changesets)
+
+- When a repository uses **Atlassian Changesets** (a `.changeset/` config and `@changesets/cli` in the workspace), **do not** hand-edit the root or package `version` fields in `package.json` to release user-facing changes, and **do not** hand-edit `CHANGELOG.md` to add release notes for those changes. Release automation applies those updates when maintainers run `changeset version` (or the organization’s release pipeline does).
+- Use **`pnpm changeset` / `changeset add`**, or add a new tracked markdown file under **`.changeset/`** with the correct `patch` / `minor` / `major` frontmatter, so the intended semver bump and changelog line are generated at release time.
+- Follow `org/agents/skills/changesets-hygiene/SKILL.md` when introducing or changing releaseable work.
+
 ## Org subtree safety
 
 - Treat `org/` as a `git subtree`-managed prefix; do not remove and recreate `org/` unless the user explicitly requests subtree reinitialization.
