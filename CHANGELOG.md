@@ -1,5 +1,24 @@
 # @chiubaka/circleci-orb
 
+## 0.16.0
+
+### Minor Changes
+
+- ab4752f: Switch monorepo coverage upload to direct Codecov CLI v5 mechanics while preserving per-package monorepo uploads.
+
+  **BREAKING CHANGE**: Replace legacy passthrough parameters with explicit Codecov options (`fail-on-error`, `verbose`, `disable-search`, `files`, `flags`) for per-package uploads. Tokenless mode is supported when `CODECOV_TOKEN` is unset.
+  See `README.md` Migration Notes (`v0.16.0`) for parameter mapping and before/after examples.
+
+### Patch Changes
+
+- 0b7fbd9: Skip pnpm workspace root in `upload_monorepo_coverage` Codecov uploads
+
+  The `uploadMonorepoCoverageWithCodecovCli` script no longer passes the entire coverage
+  root to Codecov under the workspace root package name, avoiding duplicate per-package
+  uploads and collisions with path-scoped Codecov `flags` that reuse that name. Each leaf
+  package still uploads when `reports/coverage/<relpath>` exists. Tests and the orb command
+  description were updated to match.
+
 ## 0.15.0
 
 ### Minor Changes
