@@ -1,0 +1,13 @@
+version: 2.1
+
+orbs:
+  chiubaka: chiubaka/circleci-orb@0.13.0
+
+workflows:
+  lint:
+    jobs:
+      - chiubaka/lint:
+          name: lint-markdown
+          primary-branch: master
+          context:
+            - github-packages-read

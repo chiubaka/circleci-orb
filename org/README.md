@@ -3,6 +3,13 @@
 This directory is the org-level source of truth for shared architecture guidance and
 agent guidance used across Chiubaka Technologies, LLC repositories.
 
+## Private packages (`GH_TOKEN`)
+
+The root `.npmrc` routes the `@chiubaka` scope to GitHub Packages and reads `GH_TOKEN`
+for authentication. The token is never committed; set it in your environment before
+`pnpm install` (for example `export GH_TOKEN=...` in your shell profile, or your CI
+secret store). The token needs `read:packages` (and org access as required by GitHub).
+
 ## What lives here
 
 - `org/docs/adr/`: org-wide ADRs and architecture conventions.

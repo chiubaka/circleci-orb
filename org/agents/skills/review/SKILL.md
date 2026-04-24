@@ -51,7 +51,7 @@ Run by default after any non-trivial code change and **before** you tell the use
 
 ## Style and naming
 
-- [ ] **Test stand-in naming (review-time):** Prefer **mock** terminology in test code (`createFooMock`, `*TestMocks` modules) over “double” naming (`*Double`, `*TestDoubles`). Reserve *double* for prose when you mean the general testing concept.
+- [ ] **Test stand-in naming (review-time):** Prefer **mock** terminology in test code (`createFooMock`, `*TestMocks` modules) over “double” naming (`*Double`, `*TestDoubles`). Reserve _double_ for prose when you mean the general testing concept.
 - [ ] Prefer full, descriptive names over short abbreviations for variables, parameters, instance fields, and destructured bindings.
 - [ ] Apply that preference consistently across all scopes (local variables, function parameters, and class members) unless a conventional short name is more recognizable within the domain.
 - [ ] When clarifying the guidance, examples such as `dependencies` over `deps`, `llmService` over `llm`, and `configuration` over `config` are helpful; list exceptions explicitly so reviewers can justify departures.
