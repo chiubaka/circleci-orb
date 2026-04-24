@@ -1,5 +1,9 @@
 description: >
-  This command uploads coverage reports for monorepos to Codecov
+  Uploads Codecov coverage for each pnpm workspace package that has a matching directory under
+  the coverage path (for example reports/coverage/<packagePath>). The workspace root package
+  is skipped: there is no separate upload for the entire tree under the coverage root, so the
+  root `package.json` name is not used as a Codecov flag. Leaf packages under the workspace
+  continue to receive one upload each when their per-package coverage directory exists.
 
 parameters:
   app-dir:

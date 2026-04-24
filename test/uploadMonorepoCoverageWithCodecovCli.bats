@@ -52,6 +52,29 @@ teardown() {
   assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin"
 }
 
+@test "skips workspace root package; does not upload full coverage tree under root name" {
+  pnpm_ls_with_root="[{\"name\":\"monorepo-root\",\"path\":\"$TEST_DIR\"},{\"name\":\"nx-plugin\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"nx-plugin-e2e\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$pnpm_ls_with_root"
+  # Entire tree exists under coverage root, but root must not trigger one -F monorepo-root upload.
+  mkdir -p "$COVERAGE_DIR"
+  touch "$COVERAGE_DIR"/.placeholder
+
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_output --partial "Skipping coverage upload for workspace root package monorepo-root; per-package subdirectories only"
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name nx-plugin-e2e --flag nx-plugin-e2e"
+}
+
 @test "skips packages with missing coverage directories" {
   rm -d "$COVERAGE_DIR"/e2e/nx-plugin-e2e
   codecov_mock=$(mock_create)
