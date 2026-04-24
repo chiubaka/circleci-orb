@@ -46,15 +46,18 @@ IFS=',' read -r -a configured_flags <<< "${CODECOV_FLAGS:-}"
 
 while IFS=$'\t' read -r package_name package_abs_path; do
   if [[ "$package_abs_path" == "$monorepo_root" ]]; then
-    package_coverage_dir="$coverage_root"
-  else
-    package_rel_path="${package_abs_path#"$monorepo_root/"}"
-    if [[ "$package_rel_path" == "$package_abs_path" ]]; then
-      echo "ERROR: package path is not under MONOREPO_ROOT ($monorepo_root): $package_abs_path" >&2
-      exit 1
-    fi
-    package_coverage_dir="$coverage_root/$package_rel_path"
+    # pnpm includes the workspace root; do not upload reports/coverage as one tree under the root
+    # package name (it duplicates leaf uploads and can collide with path-scoped Codecov flags).
+    echo "Skipping coverage upload for workspace root package $package_name; per-package subdirectories only"
+    continue
   fi
+
+  package_rel_path="${package_abs_path#"$monorepo_root/"}"
+  if [[ "$package_rel_path" == "$package_abs_path" ]]; then
+    echo "ERROR: package path is not under MONOREPO_ROOT ($monorepo_root): $package_abs_path" >&2
+    exit 1
+  fi
+  package_coverage_dir="$coverage_root/$package_rel_path"
 
   if [[ ! -d "$package_coverage_dir" ]]; then
     echo "Skipping coverage upload for $package_name because $package_coverage_dir does not exist"
