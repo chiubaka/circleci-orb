@@ -23,7 +23,7 @@ sh_files=()
 while IFS= read -r -d '' f; do
   sh_files+=("$f")
 done < <(
-  find . \( -path './.git' -o -path './node_modules' -o -path './.husky' \) -prune -o \
+  find . \( -path './.git' -o -path './node_modules' -o -path './.husky' -o -path './org/agents/scripts' \) -prune -o \
     -name '*.sh' -type f -print0
 )
 
