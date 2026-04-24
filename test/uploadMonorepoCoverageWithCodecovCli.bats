@@ -18,6 +18,8 @@ teardown() {
 @test "uploads one coverage report per monorepo package with package flag" {
   codecov_mock=$(mock_create)
 
+  # Clear token so assertions match; CI may inject CODECOV_TOKEN.
+  CODECOV_TOKEN='' \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   CODECOV_FAIL_ON_ERROR=true \
@@ -38,6 +40,7 @@ teardown() {
 @test "omits token and optional args when unset" {
   codecov_mock=$(mock_create)
 
+  CODECOV_TOKEN='' \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   CODECOV_BINARY="${codecov_mock}" \
@@ -53,6 +56,7 @@ teardown() {
   rm -d "$COVERAGE_DIR"/e2e/nx-plugin-e2e
   codecov_mock=$(mock_create)
 
+  CODECOV_TOKEN='' \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   CODECOV_BINARY="${codecov_mock}" \
