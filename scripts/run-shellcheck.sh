@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# Keep in sync with .circleci/config.yml shellcheck/check exclude
+# Keep in sync with .circleci/continue_config.yml shellcheck/check exclude and ignore-dirs
 EXCLUDE="SC2148,SC2038,SC2086,SC2002,SC2016"
 
 if [[ -x "$ROOT/node_modules/.bin/shellcheck" ]]; then

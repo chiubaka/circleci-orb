@@ -80,6 +80,10 @@ workflows:
       - shellcheck/check:
           name: lint-shellcheck
           exclude: SC2148,SC2038,SC2086,SC2002,SC2016
+          # Match scripts/run-shellcheck.sh: org-managed scripts are not first-party orb bash.
+          ignore-dirs: |
+            ./.git
+            ./org/agents/scripts
           filters: *filters
       - orb-tools/publish:
           name: publish-dev-orb
