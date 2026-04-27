@@ -79,6 +79,7 @@ teardown() {
   rm -d "$COVERAGE_DIR"/e2e/nx-plugin-e2e
   codecov_mock=$(mock_create)
 
+  # Entire tree exists under coverage root, but root must not trigger one --name monorepo-root --flag monorepo-root upload.
   CODECOV_TOKEN='' \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
