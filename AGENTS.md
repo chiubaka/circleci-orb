@@ -62,4 +62,11 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 <!-- REPO_OVERRIDES_START -->
 _Repository-specific overrides go here. These take precedence over org defaults._
+
+## Repo release-notes policy
+
+- Do not maintain a running migration log, release notes ledger, or shadow changelog in `README.md`.
+- Record normal release-facing changes through `.changeset/*.md`; generated changelog output is the canonical release history.
+- Add README migration guidance only for large, breaking transitions that require durable operator context not appropriate for a single changeset entry.
+- When such README migration guidance is necessary, keep it focused on actionable migration steps and remove it after it is no longer needed.
 <!-- REPO_OVERRIDES_END -->

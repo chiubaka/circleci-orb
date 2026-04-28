@@ -3,7 +3,9 @@ description: >
   the coverage path (for example reports/coverage/<packagePath>). The workspace root package
   is skipped: there is no separate upload for the entire tree under the coverage root, so the
   root `package.json` name is not used as a Codecov flag. Leaf packages under the workspace
-  continue to receive one upload each when their per-package coverage directory exists.
+  continue to receive one upload each when their per-package coverage directory exists. Package
+  names are normalized to Codecov-safe flags (for example `@chiubaka/lint` becomes
+  `chiubaka-lint`) before upload.
 
 parameters:
   app-dir:
@@ -39,7 +41,7 @@ parameters:
   flags:
     type: string
     default: ""
-    description: Comma-separated list of Codecov flags for this upload.
+    description: Comma-separated list of additional Codecov flags for this upload.
 
 steps:
   - run:

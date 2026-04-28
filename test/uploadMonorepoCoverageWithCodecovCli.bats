@@ -37,6 +37,81 @@ teardown() {
   assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name nx-plugin-e2e --flag nx-plugin-e2e --fail-on-error --verbose --disable-search --file coverage.xml --file coverage-final.json --flag unit --flag monorepo"
 }
 
+@test "sanitizes scoped package names into Codecov-safe flags" {
+  scoped_pnpm_ls_json="[{\"name\":\"@chiubaka/lint\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"@chiubaka/e2e-tests\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$scoped_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/lint --flag chiubaka-lint"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @chiubaka/e2e-tests --flag chiubaka-e2e-tests"
+}
+
+@test "normalizes disallowed characters in package-derived flags" {
+  weird_pnpm_ls_json="[{\"name\":\"@chiubaka/pkg!!name\",\"path\":\"$TEST_DIR/packages/nx-plugin\"}]"
+  mock_set_output "${pnpm_mock}" "$weird_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/pkg!!name --flag chiubaka-pkg-name"
+}
+
+@test "truncates long package-derived flags to Codecov max length" {
+  long_name="@scope/abcdefghijklmnopqrstuvwxyz1234567890abcdefghijk"
+  long_pnpm_ls_json="[{\"name\":\"$long_name\",\"path\":\"$TEST_DIR/packages/nx-plugin\"}]"
+  mock_set_output "${pnpm_mock}" "$long_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name $long_name --flag scope-abcdefghijklmnopqrstuvwxyz1234567890abc"
+}
+
+@test "adds hash suffix when sanitized flags collide" {
+  colliding_pnpm_ls_json="[{\"name\":\"@a/b\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"a-b\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  run bash -lc "printf '%s' 'a-b' | sha256sum | cut -c1-8"
+  assert_success
+  hash_suffix="$output"
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @a/b --flag a-b"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name a-b --flag a-b-$hash_suffix"
+}
+
 @test "omits token and optional args when unset" {
   codecov_mock=$(mock_create)
 
