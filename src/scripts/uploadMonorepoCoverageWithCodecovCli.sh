@@ -75,6 +75,11 @@ resolve_unique_flag() {
   fi
 
   scoped_flag="$(sanitize_package_flag "$package_with_scope")"
+  if [[ "$scoped_flag" == "$unscoped_flag" ]]; then
+    echo "ERROR: unable to derive unique Codecov flag for package $package_name. Unscoped candidate '$unscoped_flag' collides with ${flag_to_package[$unscoped_flag]}, and no distinct scoped fallback is available." >&2
+    exit 1
+  fi
+
   existing_package="${flag_to_package[$scoped_flag]-}"
   if [[ -z "$existing_package" ]] || [[ "$existing_package" == "$package_name" ]]; then
     printf '%s' "$scoped_flag"

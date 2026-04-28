@@ -144,6 +144,22 @@ teardown() {
   assert_output --partial "ERROR: unable to derive unique Codecov flag for package @b/pkg. Unscoped candidate 'pkg' collides with @a/pkg, and scoped candidate 'b-pkg' collides with b-pkg."
 }
 
+@test "fails with explicit no-fallback message for unscoped collision" {
+  colliding_pnpm_ls_json="[{\"name\":\"pkg\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"pkg!\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_failure
+  assert_output --partial "ERROR: unable to derive unique Codecov flag for package pkg!. Unscoped candidate 'pkg' collides with pkg, and no distinct scoped fallback is available."
+}
+
 @test "omits token and optional args when unset" {
   codecov_mock=$(mock_create)
 
