@@ -44,6 +44,85 @@ fi
 IFS=',' read -r -a configured_files <<< "${CODECOV_FILES:-}"
 IFS=',' read -r -a configured_flags <<< "${CODECOV_FLAGS:-}"
 
+sanitize_package_flag() {
+  local package_name="$1"
+  local sanitized
+
+  sanitized="${package_name#@}"
+  sanitized="${sanitized//\//-}"
+  sanitized="$(printf '%s' "$sanitized" | sed -E 's/[^[:alnum:]_.-]+/-/g; s/-+/-/g; s/^[._-]+//; s/[._-]+$//')"
+  sanitized="${sanitized:0:45}"
+  sanitized="$(printf '%s' "$sanitized" | sed -E 's/[._-]+$//')"
+
+  if [[ -z "$sanitized" ]]; then
+    sanitized="pkg"
+  fi
+
+  printf '%s' "$sanitized"
+}
+
+short_hash() {
+  local input="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$input" | sha256sum | cut -c1-8
+    return
+  fi
+
+  if command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$input" | shasum -a 256 | cut -c1-8
+    return
+  fi
+
+  echo "ERROR: neither sha256sum nor shasum is available for flag collision handling." >&2
+  exit 1
+}
+
+resolve_unique_flag() {
+  local package_name="$1"
+  local base_flag="$2"
+  local existing_package
+  local hashed_flag hash_suffix hash base_limit truncated_base
+
+  existing_package="${flag_to_package[$base_flag]-}"
+  if [[ -z "$existing_package" ]]; then
+    printf '%s' "$base_flag"
+    return
+  fi
+
+  if [[ "$existing_package" == "$package_name" ]]; then
+    printf '%s' "$base_flag"
+    return
+  fi
+
+  hash="$(short_hash "$package_name")"
+  hash_suffix="-$hash"
+  base_limit=$((45 - ${#hash_suffix}))
+
+  if (( base_limit < 1 )); then
+    echo "ERROR: unable to derive unique Codecov flag for package $package_name." >&2
+    exit 1
+  fi
+
+  truncated_base="${base_flag:0:$base_limit}"
+  truncated_base="$(printf '%s' "$truncated_base" | sed -E 's/[._-]+$//')"
+  if [[ -z "$truncated_base" ]]; then
+    truncated_base="pkg"
+  fi
+  hashed_flag="${truncated_base}${hash_suffix}"
+
+  existing_package="${flag_to_package[$hashed_flag]-}"
+  if [[ -n "$existing_package" ]] && [[ "$existing_package" != "$package_name" ]]; then
+    echo "ERROR: flag collision detected after sanitization: $package_name and $existing_package both map to $hashed_flag." >&2
+    exit 1
+  fi
+
+  printf '%s' "$hashed_flag"
+}
+
+declare -A package_to_flag=()
+declare -A flag_to_package=()
+
 while IFS=$'\t' read -r package_name package_abs_path; do
   if [[ "$package_abs_path" == "$monorepo_root" ]]; then
     # pnpm includes the workspace root; do not upload reports/coverage as one tree under the root
@@ -64,12 +143,22 @@ while IFS=$'\t' read -r package_name package_abs_path; do
     continue
   fi
 
+  package_flag="${package_to_flag[$package_name]-}"
+  if [[ -z "$package_flag" ]]; then
+    base_flag="$(sanitize_package_flag "$package_name")"
+    package_flag="$(resolve_unique_flag "$package_name" "$base_flag")"
+    package_to_flag["$package_name"]="$package_flag"
+    flag_to_package["$package_flag"]="$package_name"
+  fi
+
+  echo "Uploading coverage for package $package_name using Codecov flag $package_flag"
+
   upload_args=(
     upload-coverage
     --dir "$package_coverage_dir"
     --network-root-folder "$monorepo_root"
     --name "$package_name"
-    --flag "$package_name"
+    --flag "$package_flag"
   )
   upload_args+=("${common_args[@]}")
 

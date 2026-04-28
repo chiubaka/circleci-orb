@@ -15,6 +15,22 @@ _**Edit this area to include a custom title and description.**_
 
 ## Migration Notes
 
+### v0.16.1
+
+`v0.16.1` fixes monorepo Codecov flag uploads for scoped npm package names.
+
+- Package-derived monorepo flags are now normalized to Codecov-safe names.
+- Normalization rules for package-derived flags:
+  - remove leading `@`
+  - replace `/` with `-`
+  - replace unsupported characters with `-`
+  - truncate to Codecov's 45-character limit
+- Example: `@chiubaka/lint` uploads with flag `chiubaka-lint`.
+- Additional flags supplied through the `flags` parameter are passed through unchanged.
+
+If your `codecov.yml` uses `individual_flags`, ensure each `name` matches the normalized flag
+value used by uploads.
+
 ### v0.16.0
 
 `v0.16.0` includes a Codecov upgrade and a breaking API change for monorepo coverage uploads.
