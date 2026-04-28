@@ -24,12 +24,16 @@ parameters:
     description: Path relative to app-dir where coverage reports can be found
   fail-on-error:
     type: boolean
-    default: false
-    description: Exit non-zero when an upload fails.
+    default: true
+    description: Exit non-zero when an upload fails (recommended default).
   verbose:
     type: boolean
-    default: false
-    description: Enable verbose Codecov logs.
+    default: true
+    description: Enable verbose Codecov logs by default.
+  require-uploads:
+    type: boolean
+    default: true
+    description: Exit non-zero when no per-package coverage upload occurs.
   disable-search:
     type: boolean
     default: false
@@ -54,5 +58,6 @@ steps:
         CODECOV_FAIL_ON_ERROR: << parameters.fail-on-error >>
         CODECOV_VERBOSE: << parameters.verbose >>
         CODECOV_DISABLE_SEARCH: << parameters.disable-search >>
+        CODECOV_REQUIRE_UPLOADS: << parameters.require-uploads >>
         CODECOV_FILES: << parameters.files >>
         CODECOV_FLAGS: << parameters.flags >>

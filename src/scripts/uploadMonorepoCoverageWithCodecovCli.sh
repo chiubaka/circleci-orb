@@ -28,10 +28,10 @@ if ! command -v "$codecov_bin" >/dev/null 2>&1; then
 fi
 
 common_args=()
-if [[ "${CODECOV_FAIL_ON_ERROR:-false}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-0}" == "1" ]]; then
+if [[ "${CODECOV_FAIL_ON_ERROR:-true}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-1}" == "1" ]]; then
   common_args+=(--fail-on-error)
 fi
-if [[ "${CODECOV_VERBOSE:-false}" == "true" ]] || [[ "${CODECOV_VERBOSE:-0}" == "1" ]]; then
+if [[ "${CODECOV_VERBOSE:-true}" == "true" ]] || [[ "${CODECOV_VERBOSE:-1}" == "1" ]]; then
   common_args+=(--verbose)
 fi
 if [[ "${CODECOV_DISABLE_SEARCH:-false}" == "true" ]] || [[ "${CODECOV_DISABLE_SEARCH:-0}" == "1" ]]; then
@@ -122,6 +122,12 @@ resolve_unique_flag() {
 
 declare -A package_to_flag=()
 declare -A flag_to_package=()
+upload_count=0
+if [[ "${CODECOV_REQUIRE_UPLOADS:-true}" == "true" ]] || [[ "${CODECOV_REQUIRE_UPLOADS:-1}" == "1" ]]; then
+  require_uploads=true
+else
+  require_uploads=false
+fi
 
 while IFS=$'\t' read -r package_name package_abs_path; do
   if [[ "$package_abs_path" == "$monorepo_root" ]]; then
@@ -179,4 +185,10 @@ while IFS=$'\t' read -r package_name package_abs_path; do
   done
 
   "$codecov_bin" "${upload_args[@]}"
+  upload_count=$((upload_count + 1))
 done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')
+
+if [[ "$require_uploads" == "true" ]] && (( upload_count == 0 )); then
+  echo "ERROR: no coverage reports were uploaded. Ensure per-package coverage directories exist under $coverage_root or set CODECOV_REQUIRE_UPLOADS=false to allow empty uploads." >&2
+  exit 1
+fi

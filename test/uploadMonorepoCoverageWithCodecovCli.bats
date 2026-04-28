@@ -51,8 +51,8 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/lint --flag chiubaka-lint"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @chiubaka/e2e-tests --flag chiubaka-e2e-tests"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/lint --flag chiubaka-lint --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @chiubaka/e2e-tests --flag chiubaka-e2e-tests --fail-on-error --verbose"
 }
 
 @test "normalizes disallowed characters in package-derived flags" {
@@ -69,7 +69,7 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/pkg!!name --flag chiubaka-pkg-name"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/pkg!!name --flag chiubaka-pkg-name --fail-on-error --verbose"
 }
 
 @test "truncates long package-derived flags to Codecov max length" {
@@ -87,7 +87,7 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name $long_name --flag scope-abcdefghijklmnopqrstuvwxyz1234567890abc"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name $long_name --flag scope-abcdefghijklmnopqrstuvwxyz1234567890abc --fail-on-error --verbose"
 }
 
 @test "adds hash suffix when sanitized flags collide" {
@@ -108,11 +108,29 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @a/b --flag a-b"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name a-b --flag a-b-$hash_suffix"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @a/b --flag a-b --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name a-b --flag a-b-$hash_suffix --fail-on-error --verbose"
 }
 
 @test "omits token and optional args when unset" {
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  CODECOV_FAIL_ON_ERROR=false \
+  CODECOV_VERBOSE=false \
+  CODECOV_REQUIRE_UPLOADS=false \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin"
+}
+
+@test "defaults fail-on-error and verbose to true" {
   codecov_mock=$(mock_create)
 
   CODECOV_TOKEN='' \
@@ -124,7 +142,7 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin --fail-on-error --verbose"
 }
 
 @test "skips workspace root package; does not upload full coverage tree under root name" {
@@ -146,8 +164,8 @@ teardown() {
   assert_success
   assert_output --partial "Skipping coverage upload for workspace root package monorepo-root; per-package subdirectories only"
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name nx-plugin-e2e --flag nx-plugin-e2e"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name nx-plugin-e2e --flag nx-plugin-e2e --fail-on-error --verbose"
 }
 
 @test "skips packages with missing coverage directories" {
@@ -156,6 +174,8 @@ teardown() {
 
   # Entire tree exists under coverage root, but root must not trigger one --name monorepo-root --flag monorepo-root upload.
   CODECOV_TOKEN='' \
+  CODECOV_FAIL_ON_ERROR=false \
+  CODECOV_VERBOSE=false \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   CODECOV_BINARY="${codecov_mock}" \
@@ -165,4 +185,36 @@ teardown() {
   assert_success
   assert_output --partial "Skipping coverage upload for nx-plugin-e2e because $COVERAGE_DIR/e2e/nx-plugin-e2e does not exist"
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
+}
+
+@test "fails when no package coverage reports are uploaded by default" {
+  rm -rf "$COVERAGE_DIR"/packages/nx-plugin "$COVERAGE_DIR"/e2e/nx-plugin-e2e
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_failure
+  assert_output --partial "ERROR: no coverage reports were uploaded."
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 0
+}
+
+@test "allows empty uploads when CODECOV_REQUIRE_UPLOADS is false" {
+  rm -rf "$COVERAGE_DIR"/packages/nx-plugin "$COVERAGE_DIR"/e2e/nx-plugin-e2e
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  CODECOV_REQUIRE_UPLOADS=false \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 0
 }
