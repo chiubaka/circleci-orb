@@ -358,12 +358,87 @@ EOF
 #! /usr/bin/env bash
 if [[ "$1" == "-fsSL" && "$2" == "https://bootstrap.pypa.io/get-pip.py" && "$3" == "-o" ]]; then
   mkdir -p "$(dirname "$4")"
-  touch "$4"
+  printf '# bootstrap\n' >"$4"
   exit 0
 fi
 exit 1
 EOF
   chmod +x "$mock_bin_dir/curl"
+  cat >"$mock_bin_dir/pip3" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/pip3"
+
+  HOME="$home_dir" \
+  PATH="$mock_bin_dir:$PATH" \
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_file_exist "$home_dir/.local/bin/codecovcli"
+  assert_output --partial "Uploading coverage for package nx-plugin"
+
+  rm -rf "$home_dir" "$mock_bin_dir"
+}
+
+@test "bootstraps pip with get-pip.py via wget when curl is unavailable" {
+  home_dir="$(mktemp -d)"
+  mock_bin_dir="$(mktemp -d)"
+  mkdir -p "$home_dir/.local/bin"
+
+  cat >"$mock_bin_dir/python3" <<'EOF'
+#! /usr/bin/env bash
+if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "--version" ]]; then
+  if [[ -f "$HOME/.get-pip-ready" ]]; then
+    exit 0
+  fi
+  exit 1
+fi
+
+if [[ "$1" == "-m" && "$2" == "ensurepip" ]]; then
+  exit 1
+fi
+
+if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "install" ]]; then
+  mkdir -p "$HOME/.local/bin"
+  cat >"$HOME/.local/bin/codecovcli" <<'INNER'
+#! /usr/bin/env bash
+printf '%s\n' "$*" >>"$HOME/codecov-invocations.log"
+INNER
+  chmod +x "$HOME/.local/bin/codecovcli"
+  exit 0
+fi
+
+if [[ "$1" == */get-pip.py && "$2" == "--user" ]]; then
+  touch "$HOME/.get-pip-ready"
+  exit 0
+fi
+
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/python3"
+
+  cat >"$mock_bin_dir/curl" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/curl"
+
+  cat >"$mock_bin_dir/wget" <<'EOF'
+#! /usr/bin/env bash
+if [[ "$1" == "-qO" ]]; then
+  mkdir -p "$(dirname "$2")"
+  printf '# bootstrap\n' >"$2"
+  exit 0
+fi
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/wget"
+
   cat >"$mock_bin_dir/pip3" <<'EOF'
 #! /usr/bin/env bash
 exit 1
