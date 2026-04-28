@@ -45,10 +45,10 @@ IFS=',' read -r -a configured_files <<< "${CODECOV_FILES:-}"
 IFS=',' read -r -a configured_flags <<< "${CODECOV_FLAGS:-}"
 
 sanitize_package_flag() {
-  local package_name="$1"
+  local raw_name="$1"
   local sanitized
 
-  sanitized="${package_name#@}"
+  sanitized="$raw_name"
   sanitized="${sanitized//\//-}"
   sanitized="$(printf '%s' "$sanitized" | sed -E 's/[^[:alnum:]_.-]+/-/g; s/-+/-/g; s/^[._-]+//; s/[._-]+$//')"
   sanitized="${sanitized:0:45}"
@@ -61,63 +61,28 @@ sanitize_package_flag() {
   printf '%s' "$sanitized"
 }
 
-short_hash() {
-  local input="$1"
-
-  if command -v sha256sum >/dev/null 2>&1; then
-    printf '%s' "$input" | sha256sum | cut -c1-8
-    return
-  fi
-
-  if command -v shasum >/dev/null 2>&1; then
-    printf '%s' "$input" | shasum -a 256 | cut -c1-8
-    return
-  fi
-
-  echo "ERROR: neither sha256sum nor shasum is available for flag collision handling." >&2
-  exit 1
-}
-
 resolve_unique_flag() {
   local package_name="$1"
-  local base_flag="$2"
-  local existing_package
-  local hashed_flag hash_suffix hash base_limit truncated_base
+  local package_without_scope="$2"
+  local package_with_scope="$3"
+  local unscoped_flag scoped_flag existing_package
 
-  existing_package="${flag_to_package[$base_flag]-}"
-  if [[ -z "$existing_package" ]]; then
-    printf '%s' "$base_flag"
+  unscoped_flag="$(sanitize_package_flag "$package_without_scope")"
+  existing_package="${flag_to_package[$unscoped_flag]-}"
+  if [[ -z "$existing_package" ]] || [[ "$existing_package" == "$package_name" ]]; then
+    printf '%s' "$unscoped_flag"
     return
   fi
 
-  if [[ "$existing_package" == "$package_name" ]]; then
-    printf '%s' "$base_flag"
+  scoped_flag="$(sanitize_package_flag "$package_with_scope")"
+  existing_package="${flag_to_package[$scoped_flag]-}"
+  if [[ -z "$existing_package" ]] || [[ "$existing_package" == "$package_name" ]]; then
+    printf '%s' "$scoped_flag"
     return
   fi
 
-  hash="$(short_hash "$package_name")"
-  hash_suffix="-$hash"
-  base_limit=$((45 - ${#hash_suffix}))
-
-  if (( base_limit < 1 )); then
-    echo "ERROR: unable to derive unique Codecov flag for package $package_name." >&2
-    exit 1
-  fi
-
-  truncated_base="${base_flag:0:$base_limit}"
-  truncated_base="$(printf '%s' "$truncated_base" | sed -E 's/[._-]+$//')"
-  if [[ -z "$truncated_base" ]]; then
-    truncated_base="pkg"
-  fi
-  hashed_flag="${truncated_base}${hash_suffix}"
-
-  existing_package="${flag_to_package[$hashed_flag]-}"
-  if [[ -n "$existing_package" ]] && [[ "$existing_package" != "$package_name" ]]; then
-    echo "ERROR: flag collision detected after sanitization: $package_name and $existing_package both map to $hashed_flag." >&2
-    exit 1
-  fi
-
-  printf '%s' "$hashed_flag"
+  echo "ERROR: unable to derive unique Codecov flag for package $package_name. Unscoped candidate '$unscoped_flag' collides with ${flag_to_package[$unscoped_flag]}, and scoped candidate '$scoped_flag' collides with ${flag_to_package[$scoped_flag]}." >&2
+  exit 1
 }
 
 declare -A package_to_flag=()
@@ -151,8 +116,14 @@ while IFS=$'\t' read -r package_name package_abs_path; do
 
   package_flag="${package_to_flag[$package_name]-}"
   if [[ -z "$package_flag" ]]; then
-    base_flag="$(sanitize_package_flag "$package_name")"
-    package_flag="$(resolve_unique_flag "$package_name" "$base_flag")"
+    package_without_scope="$package_name"
+    package_with_scope="$package_name"
+    if [[ "$package_name" =~ ^@([^/]+)/(.+)$ ]]; then
+      package_without_scope="${BASH_REMATCH[2]}"
+      package_with_scope="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}"
+    fi
+
+    package_flag="$(resolve_unique_flag "$package_name" "$package_without_scope" "$package_with_scope")"
     package_to_flag["$package_name"]="$package_flag"
     flag_to_package["$package_flag"]="$package_name"
   fi
