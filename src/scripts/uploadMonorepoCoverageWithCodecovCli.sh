@@ -16,6 +16,8 @@ pnpm_bin=${PNPM_BINARY:-pnpm}
 codecov_bin=${CODECOV_BINARY:-codecovcli}
 
 install_codecov_cli() {
+  local bootstrap_dir bootstrap_script
+
   if python3 -m pip --version >/dev/null 2>&1; then
     if python3 -m pip install --user codecov-cli >/dev/null; then
       return
@@ -34,7 +36,19 @@ install_codecov_cli() {
     fi
   fi
 
-  echo "ERROR: codecovcli is not available and no Python pip installer was found. Install pip for python3 or provide a preinstalled Codecov binary via CODECOV_BINARY." >&2
+  if command -v curl >/dev/null 2>&1; then
+    bootstrap_dir="$(mktemp -d)"
+    bootstrap_script="$bootstrap_dir/get-pip.py"
+    if curl -fsSL https://bootstrap.pypa.io/get-pip.py -o "$bootstrap_script" >/dev/null 2>&1 && python3 "$bootstrap_script" --user >/dev/null 2>&1; then
+      if python3 -m pip install --user codecov-cli >/dev/null; then
+        rm -rf "$bootstrap_dir"
+        return
+      fi
+    fi
+    rm -rf "$bootstrap_dir"
+  fi
+
+  echo "ERROR: codecovcli is not available and no Python pip installer could be bootstrapped. Install pip for python3 or provide a preinstalled Codecov binary via CODECOV_BINARY." >&2
   exit 1
 }
 
