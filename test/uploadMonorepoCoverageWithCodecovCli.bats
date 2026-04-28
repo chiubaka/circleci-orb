@@ -488,3 +488,43 @@ EOF
 
   rm -rf "$home_dir" "$mock_bin_dir"
 }
+
+@test "skips upload when installer bootstrap fails and fail-on-error is false" {
+  home_dir="$(mktemp -d)"
+  mock_bin_dir="$(mktemp -d)"
+
+  cat >"$mock_bin_dir/python3" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/python3"
+  cat >"$mock_bin_dir/pip3" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/pip3"
+  cat >"$mock_bin_dir/curl" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/curl"
+  cat >"$mock_bin_dir/wget" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/wget"
+
+  HOME="$home_dir" \
+  PATH="$mock_bin_dir:$PATH" \
+  CODECOV_FAIL_ON_ERROR=false \
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_output --partial "WARNING: codecovcli is not available and no Python pip installer could be bootstrapped, but CODECOV_FAIL_ON_ERROR is disabled. Skipping coverage upload."
+
+  rm -rf "$home_dir" "$mock_bin_dir"
+}

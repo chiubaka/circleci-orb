@@ -24,8 +24,8 @@ parameters:
     description: Path relative to app-dir where coverage reports can be found
   fail-on-error:
     type: boolean
-    default: true
-    description: Exit non-zero when an upload fails (recommended default).
+    default: false
+    description: Exit non-zero when an upload fails.
   verbose:
     type: boolean
     default: true

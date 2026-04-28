@@ -14,6 +14,11 @@ monorepo_root=$(pwd)
 coverage_root=${COVERAGE_DIR:?COVERAGE_DIR is required}
 pnpm_bin=${PNPM_BINARY:-pnpm}
 codecov_bin=${CODECOV_BINARY:-codecovcli}
+if [[ "${CODECOV_FAIL_ON_ERROR:-true}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-1}" == "1" ]]; then
+  fail_on_error=true
+else
+  fail_on_error=false
+fi
 
 install_codecov_cli() {
   local bootstrap_dir bootstrap_script
@@ -54,24 +59,34 @@ install_codecov_cli() {
   fi
   rm -rf "$bootstrap_dir"
 
-  echo "ERROR: codecovcli is not available and no Python pip installer could be bootstrapped. Install pip for python3 or provide a preinstalled Codecov binary via CODECOV_BINARY." >&2
-  exit 1
+  return 1
 }
 
 # Install Codecov CLI if no preinstalled binary is provided.
 if ! command -v "$codecov_bin" >/dev/null 2>&1; then
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: codecovcli is not available and python3 is not installed." >&2
-    exit 1
+    if [[ "$fail_on_error" == "true" ]]; then
+      echo "ERROR: codecovcli is not available and python3 is not installed." >&2
+      exit 1
+    fi
+    echo "WARNING: codecovcli is unavailable, python3 is not installed, and CODECOV_FAIL_ON_ERROR is disabled. Skipping coverage upload." >&2
+    exit 0
   fi
 
-  install_codecov_cli
+  if ! install_codecov_cli; then
+    if [[ "$fail_on_error" == "true" ]]; then
+      echo "ERROR: codecovcli is not available and no Python pip installer could be bootstrapped. Install pip for python3 or provide a preinstalled Codecov binary via CODECOV_BINARY." >&2
+      exit 1
+    fi
+    echo "WARNING: codecovcli is not available and no Python pip installer could be bootstrapped, but CODECOV_FAIL_ON_ERROR is disabled. Skipping coverage upload." >&2
+    exit 0
+  fi
   export PATH="$HOME/.local/bin:$PATH"
   codecov_bin=codecovcli
 fi
 
 common_args=()
-if [[ "${CODECOV_FAIL_ON_ERROR:-true}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-1}" == "1" ]]; then
+if [[ "$fail_on_error" == "true" ]]; then
   common_args+=(--fail-on-error)
 fi
 if [[ "${CODECOV_VERBOSE:-true}" == "true" ]] || [[ "${CODECOV_VERBOSE:-1}" == "1" ]]; then
