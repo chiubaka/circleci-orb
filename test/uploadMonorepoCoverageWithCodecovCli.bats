@@ -143,6 +143,7 @@ teardown() {
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
   assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name nx-plugin --flag nx-plugin --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name nx-plugin-e2e --flag nx-plugin-e2e --fail-on-error --verbose"
 }
 
 @test "skips workspace root package; does not upload full coverage tree under root name" {
