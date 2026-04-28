@@ -267,3 +267,81 @@ teardown() {
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 0
 }
+
+@test "bootstraps pip with ensurepip when python3 -m pip is unavailable" {
+  home_dir="$(mktemp -d)"
+  mock_bin_dir="$(mktemp -d)"
+  mkdir -p "$home_dir/.local/bin"
+
+  cat >"$mock_bin_dir/python3" <<'EOF'
+#! /usr/bin/env bash
+if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "--version" ]]; then
+  if [[ -f "$HOME/.ensurepip-ready" ]]; then
+    exit 0
+  fi
+  exit 1
+fi
+
+if [[ "$1" == "-m" && "$2" == "ensurepip" ]]; then
+  mkdir -p "$HOME/.local/bin"
+  touch "$HOME/.ensurepip-ready"
+  exit 0
+fi
+
+if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "install" ]]; then
+  mkdir -p "$HOME/.local/bin"
+  cat >"$HOME/.local/bin/codecovcli" <<'INNER'
+#! /usr/bin/env bash
+printf '%s\n' "$*" >>"$HOME/codecov-invocations.log"
+INNER
+  chmod +x "$HOME/.local/bin/codecovcli"
+  exit 0
+fi
+
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/python3"
+
+  HOME="$home_dir" \
+  PATH="$mock_bin_dir:$PATH" \
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_file_exist "$home_dir/.local/bin/codecovcli"
+  assert_output --partial "Uploading coverage for package nx-plugin"
+
+  rm -rf "$home_dir" "$mock_bin_dir"
+}
+
+@test "fails with actionable error when no pip installation path exists" {
+  home_dir="$(mktemp -d)"
+  mock_bin_dir="$(mktemp -d)"
+
+  cat >"$mock_bin_dir/python3" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/python3"
+  cat >"$mock_bin_dir/pip3" <<'EOF'
+#! /usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$mock_bin_dir/pip3"
+
+  HOME="$home_dir" \
+  PATH="$mock_bin_dir:$PATH" \
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_failure
+  assert_output --partial "ERROR: codecovcli is not available and no Python pip installer was found."
+
+  rm -rf "$home_dir" "$mock_bin_dir"
+}

@@ -15,6 +15,29 @@ coverage_root=${COVERAGE_DIR:?COVERAGE_DIR is required}
 pnpm_bin=${PNPM_BINARY:-pnpm}
 codecov_bin=${CODECOV_BINARY:-codecovcli}
 
+install_codecov_cli() {
+  if python3 -m pip --version >/dev/null 2>&1; then
+    if python3 -m pip install --user codecov-cli >/dev/null; then
+      return
+    fi
+  fi
+
+  if python3 -m ensurepip --upgrade --user >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
+    if python3 -m pip install --user codecov-cli >/dev/null; then
+      return
+    fi
+  fi
+
+  if command -v pip3 >/dev/null 2>&1; then
+    if pip3 install --user codecov-cli >/dev/null; then
+      return
+    fi
+  fi
+
+  echo "ERROR: codecovcli is not available and no Python pip installer was found. Install pip for python3 or provide a preinstalled Codecov binary via CODECOV_BINARY." >&2
+  exit 1
+}
+
 # Install Codecov CLI if no preinstalled binary is provided.
 if ! command -v "$codecov_bin" >/dev/null 2>&1; then
   if ! command -v python3 >/dev/null 2>&1; then
@@ -22,7 +45,7 @@ if ! command -v "$codecov_bin" >/dev/null 2>&1; then
     exit 1
   fi
 
-  python3 -m pip install --user codecov-cli >/dev/null
+  install_codecov_cli
   export PATH="$HOME/.local/bin:$PATH"
   codecov_bin=codecovcli
 fi
