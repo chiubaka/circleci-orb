@@ -51,8 +51,8 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/lint --flag chiubaka-lint --fail-on-error --verbose"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @chiubaka/e2e-tests --flag chiubaka-e2e-tests --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/lint --flag lint --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @chiubaka/e2e-tests --flag e2e-tests --fail-on-error --verbose"
 }
 
 @test "normalizes disallowed characters in package-derived flags" {
@@ -69,7 +69,7 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/pkg!!name --flag chiubaka-pkg-name --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @chiubaka/pkg!!name --flag pkg-name --fail-on-error --verbose"
 }
 
 @test "truncates long package-derived flags to Codecov max length" {
@@ -87,17 +87,13 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 1
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name $long_name --flag scope-abcdefghijklmnopqrstuvwxyz1234567890abc --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name $long_name --flag abcdefghijklmnopqrstuvwxyz1234567890abcdefghi --fail-on-error --verbose"
 }
 
-@test "adds hash suffix when sanitized flags collide" {
-  colliding_pnpm_ls_json="[{\"name\":\"@a/b\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"a-b\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+@test "adds scope back when unscoped flag collides" {
+  colliding_pnpm_ls_json="[{\"name\":\"@a/pkg\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"@b/pkg\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
   mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
   codecov_mock=$(mock_create)
-
-  run bash -lc "printf '%s' 'a-b' | sha256sum | cut -c1-8"
-  assert_success
-  hash_suffix="$output"
 
   CODECOV_TOKEN='' \
   MONOREPO_ROOT="$TEST_DIR" \
@@ -108,8 +104,60 @@ teardown() {
 
   assert_success
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @a/b --flag a-b --fail-on-error --verbose"
-  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name a-b --flag a-b-$hash_suffix --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @a/pkg --flag pkg --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @b/pkg --flag b-pkg --fail-on-error --verbose"
+}
+
+@test "resolves collisions introduced by 45-char truncation via scope fallback" {
+  long_leaf="abcdefghijklmnopqrstuvwxyz1234567890abcdefghijk"
+  colliding_pnpm_ls_json="[{\"name\":\"@alpha/$long_leaf\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"@beta/$long_leaf\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${codecov_mock}")" 2
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 1)" "upload-coverage --dir $COVERAGE_DIR/packages/nx-plugin --network-root-folder $TEST_DIR --name @alpha/$long_leaf --flag abcdefghijklmnopqrstuvwxyz1234567890abcdefghi --fail-on-error --verbose"
+  assert_equal "$(mock_get_call_args "${codecov_mock}" 2)" "upload-coverage --dir $COVERAGE_DIR/e2e/nx-plugin-e2e --network-root-folder $TEST_DIR --name @beta/$long_leaf --flag beta-abcdefghijklmnopqrstuvwxyz1234567890abcd --fail-on-error --verbose"
+}
+
+@test "fails loudly when unscoped and scoped candidates both collide" {
+  colliding_pnpm_ls_json="[{\"name\":\"@a/pkg\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"b-pkg\",\"path\":\"$TEST_DIR/extra/b-pkg\"},{\"name\":\"@b/pkg\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
+  mkdir -p "$COVERAGE_DIR"/extra/b-pkg
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_failure
+  assert_output --partial "ERROR: unable to derive unique Codecov flag for package @b/pkg. Unscoped candidate 'pkg' collides with @a/pkg, and scoped candidate 'b-pkg' collides with b-pkg."
+}
+
+@test "fails with explicit no-fallback message for unscoped collision" {
+  colliding_pnpm_ls_json="[{\"name\":\"pkg\",\"path\":\"$TEST_DIR/packages/nx-plugin\"},{\"name\":\"pkg!\",\"path\":\"$TEST_DIR/e2e/nx-plugin-e2e\"}]"
+  mock_set_output "${pnpm_mock}" "$colliding_pnpm_ls_json"
+  codecov_mock=$(mock_create)
+
+  CODECOV_TOKEN='' \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  CODECOV_BINARY="${codecov_mock}" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_failure
+  assert_output --partial "ERROR: unable to derive unique Codecov flag for package pkg!. Unscoped candidate 'pkg' collides with pkg, and no distinct scoped fallback is available."
 }
 
 @test "omits token and optional args when unset" {

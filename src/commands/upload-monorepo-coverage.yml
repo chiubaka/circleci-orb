@@ -5,7 +5,7 @@ description: >
   root `package.json` name is not used as a Codecov flag. Leaf packages under the workspace
   continue to receive one upload each when their per-package coverage directory exists. Package
   names are normalized to Codecov-safe flags (for example `@chiubaka/lint` becomes
-  `chiubaka-lint`) before upload.
+  `lint`) before upload.
 
 parameters:
   app-dir:
