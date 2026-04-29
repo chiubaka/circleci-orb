@@ -2,6 +2,6 @@
 "@chiubaka/circleci-orb": patch
 ---
 
-Harden Codecov CLI installation when Python environments do not include the pip module.
+Install the Codecov CLI the same way as the official [codecov/codecov](https://circleci.com/orbs/registry/orb/codecov/codecov) orb: download the `codecov` binary from `https://cli.codecov.io` (per [codecov/wrapper](https://github.com/codecov/wrapper) `download.sh`), then verify with GPG and SHA256 (per `validate.sh`) unless `CODECOV_SKIP_VALIDATION` is set. Pip is no longer used.
 
-The monorepo coverage upload command now tries `python3 -m pip`, then `python3 -m ensurepip`, and finally `pip3` before failing with an actionable error. This avoids failing immediately on images that provide Python but omit `python3 -m pip`.
+`upload-monorepo-coverage` accepts `codecov-version`, `skip-codecov-cli-validation`, and an optional `codecov-cli-base-url` (`CODECOV_CLI_URL`). The default for `fail-on-error` is restored to `true`.

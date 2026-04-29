@@ -268,263 +268,122 @@ teardown() {
   assert_equal "$(mock_get_call_num "${codecov_mock}")" 0
 }
 
-@test "bootstraps pip with ensurepip when python3 -m pip is unavailable" {
-  home_dir="$(mktemp -d)"
+@test "downloads Codecov CLI from cli.codecov.io when not on PATH and skip validation" {
   mock_bin_dir="$(mktemp -d)"
-  mkdir -p "$home_dir/.local/bin"
-
-  cat >"$mock_bin_dir/python3" <<'EOF'
-#! /usr/bin/env bash
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "--version" ]]; then
-  if [[ -f "$HOME/.ensurepip-ready" ]]; then
-    exit 0
-  fi
-  exit 1
-fi
-
-if [[ "$1" == "-m" && "$2" == "ensurepip" ]]; then
-  mkdir -p "$HOME/.local/bin"
-  touch "$HOME/.ensurepip-ready"
-  exit 0
-fi
-
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "install" ]]; then
-  mkdir -p "$HOME/.local/bin"
-  cat >"$HOME/.local/bin/codecovcli" <<'INNER'
-#! /usr/bin/env bash
-printf '%s\n' "$*" >>"$HOME/codecov-invocations.log"
-INNER
-  chmod +x "$HOME/.local/bin/codecovcli"
-  exit 0
-fi
-
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/python3"
-
-  HOME="$home_dir" \
-  PATH="$mock_bin_dir:$PATH" \
-  CODECOV_TOKEN='' \
-  MONOREPO_ROOT="$TEST_DIR" \
-  COVERAGE_DIR="$COVERAGE_DIR" \
-  PNPM_BINARY="${pnpm_mock}" \
-  run uploadMonorepoCoverageWithCodecovCli.sh
-
-  assert_success
-  assert_file_exist "$home_dir/.local/bin/codecovcli"
-  assert_output --partial "Uploading coverage for package nx-plugin"
-
-  rm -rf "$home_dir" "$mock_bin_dir"
-}
-
-@test "bootstraps pip with get-pip.py when ensurepip and pip3 are unavailable" {
-  home_dir="$(mktemp -d)"
-  mock_bin_dir="$(mktemp -d)"
-  mkdir -p "$home_dir/.local/bin"
-
-  cat >"$mock_bin_dir/python3" <<'EOF'
-#! /usr/bin/env bash
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "--version" ]]; then
-  if [[ -f "$HOME/.get-pip-ready" ]]; then
-    exit 0
-  fi
-  exit 1
-fi
-
-if [[ "$1" == "-m" && "$2" == "ensurepip" ]]; then
-  exit 1
-fi
-
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "install" ]]; then
-  mkdir -p "$HOME/.local/bin"
-  cat >"$HOME/.local/bin/codecovcli" <<'INNER'
-#! /usr/bin/env bash
-printf '%s\n' "$*" >>"$HOME/codecov-invocations.log"
-INNER
-  chmod +x "$HOME/.local/bin/codecovcli"
-  exit 0
-fi
-
-if [[ "$1" == */get-pip.py && "$2" == "--user" ]]; then
-  touch "$HOME/.get-pip-ready"
-  exit 0
-fi
-
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/python3"
+  ln -sfn "$(command -v jq)" "$mock_bin_dir/jq"
 
   cat >"$mock_bin_dir/curl" <<'EOF'
 #! /usr/bin/env bash
-if [[ "$1" == "-fsSL" && "$2" == "https://bootstrap.pypa.io/get-pip.py" && "$3" == "-o" ]]; then
-  mkdir -p "$(dirname "$4")"
-  printf '# bootstrap\n' >"$4"
-  exit 0
-fi
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/curl"
-  cat >"$mock_bin_dir/pip3" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/pip3"
-
-  HOME="$home_dir" \
-  PATH="$mock_bin_dir:$PATH" \
-  CODECOV_TOKEN='' \
-  MONOREPO_ROOT="$TEST_DIR" \
-  COVERAGE_DIR="$COVERAGE_DIR" \
-  PNPM_BINARY="${pnpm_mock}" \
-  run uploadMonorepoCoverageWithCodecovCli.sh
-
-  assert_success
-  assert_file_exist "$home_dir/.local/bin/codecovcli"
-  assert_output --partial "Uploading coverage for package nx-plugin"
-
-  rm -rf "$home_dir" "$mock_bin_dir"
-}
-
-@test "bootstraps pip with get-pip.py via wget when curl is unavailable" {
-  home_dir="$(mktemp -d)"
-  mock_bin_dir="$(mktemp -d)"
-  mkdir -p "$home_dir/.local/bin"
-
-  cat >"$mock_bin_dir/python3" <<'EOF'
-#! /usr/bin/env bash
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "--version" ]]; then
-  if [[ -f "$HOME/.get-pip-ready" ]]; then
-    exit 0
+prev=
+for a in "$@"; do
+  if [[ "$prev" == "-o" ]]; then
+    if [[ "$*" == *"cli.codecov.io"* ]] && [[ "$*" == *"/codecov"* ]]; then
+      {
+        printf '#!/usr/bin/env bash\n'
+        printf 'exit 0\n'
+      } >"$a"
+      chmod +x "$a"
+      exit 0
+    fi
   fi
-  exit 1
-fi
-
-if [[ "$1" == "-m" && "$2" == "ensurepip" ]]; then
-  exit 1
-fi
-
-if [[ "$1" == "-m" && "$2" == "pip" && "$3" == "install" ]]; then
-  mkdir -p "$HOME/.local/bin"
-  cat >"$HOME/.local/bin/codecovcli" <<'INNER'
-#! /usr/bin/env bash
-printf '%s\n' "$*" >>"$HOME/codecov-invocations.log"
-INNER
-  chmod +x "$HOME/.local/bin/codecovcli"
-  exit 0
-fi
-
-if [[ "$1" == */get-pip.py && "$2" == "--user" ]]; then
-  touch "$HOME/.get-pip-ready"
-  exit 0
-fi
-
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/python3"
-
-  cat >"$mock_bin_dir/curl" <<'EOF'
-#! /usr/bin/env bash
+  prev=$a
+done
 exit 1
 EOF
   chmod +x "$mock_bin_dir/curl"
 
-  cat >"$mock_bin_dir/wget" <<'EOF'
-#! /usr/bin/env bash
-if [[ "$1" == "-qO" ]]; then
-  mkdir -p "$(dirname "$2")"
-  printf '# bootstrap\n' >"$2"
-  exit 0
-fi
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/wget"
-
-  cat >"$mock_bin_dir/pip3" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/pip3"
-
-  HOME="$home_dir" \
-  PATH="$mock_bin_dir:$PATH" \
   CODECOV_TOKEN='' \
+  CODECOV_SKIP_VALIDATION=true \
+  PATH="$mock_bin_dir:$PATH" \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageWithCodecovCli.sh
 
   assert_success
-  assert_file_exist "$home_dir/.local/bin/codecovcli"
+  assert_output --partial "Downloading Codecov CLI from"
   assert_output --partial "Uploading coverage for package nx-plugin"
 
-  rm -rf "$home_dir" "$mock_bin_dir"
+  rm -rf "$mock_bin_dir"
 }
 
-@test "fails with actionable error when no pip installation path exists" {
-  home_dir="$(mktemp -d)"
+@test "fails when Codecov CLI download returns non-zero" {
   mock_bin_dir="$(mktemp -d)"
-
-  cat >"$mock_bin_dir/python3" <<'EOF'
+  ln -sfn "$(command -v jq)" "$mock_bin_dir/jq"
+  cat >"$mock_bin_dir/curl" <<'EOF'
 #! /usr/bin/env bash
-exit 1
+if [[ "$*" == *"cli.codecov.io"* && "$*" == *"/codecov" ]]; then
+  if [[ "$*" == *" -o "* ]]; then
+    exit 7
+  fi
+fi
+exit 0
 EOF
-  chmod +x "$mock_bin_dir/python3"
-  cat >"$mock_bin_dir/pip3" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/pip3"
+  chmod +x "$mock_bin_dir/curl"
 
-  HOME="$home_dir" \
-  PATH="$mock_bin_dir:$PATH" \
   CODECOV_TOKEN='' \
+  CODECOV_SKIP_VALIDATION=true \
+  PATH="$mock_bin_dir:$PATH" \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageWithCodecovCli.sh
 
   assert_failure
-  assert_output --partial "ERROR: codecovcli is not available and no Python pip installer could be bootstrapped."
+  assert_output --partial "ERROR: failed to download Codecov CLI"
 
-  rm -rf "$home_dir" "$mock_bin_dir"
+  rm -rf "$mock_bin_dir"
 }
 
-@test "skips upload when installer bootstrap fails and fail-on-error is false" {
-  home_dir="$(mktemp -d)"
-  mock_bin_dir="$(mktemp -d)"
+@test "fails when GPG is missing and CLI validation is enabled" {
+  # PATH: tools first (no gpg) so download succeeds, then GPG check fails. Include repo scripts on PATH
+  # so the upload script is found; only bare utilities are symlinks, not gpg.
+  tools_dir="$(mktemp -d)"
+  for c in bash jq mktemp rm tr grep cut sed; do
+    ln -sfn "$(command -v "$c")" "$tools_dir/$c"
+  done
+  if command -v arch >/dev/null 2>&1; then
+    ln -sfn "$(command -v arch)" "$tools_dir/arch"
+  elif command -v /usr/bin/arch >/dev/null 2>&1; then
+    ln -sfn /usr/bin/arch "$tools_dir/arch"
+  fi
+  for u in /bin/uname /usr/bin/uname; do
+    if [[ -x "$u" ]]; then
+      ln -sfn "$u" "$tools_dir/uname"
+      break
+    fi
+  done
 
-  cat >"$mock_bin_dir/python3" <<'EOF'
+  cat >"$tools_dir/curl" <<'EOF'
 #! /usr/bin/env bash
-exit 1
+prev=
+for a in "$@"; do
+  if [[ "$prev" == "-o" ]]; then
+    if [[ "$*" == *"cli.codecov.io"* && "$*" == *"/codecov"* ]]; then
+      {
+        printf '#!/bin/sh\n'
+        printf 'exit 0\n'
+      } >"$a"
+      chmod +x "$a"
+      exit 0
+    fi
+  fi
+  prev=$a
+done
+exit 0
 EOF
-  chmod +x "$mock_bin_dir/python3"
-  cat >"$mock_bin_dir/pip3" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/pip3"
-  cat >"$mock_bin_dir/curl" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/curl"
-  cat >"$mock_bin_dir/wget" <<'EOF'
-#! /usr/bin/env bash
-exit 1
-EOF
-  chmod +x "$mock_bin_dir/wget"
+  chmod +x "$tools_dir/curl"
 
-  HOME="$home_dir" \
-  PATH="$mock_bin_dir:$PATH" \
-  CODECOV_FAIL_ON_ERROR=false \
   CODECOV_TOKEN='' \
+  CODECOV_SKIP_VALIDATION=false \
+  PATH="$tools_dir:$PROJECT_ROOT/src/scripts" \
   MONOREPO_ROOT="$TEST_DIR" \
   COVERAGE_DIR="$COVERAGE_DIR" \
   PNPM_BINARY="${pnpm_mock}" \
   run uploadMonorepoCoverageWithCodecovCli.sh
 
-  assert_success
-  assert_output --partial "WARNING: codecovcli is not available and no Python pip installer could be bootstrapped, but CODECOV_FAIL_ON_ERROR is disabled. Skipping coverage upload."
+  assert_failure
+  assert_output --partial "ERROR: gpg is not installed"
 
-  rm -rf "$home_dir" "$mock_bin_dir"
+  rm -rf "$tools_dir"
 }
