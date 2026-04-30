@@ -387,3 +387,67 @@ EOF
 
   rm -rf "$tools_dir"
 }
+
+@test "ignores checksum stdout so resolved codecov command stays executable path" {
+  mock_bin_dir="$(mktemp -d)"
+  run_home="$(mktemp -d)"
+  ln -sfn "$(command -v jq)" "$mock_bin_dir/jq"
+  ln -sfn "$(command -v mktemp)" "$mock_bin_dir/mktemp"
+  ln -sfn "$(command -v rm)" "$mock_bin_dir/rm"
+  ln -sfn "$(command -v uname)" "$mock_bin_dir/uname"
+  ln -sfn "$(command -v tr)" "$mock_bin_dir/tr"
+  ln -sfn "$(command -v grep)" "$mock_bin_dir/grep"
+  ln -sfn "$(command -v cut)" "$mock_bin_dir/cut"
+
+  cat >"$mock_bin_dir/curl" <<'EOF'
+#! /usr/bin/env bash
+last="${@: -1}"
+if [[ "$1" == "-s" && "$2" == "https://keybase.io/codecovsecurity/pgp_keys.asc" ]]; then
+  printf 'fake-key'
+  exit 0
+fi
+if [[ "$*" == *" -o "* ]] && [[ "$last" == */codecov ]]; then
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'printf "codecov-ran\n"\n'
+  } >"$last"
+  chmod +x "$last"
+  exit 0
+fi
+if [[ "$*" == *" -O "* ]]; then
+  printf 'fake' >"$(basename "$last")"
+  exit 0
+fi
+exit 0
+EOF
+  chmod +x "$mock_bin_dir/curl"
+
+  cat >"$mock_bin_dir/gpg" <<'EOF'
+#! /usr/bin/env bash
+exit 0
+EOF
+  chmod +x "$mock_bin_dir/gpg"
+
+  cat >"$mock_bin_dir/shasum" <<'EOF'
+#! /usr/bin/env bash
+printf 'codecov: OK\n'
+exit 0
+EOF
+  chmod +x "$mock_bin_dir/shasum"
+
+  HOME="$run_home" \
+  CODECOV_TOKEN='' \
+  CODECOV_SKIP_VALIDATION=false \
+  PATH="$mock_bin_dir:$PROJECT_ROOT/src/scripts:$PATH" \
+  MONOREPO_ROOT="$TEST_DIR" \
+  COVERAGE_DIR="$COVERAGE_DIR" \
+  PNPM_BINARY="${pnpm_mock}" \
+  run uploadMonorepoCoverageWithCodecovCli.sh
+
+  assert_success
+  assert_output --partial "Codecov CLI integrity verified"
+  assert_output --partial "Uploading coverage for package nx-plugin"
+  assert_output --partial "codecov-ran"
+
+  rm -rf "$mock_bin_dir" "$run_home"
+}

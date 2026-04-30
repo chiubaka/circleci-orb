@@ -81,7 +81,7 @@ codecov_validate_cli() {
       echo "ERROR: could not verify GPG signature of Codecov CLI checksum" >&2
       exit 1
     fi
-    if ! (shasum -a 256 -c "${filename}.SHA256SUM" 2>/dev/null || sha256sum -c "${filename}.SHA256SUM"); then
+    if ! (shasum -a 256 -c "${filename}.SHA256SUM" >/dev/null 2>&1 || sha256sum -c "${filename}.SHA256SUM" >/dev/null 2>&1); then
       echo "ERROR: could not verify SHA256 of Codecov CLI" >&2
       exit 1
     fi
