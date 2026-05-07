@@ -166,8 +166,11 @@ common_args=()
 if [[ "$fail_on_error" == "true" ]]; then
   common_args+=(--fail-on-error)
 fi
+global_args=()
 if [[ "${CODECOV_VERBOSE:-true}" == "true" ]] || [[ "${CODECOV_VERBOSE:-1}" == "1" ]]; then
-  common_args+=(--verbose)
+  # For codecov binary installs, verbosity is a global option (`codecov -v ...`),
+  # not an `upload-coverage` subcommand option.
+  global_args+=(-v)
 fi
 if [[ "${CODECOV_DISABLE_SEARCH:-false}" == "true" ]] || [[ "${CODECOV_DISABLE_SEARCH:-0}" == "1" ]]; then
   common_args+=(--disable-search)
@@ -295,7 +298,7 @@ while IFS=$'\t' read -r package_name package_abs_path; do
     fi
   done
 
-  "$codecov_cmd" "${upload_args[@]}"
+  "$codecov_cmd" "${global_args[@]}" "${upload_args[@]}"
   upload_count=$((upload_count + 1))
 done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')
 
