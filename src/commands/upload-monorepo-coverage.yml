@@ -25,7 +25,7 @@ parameters:
   fail-on-error:
     type: boolean
     default: true
-    description: Exit non-zero when an upload fails (recommended default).
+    description: Exit non-zero when an upload fails.
   verbose:
     type: boolean
     default: true
@@ -46,6 +46,18 @@ parameters:
     type: string
     default: ""
     description: Comma-separated list of additional Codecov flags for this upload.
+  codecov-version:
+    type: string
+    default: latest
+    description: Version segment for https://cli.codecov.io (same as codecov/codecov CODECOV_VERSION).
+  skip-codecov-cli-validation:
+    type: boolean
+    default: false
+    description: If true, skip GPG/SHA256 verification after downloading the Codecov CLI (not recommended; matches CODECOV_SKIP_VALIDATION in the official orb).
+  codecov-cli-base-url:
+    type: string
+    default: ""
+    description: Optional base URL for CLI downloads; empty uses https://cli.codecov.io (CODECOV_CLI_URL).
 
 steps:
   - run:
@@ -61,3 +73,6 @@ steps:
         CODECOV_REQUIRE_UPLOADS: << parameters.require-uploads >>
         CODECOV_FILES: << parameters.files >>
         CODECOV_FLAGS: << parameters.flags >>
+        CODECOV_VERSION: << parameters.codecov-version >>
+        CODECOV_SKIP_VALIDATION: << parameters.skip-codecov-cli-validation >>
+        CODECOV_CLI_URL: << parameters.codecov-cli-base-url >>

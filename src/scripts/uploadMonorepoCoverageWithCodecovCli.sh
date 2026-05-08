@@ -1,4 +1,6 @@
 #! /usr/bin/env bash
+# Install and run the Codecov CLI the same way as codecov/codecov: binary from cli.codecov.io
+# (see https://github.com/codecov/wrapper scripts/download.sh and validate.sh), not via pip.
 set -euo pipefail
 
 # Keep parity with Codecov orb behavior for Node-based environments.
@@ -13,26 +15,162 @@ monorepo_root=$(pwd)
 
 coverage_root=${COVERAGE_DIR:?COVERAGE_DIR is required}
 pnpm_bin=${PNPM_BINARY:-pnpm}
-codecov_bin=${CODECOV_BINARY:-codecovcli}
+curl_retry=(--retry 5 --retry-delay 2)
 
-# Install Codecov CLI if no preinstalled binary is provided.
-if ! command -v "$codecov_bin" >/dev/null 2>&1; then
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: codecovcli is not available and python3 is not installed." >&2
-    exit 1
+codecov_detect_os() {
+  if [[ -n "${CODECOV_OS:-}" ]]; then
+    printf '%s' "$CODECOV_OS"
+    return
+  fi
+  # Same OS labels as https://github.com/codecov/wrapper/blob/main/scripts/download.sh
+  local family os_id arch
+  family=$(uname -s | tr '[:upper:]' '[:lower:]')
+  arch=$(arch 2>/dev/null || uname -m)
+  if [[ $family == "darwin" ]]; then
+    printf '%s' "macos"
+    return
+  fi
+  if [[ $family != "linux" ]]; then
+    printf '%s' "linux"
+    return
+  fi
+  if [[ -r /etc/os-release ]]; then
+    os_id=$(grep -E '^ID=' /etc/os-release | cut -c4-)
+    if [[ $os_id == "alpine" ]]; then
+      if [[ $arch == "aarch64" ]]; then
+        printf '%s' "alpine-arm64"
+      else
+        printf '%s' "alpine"
+      fi
+      return
+    fi
+  fi
+  if [[ $arch == "aarch64" ]]; then
+    printf '%s' "linux-arm64"
+  else
+    printf '%s' "linux"
+  fi
+}
+
+codecov_validate_cli() {
+  # Mirrors https://github.com/codecov/wrapper/blob/main/scripts/validate.sh
+  local install_dir="$1"
+  local filename="$2"
+
+  if [[ "${CODECOV_SKIP_VALIDATION:-false}" == "true" ]] || [[ "${CODECOV_SKIP_VALIDATION:-0}" == "1" ]]; then
+    echo "(Codecov) Skipping CLI integrity validation" >&2
+    chmod +x "$install_dir/$filename"
+    return
   fi
 
-  python3 -m pip install --user codecov-cli >/dev/null
-  export PATH="$HOME/.local/bin:$PATH"
-  codecov_bin=codecovcli
+  if ! command -v gpg >/dev/null 2>&1; then
+    echo "ERROR: gpg is not installed. Install gnupg (e.g. apt install gnupg) or set CODECOV_SKIP_VALIDATION=true" >&2
+    return 1
+  fi
+
+  if ! (
+    cd "$install_dir" || exit 1
+    curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --import
+    local base sha_url
+    base="${CODECOV_CLI_URL:-https://cli.codecov.io}"
+    base="${base}/${CODECOV_VERSION:-latest}/${CODECOV_OS?}"
+    sha_url="${base}/${filename}.SHA256SUM"
+    curl -fsS "${curl_retry[@]}" --connect-timeout 2 -O "$sha_url"
+    curl -fsS "${curl_retry[@]}" --connect-timeout 2 -O "${sha_url}.sig"
+    if ! gpg --verify "${filename}.SHA256SUM.sig" "${filename}.SHA256SUM"; then
+      echo "ERROR: could not verify GPG signature of Codecov CLI checksum" >&2
+      exit 1
+    fi
+    if ! (shasum -a 256 -c "${filename}.SHA256SUM" >/dev/null 2>&1 || sha256sum -c "${filename}.SHA256SUM" >/dev/null 2>&1); then
+      echo "ERROR: could not verify SHA256 of Codecov CLI" >&2
+      exit 1
+    fi
+    chmod +x "$filename"
+  ); then
+    return 1
+  fi
+  echo "Codecov CLI integrity verified" >&2
+}
+
+download_codecov_cli() {
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "ERROR: curl is not installed. The Codecov CLI is downloaded with curl; install curl or set CODECOV_BINARY to a preinstalled codecov binary path." >&2
+    return 1
+  fi
+
+  local install_dir base_url download_url
+  local codecov_filename=codecov
+
+  export CODECOV_VERSION="${CODECOV_VERSION:-latest}"
+  CODECOV_OS=$(codecov_detect_os)
+  export CODECOV_OS
+  install_dir=$(mktemp -d)
+  base_url="${CODECOV_CLI_URL:-https://cli.codecov.io}"
+  base_url="${base_url}/${CODECOV_VERSION}/${CODECOV_OS}"
+  download_url="${base_url}/${codecov_filename}"
+
+  echo "Downloading Codecov CLI from $download_url" >&2
+  if ! curl -fsSL "${curl_retry[@]}" "$download_url" -o "$install_dir/${codecov_filename}"; then
+    echo "ERROR: failed to download Codecov CLI from $download_url" >&2
+    rm -rf "$install_dir"
+    return 1
+  fi
+
+  if ! codecov_validate_cli "$install_dir" "$codecov_filename"; then
+    rm -rf "$install_dir"
+    return 1
+  fi
+
+  printf '%s' "$install_dir/${codecov_filename}"
+}
+
+resolve_codecov_command() {
+  # Preinstalled path: CODECOV_BINARY (same as codecov/codecov)
+  if [[ -n "${CODECOV_BINARY:-}" ]] && [[ -f "$CODECOV_BINARY" ]]; then
+    if [[ -x "$CODECOV_BINARY" ]]; then
+      printf '%s' "$CODECOV_BINARY"
+      return
+    fi
+    echo "ERROR: CODECOV_BINARY is not an executable file: $CODECOV_BINARY" >&2
+    return 1
+  fi
+  # PATH: official download installs as "codecov"; PyPI has "codecovcli"
+  local n=${CODECOV_BINARY:-}
+  if [[ -z "$n" ]]; then
+    if command -v codecov >/dev/null 2>&1; then
+      command -v codecov
+      return
+    fi
+    if command -v codecovcli >/dev/null 2>&1; then
+      command -v codecovcli
+      return
+    fi
+  elif command -v "$n" >/dev/null 2>&1; then
+    command -v "$n"
+    return
+  fi
+  download_codecov_cli
+}
+
+if ! codecov_cmd=$(resolve_codecov_command); then
+  exit 1
+fi
+
+if [[ "${CODECOV_FAIL_ON_ERROR:-true}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-1}" == "1" ]]; then
+  fail_on_error=true
+else
+  fail_on_error=false
 fi
 
 common_args=()
-if [[ "${CODECOV_FAIL_ON_ERROR:-true}" == "true" ]] || [[ "${CODECOV_FAIL_ON_ERROR:-1}" == "1" ]]; then
+if [[ "$fail_on_error" == "true" ]]; then
   common_args+=(--fail-on-error)
 fi
+global_args=()
 if [[ "${CODECOV_VERBOSE:-true}" == "true" ]] || [[ "${CODECOV_VERBOSE:-1}" == "1" ]]; then
-  common_args+=(--verbose)
+  # For codecov binary installs, verbosity is a global option (`codecov -v ...`),
+  # not an `upload-coverage` subcommand option.
+  global_args+=(-v)
 fi
 if [[ "${CODECOV_DISABLE_SEARCH:-false}" == "true" ]] || [[ "${CODECOV_DISABLE_SEARCH:-0}" == "1" ]]; then
   common_args+=(--disable-search)
@@ -160,7 +298,7 @@ while IFS=$'\t' read -r package_name package_abs_path; do
     fi
   done
 
-  "$codecov_bin" "${upload_args[@]}"
+  "$codecov_cmd" "${global_args[@]}" "${upload_args[@]}"
   upload_count=$((upload_count + 1))
 done < <($pnpm_bin ls --json -r 2>/dev/null | jq -r '.[] | "\(.name)\t\(.path)"')
 
