@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# CI shells (e.g. CircleCI) usually lack hook-only deps such as system yamllint; lint runs there as explicit workflow steps.
-[ -n "${CI:-}" ] && exit 0
+# CircleCI release jobs may not have hook-only deps (for example system yamllint);
+# skip only in CircleCI so local shells with CI=false do not bypass hooks.
+[ -n "${CIRCLECI:-}" ] && exit 0
 
 pnpm lint
