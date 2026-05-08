@@ -1,5 +1,19 @@
 # @chiubaka/circleci-orb
 
+## 0.16.2
+
+### Patch Changes
+
+- 97feada: Fix monorepo Codecov CLI install and upload invocation on minimal CI images.
+
+  Replaces pip with the official `codecov` binary from `https://cli.codecov.io`, matching codecov/wrapper download and validate behavior (GPG + SHA256 unless `CODECOV_SKIP_VALIDATION` is set). `upload-monorepo-coverage` adds `codecov-version`, `skip-codecov-cli-validation`, and `codecov-cli-base-url`; `fail-on-error` defaults to `true`.
+
+  Fixes two regressions encountered after switching to the binary: `sha256sum`/`shasum -c` printed `codecov: OK` to stdout, which Bash command substitution mixed into the resolved CLI path so the shell tried to run `codecov: OK`; checksum verification now silences stdout. Also passes verbosity as global `codecov -v` because `upload-coverage` on that binary does not accept `--verbose` (unlike older `codecovcli` usage).
+
+- 90a926d: Skip git hooks for Changesets release PR commits so CI can commit without system tools like yamllint.
+
+  Release automation runs `git commit` on a minimal Node image; Husky pre-commit previously invoked `pnpm lint`, which failed when `yamllint` was not installed.
+
 ## 0.16.1
 
 ### Patch Changes
