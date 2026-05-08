@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# CI shells (e.g. CircleCI) usually lack hook-only deps such as system yamllint; lint runs there as explicit workflow steps.
+[ -n "${CI:-}" ] && exit 0
+
 pnpm lint

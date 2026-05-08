@@ -153,8 +153,8 @@ run_changesets_release_pr_main() {
 
   git checkout -B "$release_branch"
   git add -A
-  # Commit subject must match PR title (single-line).
-  git commit -m "$title"
+  # Commit subject must match PR title (single-line). Skip hooks: automated commits must not require dev-only tools (e.g. yamllint on PATH).
+  git commit --no-verify -m "$title"
 
   repo_slug=${GITHUB_REPO_SLUG:-}
   if [[ -z "$repo_slug" ]]; then
