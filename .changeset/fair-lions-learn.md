@@ -2,6 +2,8 @@
 "@chiubaka/circleci-orb": patch
 ---
 
-Install the Codecov CLI the same way as the official [codecov/codecov](https://circleci.com/orbs/registry/orb/codecov/codecov) orb: download the `codecov` binary from `https://cli.codecov.io` (per [codecov/wrapper](https://github.com/codecov/wrapper) `download.sh`), then verify with GPG and SHA256 (per `validate.sh`) unless `CODECOV_SKIP_VALIDATION` is set. Pip is no longer used.
+Fix monorepo Codecov CLI install and upload invocation on minimal CI images.
 
-`upload-monorepo-coverage` accepts `codecov-version`, `skip-codecov-cli-validation`, and an optional `codecov-cli-base-url` (`CODECOV_CLI_URL`). The default for `fail-on-error` is restored to `true`.
+Replaces pip with the official `codecov` binary from `https://cli.codecov.io`, matching codecov/wrapper download and validate behavior (GPG + SHA256 unless `CODECOV_SKIP_VALIDATION` is set). `upload-monorepo-coverage` adds `codecov-version`, `skip-codecov-cli-validation`, and `codecov-cli-base-url`; `fail-on-error` defaults to `true`.
+
+Fixes two regressions encountered after switching to the binary: `sha256sum`/`shasum -c` printed `codecov: OK` to stdout, which Bash command substitution mixed into the resolved CLI path so the shell tried to run `codecov: OK`; checksum verification now silences stdout. Also passes verbosity as global `codecov -v` because `upload-coverage` on that binary does not accept `--verbose` (unlike older `codecovcli` usage).
