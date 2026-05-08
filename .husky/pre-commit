@@ -1,4 +1,10 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# CircleCI release jobs may not have hook-only deps (for example system yamllint);
+# skip only when CIRCLECI is explicitly truthy so local CIRCLECI=false does not bypass hooks.
+if [ "${CIRCLECI:-}" = "true" ] || [ "${CIRCLECI:-}" = "1" ]; then
+  exit 0
+fi
+
 pnpm lint
