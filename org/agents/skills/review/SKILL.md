@@ -47,7 +47,7 @@ Run by default after any non-trivial code change and **before** you tell the use
 - [ ] If repeated issues surface, update `AGENTS.md`/`org/agents/AGENTS.org.md` or create/update a focused skill.
 - [ ] Keep skill scope narrow; avoid restating broad org conventions when cross-referencing is sufficient.
 - [ ] Run guidance sync scripts after org-level guidance or skill changes.
-- [ ] On repositories with Changesets, confirm release notes and semver bumps are expressed via a **new or updated** `.changeset/*.md` entry, **not** by editing `package.json` `version` or `CHANGELOG.md` directly, unless a maintainer asked for a hotfix to automation itself (see `org/agents/skills/changesets-hygiene/SKILL.md`).
+- [ ] On repositories with Changesets, when the PR includes **releasable** work (behavior, APIs, orb/scripts, publishable configs), confirm release notes and semver bumps are expressed via a **new or updated** `.changeset/*.md` entry, **not** by editing `package.json` `version` or `CHANGELOG.md` directly, unless a maintainer asked for a hotfix to automation itself (see `org/agents/skills/changesets-hygiene/SKILL.md`). **Skip** this check when the change is **ADRs or agent guidance only** (no changeset expected per that skill).
 
 ## Style and naming
 

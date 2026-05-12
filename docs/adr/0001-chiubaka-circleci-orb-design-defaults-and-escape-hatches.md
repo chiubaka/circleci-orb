@@ -51,6 +51,7 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 - Good, because bash changes are tested in one place.
 - Bad, because the orb maintainers own more surface area (parameters, scripts) and must semver carefully.
 - Bad, because some clients will still need custom jobs; documentation must show **when** to compose commands manually.
+- Neutral: `changesets-gated-publish` with default `create-github-release` adds a **GitHub Release** and a **train git tag** `release/<UTC-date>.N` (title `YYYY.MM.DD.N` only) alongside any existing **semver artifact tags** (for example this repo’s `vX.Y.Z` for `orb-tools/publish`). Workflow filters can keep matching only `^v[0-9]+\.[0-9]+\.[0-9]+$` so train tags do not double-trigger orb production publish; repos that must not create GitHub Releases set `create-github-release: false`.
 
 ### Confirmation
 

@@ -48,6 +48,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md`
 - `0035-trial-adoption-of-conventional-commits.md`
 - `0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md`
+- `0037-release-train-identifiers-and-github-releases.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

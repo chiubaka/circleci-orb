@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 # Pending changesets -> changeset version -> commit on release/<primary> -> gh PR. Requires GITHUB_TOKEN, gh, git push.
+# After squash-merge, gated publish uses runGithubReleaseTrain.sh to build GitHub Release notes from
+# the same style of per-package CHANGELOG excerpts (merge diff HEAD~1..HEAD).
 set -euo pipefail
 
 count_pending_changesets() {

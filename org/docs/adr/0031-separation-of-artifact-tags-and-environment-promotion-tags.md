@@ -154,6 +154,7 @@ Application versioning and changelog intent remain driven by Changesets where ap
 
 ## Related ADRs
 
+- [ADR 0037](0037-release-train-identifiers-and-github-releases.md) — canonical release train identifier and GitHub Releases alignment
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — application versioning and user-facing release intent
 - [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) — which artifacts are versioned
 - [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — release manifest format, deploy phases, and coordination rules

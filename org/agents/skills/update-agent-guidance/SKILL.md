@@ -44,7 +44,8 @@ If uncertain, choose repo-level first, then promote to org-level only when porta
 
 ## Critical rules
 
-- On repositories that use **Changesets**, do **not** add release version bumps to `package.json` or new sections to `CHANGELOG.md` in the same change that ships user-facing work; add or update a **`.changeset/*`** file instead, per `org/agents/skills/changesets-hygiene/SKILL.md`, then run the normal release or `changeset version` flow. Hand-editing only belongs to fixing Changesets or changelog tooling in isolation.
+- **Guidance and ADRs without a Changeset:** Edits that are **only** to agent guidance, org skills, or ADRs do **not** require a `.changeset/*` file. Do not add one by default—see `org/agents/skills/changesets-hygiene/SKILL.md` (**When not to add a Changeset**).
+- On repositories that use **Changesets**, when shipping **releasable** work (not guidance-only), do **not** add release version bumps to `package.json` or new sections to `CHANGELOG.md` in the same PR; add or update a **`.changeset/*`** file instead, per `org/agents/skills/changesets-hygiene/SKILL.md`, then run the normal release or `changeset version` flow. Hand-editing only belongs to fixing Changesets or changelog tooling in isolation.
 - Org-level guidance must not depend on repo-specific files or conventions as normative requirements.
 - Keep root `AGENTS.md` bootstrap-compatible:
   - preserve `<!-- ORG_GUIDANCE_START --> ... <!-- ORG_GUIDANCE_END -->`

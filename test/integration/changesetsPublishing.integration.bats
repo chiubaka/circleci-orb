@@ -60,4 +60,5 @@ setup() {
   assert_output --partial "changesets-gated-publish:"
   assert_output --partial "assert-release-merge:"
   assert_output --partial "install-github-cli:"
+  assert_output --partial "github-release-train:"
 }

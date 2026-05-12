@@ -13,6 +13,10 @@ description: >-
 
 A changeset file declares **which packages** bump and **how the change reads in the changelog**. It is the source of truth for release notes in this org’s Changesets workflow (see [ADR 0024](../../../docs/adr/0024-use-changesets-for-library-monorepos.md) and related ADRs).
 
+## When not to author a changeset
+
+For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages, orb/scripts, or consumer-facing artifact behavior), **do not** add a `.changeset` file. Use `org/agents/skills/changesets-hygiene/SKILL.md` for the full exception list.
+
 ## Where files live
 
 - Add markdown files under **`.changeset/`** at the repo root (or the configured changeset directory).

@@ -54,5 +54,7 @@ usage:
   #           - equal: [true, << pipeline.parameters.run-changesets-publish >>]
   #       jobs:
   #         - chiubaka/changesets-gated-publish:
-  #             context: [github-packages-publish]
+  #             context: [github-packages-publish, github-release-pr-bot]
   #             primary-branch: master
+  #             # create-github-release defaults to true: git tag release/<UTC>.N + GitHub Release titled <UTC>.N
+  #             # create-github-release: false
