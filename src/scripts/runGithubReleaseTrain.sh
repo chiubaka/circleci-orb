@@ -215,8 +215,12 @@ run_github_release_train_main() {
   prefix=${TRAIN_TAG_PREFIX:-release/}
 
   target_ref=${TARGET_REF:-}
-  if [[ -z "$target_ref" ]]; then
-    target_ref=${CIRCLE_SHA1:-}
+  # CircleCI sets CIRCLE_SHA1 for the job checkout. Bats fixtures use a separate git clone; inheriting
+  # CIRCLE_SHA1 would point at a commit that does not exist in the fixture repo and break tag/HEAD logic.
+  if [[ -z "$target_ref" ]] && [[ -n "${CIRCLE_SHA1:-}" ]]; then
+    if git rev-parse --verify "${CIRCLE_SHA1}^{commit}" >/dev/null 2>&1; then
+      target_ref=${CIRCLE_SHA1}
+    fi
   fi
   if [[ -z "$target_ref" ]]; then
     target_ref=HEAD
