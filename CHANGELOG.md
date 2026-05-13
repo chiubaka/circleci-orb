@@ -1,5 +1,11 @@
 # @chiubaka/circleci-orb
 
+## 0.17.0
+
+### Minor Changes
+
+- e16d1b2: `changesets-gated-publish` now defaults to creating a GitHub Release after publish: UTC train id `YYYY.MM.DD.N` as the release title, git tag `release/YYYY.MM.DD.N` by default, and notes from merged `CHANGELOG.md` diffs. Repos can set `create-github-release: false` to opt out.
+
 ## 0.16.2
 
 ### Patch Changes
