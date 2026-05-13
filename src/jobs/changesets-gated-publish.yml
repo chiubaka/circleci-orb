@@ -1,7 +1,8 @@
 description: >
   After a squash-merged release PR, run assert-release-merge then the same publish path as
-  job publish (registry auth, optional build, pnpm exec changeset publish). Pair with a path-filtering
-  + continuation workflow on the client so this job only runs for relevant merges.
+  job publish (registry auth, optional build, pnpm exec changeset publish). By default, when
+  create-github-release is true, also creates a GitHub Release and UTC train git tag (ADR 0037).
+  Pair with a path-filtering + continuation workflow on the client so this job only runs for relevant merges.
 
 executor:
   name: docker-node
@@ -122,6 +123,35 @@ parameters:
     type: boolean
     default: false
     description: When true, assert HEAD deletes at least one path under .changeset/.
+  create-github-release:
+    type: boolean
+    default: true
+    description: >
+      When true, after publish runs install-github-cli and github-release-train (GitHub Release + train
+      tag). Requires GITHUB_TOKEN with contents:write. Set false for repos that opt out of GitHub Releases.
+  train-tag-prefix:
+    type: string
+    default: "release/"
+    description: Passed to github-release-train (git tag prefix before UTC logical id YYYY.MM.DD.N).
+  release-train-draft:
+    type: boolean
+    default: false
+    description: Passed to github-release-train (--draft).
+  release-train-prerelease:
+    type: boolean
+    default: false
+    description: Passed to github-release-train (--prerelease).
+  release-train-title-template:
+    type: string
+    default: "{{logical_train_id}}"
+    description: Passed to github-release-train (GitHub release title template).
+  release-train-on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+    description: Passed to github-release-train idempotency behavior when the train tag already exists.
 
 steps:
   - setup:
@@ -164,4 +194,15 @@ steps:
       app-dir: << parameters.app-dir >>
       dry-run: << parameters.dry-run >>
       publish-script: << parameters.publish-script >>
+  - when:
+      condition: << parameters.create-github-release >>
+      steps:
+        - install-github-cli
+        - github-release-train:
+            app-dir: << parameters.app-dir >>
+            train-tag-prefix: << parameters.train-tag-prefix >>
+            draft: << parameters.release-train-draft >>
+            prerelease: << parameters.release-train-prerelease >>
+            title-template: << parameters.release-train-title-template >>
+            on-existing-tag: << parameters.release-train-on-existing-tag >>
   - steps: << parameters.cleanup-steps >>

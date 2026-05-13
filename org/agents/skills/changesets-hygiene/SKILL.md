@@ -3,7 +3,8 @@ name: changesets-hygiene
 description: >-
   Prevents hand-edited semver and changelog in Changesets-driven repos. Use
   .changeset entries and changeset add/version flows instead; never bump
-  package.json version or CHANGELOG.md to ship features in those repos.
+  package.json version or CHANGELOG.md to ship features in those repos. Skips
+  ADRs and agent-guidance-only edits (see When not to add a Changeset).
 ---
 
 # Changesets hygiene (agents)
@@ -18,6 +19,15 @@ Use in any repository with:
 
 - `.changeset/config.json` (or equivalent) and
 - `@changesets/cli` (or a documented `pnpm changeset` / `changeset` workflow) for release notes.
+
+## When not to add a Changeset
+
+**Do not** create `.changeset/*` entries when the PR only affects:
+
+- **ADRs** or other durable decision docs under `**/docs/adr/**` or `org/docs/adr/**`
+- **Agent/contributor guidance** that does not change runtime or published APIs (for example `AGENTS.md`, `org/agents/AGENTS.org.md`, `REVIEW-CHECKLIST.md`, `org/agents/skills/**`, repo-local `.agents/skills/**`, or tooling-only docs that mirror those)
+
+Those changes are recorded in git and in the docs themselves; they are **not** consumer-facing package releases. If a task mixes guidance-only edits with **releasable** code or config for a published package, add a changeset **only** for the releasable portion.
 
 ## Required behavior
 

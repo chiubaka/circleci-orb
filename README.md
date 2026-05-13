@@ -64,19 +64,11 @@ After:
 We welcome [issues](https://github.com/chiubaka/circleci-orb/issues) to and [pull requests](https://github.com/chiubaka/circleci-orb/pulls) against this repository!
 
 ### How to Publish An Update
-1. Merge pull requests with desired changes to the main branch.
-    - For the best experience, squash-and-merge and use [Conventional Commit Messages](https://conventionalcommits.org/).
-2. Find the current version of the orb.
-    - You can run `circleci orb info chiubaka/circleci-orb | grep "Latest"` to see the current version.
-3. Create a [new Release](https://github.com/chiubaka/circleci-orb/releases/new) on GitHub.
-    - Click "Choose a tag" and _create_ a new [semantically versioned](http://semver.org/) tag. (ex: v1.0.0)
-      - We will have an opportunity to change this before we publish if needed after the next step.
-4.  Click _"+ Auto-generate release notes"_.
-    - This will create a summary of all of the merged pull requests since the previous release.
-    - If you have used _[Conventional Commit Messages](https://conventionalcommits.org/)_ it will be easy to determine what types of changes were made, allowing you to ensure the correct version tag is being published.
-5. Now ensure the version tag selected is semantically accurate based on the changes included.
-6. Click _"Publish Release"_.
-    - This will push a new tag and trigger your publishing pipeline on CircleCI.
+
+1. Land changes on `master` (squash-and-merge is recommended; use [Conventional Commits](https://conventionalcommits.org/) where helpful).
+2. When [Changesets](https://github.com/changesets/changesets) has pending entries, CI opens a release PR (`changesets-release-pr`). **Squash-merge** that PR using the default title prefix `chore(release): version packages` so `changesets-gated-publish` can assert the merge.
+3. The gated publish job runs `changeset publish` (or this repo’s `release:orb` script), pushes the orb semver tag `vX.Y.Z` for registry consumers, then **by default** creates a **GitHub Release** whose title is the UTC train id `YYYY.MM.DD.N`, a matching git tag `release/YYYY.MM.DD.N`, and release notes built from the merged `CHANGELOG.md` diff. Set `create-github-release: false` on `chiubaka/changesets-gated-publish` if a repo opts out.
+4. Production orb registry releases still follow the `orb-tools/publish` workflow on semver tags `vX.Y.Z` (see [CircleCI orb registry](https://circleci.com/orbs/registry/orb/chiubaka/circleci-orb)); train tags do not replace that contract.
 
 ## Development
 

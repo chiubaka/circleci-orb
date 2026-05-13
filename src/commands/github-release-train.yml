@@ -1,0 +1,77 @@
+description: >
+  After a Changesets publish merge, create one GitHub Release per publish batch (ADR 0037).
+  Computes logical train id YYYY.MM.DD.N from current UTC date and existing remote tags, creates
+  git tag <train-tag-prefix><logical-id> (default release/2026.05.12.1), and runs gh release create
+  with title equal to the logical id (default {{logical_train_id}}). Release notes default to
+  excerpts from CHANGELOG.md files changed between HEAD~1 and HEAD (merge-commit mode); empty
+  changelog diff fails the step. Requires origin to point at github.com, GITHUB_TOKEN with
+  contents:write for tag + release, and gh on PATH (use install-github-cli before this command).
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Working directory (repository root containing .git).
+  train-tag-prefix:
+    type: string
+    default: "release/"
+    description: >
+      Prefix for the git tag; full tag is prefix plus logical train id YYYY.MM.DD.N (UTC).
+      Use empty string for bare logical-id tags.
+  draft:
+    type: boolean
+    default: false
+    description: Pass --draft to gh release create.
+  prerelease:
+    type: boolean
+    default: false
+    description: Pass --prerelease to gh release create.
+  title-template:
+    type: string
+    default: "{{logical_train_id}}"
+    description: >
+      GitHub release title; default replaces {{logical_train_id}} with YYYY.MM.DD.N (UTC).
+      Overriding can break parity with release manifests (ADR 0030).
+  target-ref:
+    type: string
+    default: "<< pipeline.git.revision >>"
+    description: >
+      Commit or ref passed to gh --target (defaults to the pipeline revision). Empty falls back to
+      CIRCLE_SHA1 or HEAD in the script.
+  on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+    description: >
+      When the computed tag already exists on origin at the same target commit, skip exits 0;
+      fail exits non-zero. A tag pointing at a different commit always fails.
+  notes-extra-file:
+    type: string
+    default: ""
+    description: Optional file whose contents are prepended before merge-commit notes (or used alone in body-file mode when configured).
+  release-notes-source:
+    type: enum
+    enum:
+      - merge-commit
+      - body-file
+    default: merge-commit
+    description: >
+      merge-commit builds notes from HEAD~1..HEAD CHANGELOG.md paths (non-empty list required).
+      body-file uses notes-extra-file as the entire body (file must exist).
+
+steps:
+  - run:
+      name: GitHub release train (ADR 0037)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runGithubReleaseTrain.sh) >>
+      environment:
+        TRAIN_TAG_PREFIX: << parameters.train-tag-prefix >>
+        DRAFT: << parameters.draft >>
+        PRERELEASE: << parameters.prerelease >>
+        TITLE_TEMPLATE: << parameters.title-template >>
+        TARGET_REF: << parameters.target-ref >>
+        ON_EXISTING_TAG: << parameters.on-existing-tag >>
+        NOTES_EXTRA_FILE: << parameters.notes-extra-file >>
+        RELEASE_NOTES_SOURCE: << parameters.release-notes-source >>
