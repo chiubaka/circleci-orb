@@ -1,6 +1,6 @@
 {
   "name": "@chiubaka/circleci-orb",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "private": true,
   "description": "CircleCI Orb for common Chiubaka Technologies CI/CD tasks",
   "main": "index.js",
