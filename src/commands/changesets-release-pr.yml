@@ -17,9 +17,14 @@ parameters:
 
 steps:
   - run:
+      name: Stage Chiubaka release notes formatter
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
+  - run:
       name: Changesets release PR (version + push + gh)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runChangesetsReleasePr.sh) >>
       environment:
+        FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs
         APP_DIR: .
         PRIMARY_BRANCH: << parameters.primary-branch >>

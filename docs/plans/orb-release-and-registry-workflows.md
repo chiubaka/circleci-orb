@@ -18,7 +18,7 @@ These choices drive Stage 2b/2c implementation. Stage **2c** squash gate uses a 
 |------|------------|
 | **Release branch name** | `release/<default-branch-name>` — e.g. `release/main`, `release/master`. The segment after `release/` matches the repo **default branch** (same value as orb `primary-branch` / client default). |
 | **PR title (and squash merge commit subject)** | `chore(release): version packages (scope@x.y.z, …)` — **npm package names** (not only workspace folder names), each with **semver**, listed **in alphabetical order** by package name, inside the parentheses. Example: `chore(release): version packages (@chiubaka/foo@0.2.0, @chiubaka/bar@1.4.0)`. |
-| **PR body** | **Changelog excerpts** (content pulled from the CHANGELOG updates produced by `changeset version`) so reviewers can see **what is landing for consumers** at a glance. Regenerated when the release PR is refreshed. |
+| **PR body** | **Grouped changelog summary** from the CHANGELOG updates produced by `changeset version`: **Major / Minor / Patch** sections, one package bullet per section with nested change bullets, plus **Published versions** (same formatter as the GitHub Release train notes). Regenerated when the release PR is refreshed. |
 | **Commit message on `release/<branch>`** | **Same Conventional Commit pattern as the PR title**, recomputed on each update to reflect the **current** set of versioned packages (e.g. new packages picked up by dependency bumps). **Single-line subject** = full title string; optional body may duplicate or expand (implementation detail). |
 
 The release PR is **updated in place** on that branch; the **title and commit subject** are **regenerated** on each run so they stay aligned with the packages being versioned.
@@ -146,7 +146,7 @@ flowchart LR
 
 - **Pipeline / workflow shape:** after checkout + install + auth (as needed), run `changeset status` / documented check; if nothing to release, **exit success** without side effects.
 - Run **`changeset version`**; **compute PR title** (alphabetical `name@version` list); set **commit subject** to that **same** Conventional Commit string (recomputed each run as package set changes).
-- **PR body:** assemble **changelog excerpts** from the CHANGELOG files Changesets updated (scoped to packages in this release) so the PR explains **consumer-visible** changes.
+- **PR body:** assemble the **grouped changelog summary** from the CHANGELOG files Changesets updated (scoped to packages in this release) so the PR explains **consumer-visible** changes in the same layout as GitHub Release train notes.
 - Push to **`release/<default-branch>`**; open or update PR to default branch via **`gh`**.
 - **Idempotency:** one open PR from `release/<default>` → default branch; updates move the same branch / PR.
 - **Secrets:** **`GITHUB_TOKEN`** from CircleCI (context) for **`gh`** + git push; document required scopes and branch protection (bots, required reviews). Machine user PAT deferred unless org rules require it.
@@ -209,7 +209,7 @@ flowchart LR
 ## Open implementation details (to resolve during build)
 
 - **Exact path-filtering mapping** (globs → continuation parameters) per monorepo layout.
-- **Changelog excerpt assembly:** how much context per package (paragraph vs section) and max body length for GitHub PR limits.
+- **Grouped release notes assembly:** full top `CHANGELOG.md` section per changed package (no arbitrary line cap on the GitHub Release path), grouped by Changesets **Major / Minor / Patch** headings across packages, plus **Published versions**; PR bodies share the same formatter with a separate max-length truncate for GitHub PR limits.
 - **Minimum `@changesets/cli` version** number and where to assert it (`pnpm exec changeset --version` vs `package.json` engines).
 - **Default branch rename:** ensure `release/<primary-branch>` tracks renames (parameter always from client).
 - **2c diff base:** single-parent squash on default branch — validate `git log -1` shape in gate script if needed.
