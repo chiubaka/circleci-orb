@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 # GitHub Release train (ADR 0037): UTC calendar train id YYYY.MM.DD.N, git tag prefix + id, title = logical id.
-# Release notes for default merge-commit mode come from HEAD~1..HEAD CHANGELOG.md diffs (same excerpt
-# shape as runChangesetsReleasePr.sh build_pr_body_file — helpers duplicated intentionally; see that file).
+# Release notes for default merge-commit mode come from HEAD~1..HEAD CHANGELOG.md diffs, formatted by
+# formatChangesetsBatchReleaseNotes.mjs (same shape as runChangesetsReleasePr.sh build_pr_body_file).
 # Optional test-only: UTC_DATE_OVERRIDE=YYYY.MM.DD fixes the calendar portion; GITHUB_RELEASE_TRAIN_KEEP_NOTES_FILE=true skips deleting the temp notes file after exit (Bats).
 set -euo pipefail
 
@@ -127,34 +127,34 @@ truncate_notes_file() {
   node -e 'const fs=require("fs");const p=process.argv[1];const m=+process.argv[2];let t=fs.readFileSync(p,"utf8");if(t.length>m){t=t.slice(0,m)+"\n\n_(body truncated for GitHub length limits)_\n";fs.writeFileSync(p,t);}' "$out" "$max" 2>/dev/null || true
 }
 
+_resolve_formatter_script() {
+  if [[ -n "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT:-}" && -f "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT}" ]]; then
+    printf '%s\n' "$FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/formatChangesetsBatchReleaseNotes.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runGithubReleaseTrain: set FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT or keep formatChangesetsBatchReleaseNotes.mjs next to this script." >&2
+  return 1
+}
+
 build_release_notes_merge() {
-  local out=$1 cl dir pkg_json name excerpt
-  {
-    echo "## Changelog excerpts"
-    echo
-    echo "Automated release notes from Changesets publish merge (HEAD~1..HEAD CHANGELOG.md paths)."
-    echo
-  } >"$out"
-
-  while IFS= read -r cl; do
-    [[ -n "$cl" ]] || continue
-    [[ -f "$cl" ]] || continue
-    dir=$(dirname "$cl")
-    pkg_json="${dir}/package.json"
-    name=""
-    if [[ -f "$pkg_json" ]]; then
-      name=$(node -e 'const fs=require("fs"); const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(j.name||"")' "$pkg_json" 2>/dev/null || true)
-    fi
-    [[ -n "$name" ]] || name="$cl"
-    excerpt=$(extract_changelog_top "$cl" | head -n 200 || true)
-    {
-      echo "### ${name}"
-      echo
-      printf '%s\n' "$excerpt"
-      echo
-    } >>"$out"
-  done < <(list_merge_changelog_paths)
-
+  local out=$1 fmt
+  if ! fmt=$(_resolve_formatter_script); then
+    return 1
+  fi
+  local -a cpaths=()
+  mapfile -t cpaths < <(list_merge_changelog_paths | grep -v '^$' || true)
+  if [[ ${#cpaths[@]} -eq 0 ]]; then
+    echo "runGithubReleaseTrain: internal error: no changelog paths after merge diff check." >&2
+    return 1
+  fi
+  node "$fmt" "$out" "${cpaths[@]}"
   truncate_notes_file "$out"
 }
 

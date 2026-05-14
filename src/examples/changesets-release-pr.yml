@@ -4,7 +4,7 @@ description: >
   context (repo contents, pull requests, workflow; push access to release/* branches). Use squash merge
   on that PR so the gated publish job can match the commit subject prefix; after merge,
   changesets-gated-publish (default create-github-release: true) publishes packages and opens a GitHub
-  Release with notes from merged CHANGELOG excerpts (ADR 0037).
+  Release with grouped release notes from Changesets changelogs (ADR 0037).
 
 usage:
   version: 2.1

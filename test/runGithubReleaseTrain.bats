@@ -241,7 +241,7 @@ EOF
   rm -f "$notes"
 }
 
-@test "merge-commit notes include package heading and changelog excerpt" {
+@test "merge-commit notes use grouped format, minor section, and published versions" {
   local clone bindir gh_mock nf args
   cd "$BATS_TEST_TMPDIR" || exit 1
   clone=$(_github_train_init_clone)
@@ -254,6 +254,7 @@ EOF
 EOF
   git add . && git commit -m "add pkg" && git push origin master
 
+  printf '%s\n' '{"name":"@t/a","version":"1.1.0"}' >pkg/package.json
   cat >pkg/CHANGELOG.md <<'EOF'
 ## 1.1.0
 ### Minor
@@ -275,7 +276,78 @@ EOF
   [[ -f "$nf" ]] || false
   run grep -F "ship it" "$nf"
   assert_success
-  run grep -F "@t/a" "$nf"
+  run grep -F "### Minor Changes" "$nf"
+  assert_success
+  run grep -F "**@t/a**" "$nf"
+  assert_success
+  run grep -F "## Published versions" "$nf"
+  assert_success
+  run grep -F '`@t/a@1.1.0`' "$nf"
+  assert_success
+  run grep -F "Changelog excerpts" "$nf"
+  assert_failure
+  rm -f "$nf"
+}
+
+@test "merge-commit notes group two packages by change category" {
+  local clone bindir gh_mock nf args
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  clone=$(_github_train_init_clone)
+  cd "$clone" || exit 1
+  mkdir -p packages/a packages/b
+  printf '%s\n' '{"name":"@t/a","version":"1.0.0"}' >packages/a/package.json
+  printf '%s\n' '{"name":"@t/b","version":"1.0.0"}' >packages/b/package.json
+  cat >packages/a/CHANGELOG.md <<'EOF'
+## 1.0.0
+- init a
+EOF
+  cat >packages/b/CHANGELOG.md <<'EOF'
+## 1.0.0
+- init b
+EOF
+  git add . && git commit -m "add pkgs" && git push origin master
+
+  printf '%s\n' '{"name":"@t/a","version":"2.0.0"}' >packages/a/package.json
+  printf '%s\n' '{"name":"@t/b","version":"1.5.0"}' >packages/b/package.json
+  cat >packages/a/CHANGELOG.md <<'EOF'
+## 2.0.0
+### Minor Changes
+- aa: minor line for a
+EOF
+  cat >packages/b/CHANGELOG.md <<'EOF'
+## 1.5.0
+### Patch Changes
+- bb: patch line for b
+EOF
+  git add . && git commit -m "release bump" && git push origin master
+
+  gh_mock="$(mock_create)"
+  bindir=$(mktemp -d)
+  ln -sf "$gh_mock" "${bindir}/gh"
+
+  run env GITHUB_TOKEN=fake UTC_DATE_OVERRIDE=2099.01.01 GITHUB_RELEASE_TRAIN_KEEP_NOTES_FILE=true \
+    PATH="${bindir}:$PATH" \
+    bash "$PROJECT_ROOT/src/scripts/runGithubReleaseTrain.sh"
+
+  assert_success
+  args=$(mock_get_call_args "$gh_mock" 1)
+  nf=$(printf '%s' "$args" | awk '{for(i=1;i<=NF;i++) if($i=="--notes-file"){print $(i+1); exit}}')
+  [[ -f "$nf" ]] || false
+  run grep -F "### Minor Changes" "$nf"
+  assert_success
+  run grep -F "**@t/a**" "$nf"
+  assert_success
+  run grep -F "minor line for a" "$nf"
+  assert_success
+  run grep -F "### Patch Changes" "$nf"
+  assert_success
+  run grep -F "**@t/b**" "$nf"
+  assert_success
+  run grep -F "patch line for b" "$nf"
+  assert_success
+  run grep -F '`@t/a@2.0.0`' "$nf"
+  assert_success
+  run grep -F '`@t/b@1.5.0`' "$nf"
   assert_success
   rm -f "$nf"
 }

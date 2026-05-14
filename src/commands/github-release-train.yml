@@ -2,8 +2,9 @@ description: >
   After a Changesets publish merge, create one GitHub Release per publish batch (ADR 0037).
   Computes logical train id YYYY.MM.DD.N from current UTC date and existing remote tags, creates
   git tag <train-tag-prefix><logical-id> (default release/2026.05.12.1), and runs gh release create
-  with title equal to the logical id (default {{logical_train_id}}). Release notes default to
-  excerpts from CHANGELOG.md files changed between HEAD~1 and HEAD (merge-commit mode); empty
+  with title equal to the logical id (default {{logical_train_id}}). Release notes default to a
+  grouped summary from CHANGELOG.md files changed between HEAD~1 and HEAD (merge-commit mode):
+  Major/Minor/Patch sections, nested bullets per package, and a Published versions list. Empty
   changelog diff fails the step. Requires origin to point at github.com, GITHUB_TOKEN with
   contents:write for tag + release, and gh on PATH (use install-github-cli before this command).
 
@@ -58,15 +59,20 @@ parameters:
       - body-file
     default: merge-commit
     description: >
-      merge-commit builds notes from HEAD~1..HEAD CHANGELOG.md paths (non-empty list required).
+      merge-commit builds grouped notes from HEAD~1..HEAD CHANGELOG.md paths (non-empty list required).
       body-file uses notes-extra-file as the entire body (file must exist).
 
 steps:
+  - run:
+      name: Stage Chiubaka release notes formatter
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
   - run:
       name: GitHub release train (ADR 0037)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runGithubReleaseTrain.sh) >>
       environment:
+        FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs
         TRAIN_TAG_PREFIX: << parameters.train-tag-prefix >>
         DRAFT: << parameters.draft >>
         PRERELEASE: << parameters.prerelease >>

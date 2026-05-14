@@ -4,7 +4,7 @@ setup() {
   CHANGESETS_RELEASE_PR_SOURCE_ONLY=true
   # shellcheck disable=SC1091
   source "$PROJECT_ROOT/src/scripts/runChangesetsReleasePr.sh"
-  export -f count_pending_changesets pkg_at_version build_title extract_changelog_top build_pr_body_file build_force_with_lease_arg
+  export -f count_pending_changesets pkg_at_version build_title extract_changelog_top build_pr_body_file _resolve_formatter_script build_force_with_lease_arg
 }
 
 @test "count_pending_changesets is zero without .changeset markdown files" {
@@ -80,7 +80,7 @@ EOF
   assert_line --index 1 "- hello"
 }
 
-@test "build_pr_body_file lists changelog excerpts for changed CHANGELOG paths" {
+@test "build_pr_body_file groups changed changelogs with categories and published versions" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   git init -b main
   git config user.email test@test
@@ -93,6 +93,7 @@ EOF
 - init
 EOF
   git add . && git commit -m "init"
+  printf '%s\n' '{"name":"@t/pkg","version":"1.2.0"}' >pkg/package.json
   cat >pkg/CHANGELOG.md <<'EOF'
 # @t/pkg
 ## 1.2.0
@@ -102,19 +103,27 @@ EOF
 
   body=$(mktemp)
   build_pr_body_file "$body"
-  run grep -F "@t/pkg" "$body"
+  run grep -F "### Minor Changes" "$body"
+  assert_success
+  run grep -F "**@t/pkg**" "$body"
   assert_success
   run grep -F "new entry" "$body"
   assert_success
+  run grep -F "## Published versions" "$body"
+  assert_success
+  run grep -F '`@t/pkg@1.2.0`' "$body"
+  assert_success
+  run grep -F "Changelog excerpts" "$body"
+  assert_failure
   rm -f "$body"
 }
 
-@test "build_pr_body_file includes excerpt from newly added untracked CHANGELOG.md" {
+@test "build_pr_body_file includes untracked CHANGELOG.md in grouped output" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   git init -b main
   git config user.email test@test
   git config user.name Test
-  printf '%s\n' '{"name":"@t/root","version":"1.0.0"}' >package.json
+  printf '%s\n' '{"name":"@t/root","version":"1.1.0"}' >package.json
   git add package.json && git commit -m "init"
 
   cat >CHANGELOG.md <<'EOF'
@@ -126,9 +135,13 @@ EOF
 
   body=$(mktemp)
   build_pr_body_file "$body"
-  run grep -F "@t/root" "$body"
+  run grep -F "### Patch Changes" "$body"
+  assert_success
+  run grep -F "**@t/root**" "$body"
   assert_success
   run grep -F "include untracked changelog excerpt" "$body"
+  assert_success
+  run grep -F '`@t/root@1.1.0`' "$body"
   assert_success
   rm -f "$body"
 }

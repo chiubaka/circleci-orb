@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 # Pending changesets -> changeset version -> commit on release/<primary> -> gh PR. Requires GITHUB_TOKEN, gh, git push.
 # After squash-merge, gated publish uses runGithubReleaseTrain.sh to build GitHub Release notes from
-# the same style of per-package CHANGELOG excerpts (merge diff HEAD~1..HEAD).
+# the same formatChangesetsBatchReleaseNotes layout (merge diff HEAD~1..HEAD).
 set -euo pipefail
 
 count_pending_changesets() {
@@ -63,35 +63,34 @@ list_changed_changelog_paths() {
   } | { grep -E '(^|/)CHANGELOG\.md$' || :; } | LC_ALL=C sort -u
 }
 
+_resolve_formatter_script() {
+  if [[ -n "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT:-}" && -f "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT}" ]]; then
+    printf '%s\n' "$FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/formatChangesetsBatchReleaseNotes.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runChangesetsReleasePr: set FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT or keep formatChangesetsBatchReleaseNotes.mjs next to this script." >&2
+  return 1
+}
+
 build_pr_body_file() {
-  local out=$1
-  {
-    echo "## Changelog excerpts"
-    echo
-    echo "Automated version bump via Changesets (release PR)."
-    echo
-  } >"$out"
-
-  while IFS= read -r cl; do
-    [[ -n "$cl" ]] || continue
-    [[ -f "$cl" ]] || continue
-    local pkg_json dir name=""
-    dir=$(dirname "$cl")
-    pkg_json="${dir}/package.json"
-    if [[ -f "$pkg_json" ]]; then
-      name=$(node -e 'const fs=require("fs"); const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(j.name||"")' "$pkg_json" 2>/dev/null || true)
-    fi
-    [[ -n "$name" ]] || name="$cl"
-    local excerpt
-    excerpt=$(extract_changelog_top "$cl" | head -n 200 || true)
-    {
-      echo "### ${name}"
-      echo
-      printf '%s\n' "$excerpt"
-      echo
-    } >>"$out"
-  done < <(list_changed_changelog_paths || true)
-
+  local out=$1 fmt
+  if ! fmt=$(_resolve_formatter_script); then
+    return 1
+  fi
+  local -a cpaths=()
+  mapfile -t cpaths < <(list_changed_changelog_paths | grep -v '^$' || true)
+  if [[ ${#cpaths[@]} -eq 0 ]]; then
+    printf '%s\n' "_No CHANGELOG.md updates in the working tree diff._" >"$out"
+  else
+    node "$fmt" "$out" "${cpaths[@]}"
+  fi
   node -e 'const fs=require("fs");const p=process.argv[1];const m=55000;let t=fs.readFileSync(p,"utf8");if(t.length>m){t=t.slice(0,m)+"\n\n_(body truncated for GitHub length limits)_\n";fs.writeFileSync(p,t);}' "$out" 2>/dev/null || true
 }
 
