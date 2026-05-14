@@ -30,10 +30,11 @@ function readPackageMeta(changelogPath) {
   try {
     const j = JSON.parse(fs.readFileSync(pkgJson, "utf8"));
     const name = typeof j.name === "string" && j.name ? j.name : changelogPath;
-    const version = typeof j.version === "string" && j.version ? j.version : "";
-    return { name, version, published: j.name && j.version ? `${j.name}@${j.version}` : "" };
+    const published =
+      j.name && typeof j.version === "string" && j.version ? `${j.name}@${j.version}` : "";
+    return { name, published };
   } catch {
-    return { name: changelogPath, version: "", published: "" };
+    return { name: changelogPath, published: "" };
   }
 }
 
