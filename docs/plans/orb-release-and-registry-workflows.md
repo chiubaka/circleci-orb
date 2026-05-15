@@ -40,7 +40,7 @@ The release PR is **updated in place** on that branch; the **title and commit su
 | **YAML style** | **Direction 2:** prefer **explicit orb parameters** (named flags, enums, script names) so client config stays readable; defaults still exist. |
 | **Build / Turbo** | Invoke **package.json scripts** for **build** steps; avoid embedding Turbo CLI in the orb; keep coupling in repo scripts per [ADR 0022](../../org/docs/adr/0022-standardize-monorepos-to-pnpm-turbo.md). |
 | **GitHub Packages token** | Document **`GITHUB_TOKEN`** for `npm.pkg.github.com` auth in examples (contexts use least-privilege tokens in practice). |
-| **Org ADR alignment** | Orb encodes **workflow shape** for [ADR 0024](../../org/docs/adr/0024-use-changesets-for-library-monorepos.md), [0027](../../org/docs/adr/0027-use-single-changesets-workflow-in-hybrid-monorepos.md), [0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md), [0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md); **escape hatches** remain first-class. |
+| **Org ADR alignment** | Orb encodes **workflow shape** for [ADR 0024](../../org/docs/adr/0024-use-changesets-for-library-monorepos.md), [0027](../../org/docs/adr/0027-use-single-changesets-workflow-in-hybrid-monorepos.md), [0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md), [0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md); **escape hatches** remain first-class. |
 | **Manifest errors** | **Fail the job** on schema/invariant violation; print **actionable** messages. |
 | **Orb semver (pre-1.0)** | Use **minor** bumps for meaningful or potentially breaking orb API changes; **patch** for small fixes until **v1.0**. |
 
@@ -179,17 +179,17 @@ flowchart LR
 
 ---
 
-## Stage 3 — Manifests and promotion tags (ADRs 0030–0031)
+## Stage 3 — Manifests and promotion tags (ADRs 0038–0031)
 
-**Goal:** Scripts and commands for `staging-*` / `prod-*` tags, `.releases/<id>.yml` validation (fail fast, helpful errors), phased deploy via **hooks** (e.g. `pnpm deploy:ci`-style), reusing patterns from [`deployMonorepoPackage.sh`](../../src/scripts/deployMonorepoPackage.sh).
+**Goal:** Scripts and commands for `staging-*` / `prod-*` tags, `.releases/<id>.yml` validation (fail fast, helpful errors), then coordinated deploy via **repo-defined hooks** (for example `pnpm deploy:ci`-style entrypoints that apply manifest pins using the repository’s canonical deploy ordering), reusing patterns from [`deployMonorepoPackage.sh`](../../src/scripts/deployMonorepoPackage.sh).
 
 **Work**
 
 - `parsePromotionTag.sh` → env: `PROMOTION_ENV`, `RELEASE_ID`.
 - `validateReleaseManifest.sh` → exit non-zero + message on violation.
 - `exportCoordinatedReleaseEnv.sh` (optional).
-- **`coordinated-deploy` job/command:** setup → validate → user hooks per phase.
-- Workflow docs: promotion tags vs artifact tags [0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md).
+- **`coordinated-deploy` job/command:** setup → validate → user-provided deploy script (ordering owned by repo tooling per ADR 0038).
+- Workflow docs: promotion tags vs artifact tags [0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md); pin-set manifests [0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md).
 - Bats + fixtures under `test/fixtures/`.
 
 **Tooling:** Confirm `yq` / `jq` / node on [`docker-node`](../../src/executors/docker-node.yml) or install in command.

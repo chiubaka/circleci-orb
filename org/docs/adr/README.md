@@ -41,7 +41,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0027-use-single-changesets-workflow-in-hybrid-monorepos.md`
 - `0028-version-only-deployable-artifacts-by-default.md`
 - `0029-standardize-on-pnpm.md`
-- `0030-coordinated-release-model-release-manifests-and-promotion-tags.md`
+- `0030-coordinated-release-model-release-manifests-and-promotion-tags.md` (superseded by `0038`; retained for history)
 - `0031-separation-of-artifact-tags-and-environment-promotion-tags.md`
 - `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
 - `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
@@ -49,6 +49,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0035-trial-adoption-of-conventional-commits.md`
 - `0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md`
 - `0037-release-train-identifiers-and-github-releases.md`
+- `0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

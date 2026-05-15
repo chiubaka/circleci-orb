@@ -12,7 +12,7 @@ Monorepos that ship multiple versioned artifacts need a **release train** identi
 
 Reasonable options include:
 
-- A **calendar-style identifier** (`YYYY.MM.DD.N`), aligned with phased promotion and release manifests.
+- A **calendar-style identifier** (`YYYY.MM.DD.N`), aligned with environment promotion and release manifests.
 - An **umbrella semver** at the repository root, optionally maintained alongside independent package versions.
 
 Separately, teams often publish **GitHub Releases** as the social and archival surface for a batch publish. That raises another question: should the GitHub Release tag follow the **train** identifier, **package** semver, or something else—and how do notes relate to Changesets?
@@ -39,7 +39,7 @@ Chosen option: **Standardize on `YYYY.MM.DD.N` as the canonical release train id
 
 **Release notes** for that GitHub Release **SHOULD** be assembled from the **Changesets-generated changelogs** and summaries for packages and deployable artifacts included in that publish batch ([ADR 0024](0024-use-changesets-for-library-monorepos.md), [ADR 0026](0026-use-changesets-for-application-releases.md), [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md)). The train identifier names the **batch**; per-package semver remains the compatibility surface for consumers. **Implementation note (Chiubaka orb):** default automation renders those notes as a **structured batch summary**—grouped **Major / Minor / Patch** sections (matching Changesets’ default changelog headings), nested bullets per package, and a **Published versions** list—rather than a flat per-package excerpt block.
 
-**Justification:** Calendar train identifiers match the orchestration model already defined for release manifests and promotion tags ([ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md), [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)), avoid inventing a parallel umbrella semver that does not map cleanly to independent package versions, and keep GitHub Releases aligned with “one batch / one train” without requiring one GitHub Release per published package.
+**Justification:** Calendar train identifiers match the orchestration model already defined for release manifests and promotion tags ([ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md), [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)), avoid inventing a parallel umbrella semver that does not map cleanly to independent package versions, and keep GitHub Releases aligned with “one batch / one train” without requiring one GitHub Release per published package.
 
 ### Consequences
 
@@ -53,7 +53,7 @@ Chosen option: **Standardize on `YYYY.MM.DD.N` as the canonical release train id
 ### Confirmation
 
 - Repositories that publish GitHub Releases for batched monorepo publishes use a **train-aligned** tag consistent with this ADR.
-- Release manifest `release` fields and promotion-tag logical ids remain consistent with [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) and [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md).
+- Release manifest `release` fields and promotion-tag logical ids remain consistent with [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) and [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md).
 - Package semver and changelogs continue to come from **Changesets**, not from the train identifier alone.
 
 ## Pros and Cons of the Options
@@ -90,5 +90,5 @@ Train identity matches manifest `release` values and promotion-tag stems; increm
 - [ADR 0024](0024-use-changesets-for-library-monorepos.md) — Changesets for libraries; batched release intent
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — Changesets for applications
 - [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) — single Changesets workflow per repository
-- [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — release manifests; logical `release` field
+- [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — release manifests (pin sets); logical `release` field
 - [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — promotion tags; logical release identifier and `N` rules

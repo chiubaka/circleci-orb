@@ -15,7 +15,7 @@ This repository publishes **`chiubaka/circleci-orb`**, which encodes reusable Ci
 - **pnpm + Turbo monorepos** — [ADR 0022](../../org/docs/adr/0022-standardize-monorepos-to-pnpm-turbo.md)
 - **GitHub Packages** for private `@chiubaka/*` packages — [ADR 0034](../../org/docs/adr/0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md)
 - **Changesets** and related versioning ADRs — e.g. [ADR 0024](../../org/docs/adr/0024-use-changesets-for-library-monorepos.md), [0026](../../org/docs/adr/0026-use-changesets-for-application-releases.md), [0027](../../org/docs/adr/0027-use-single-changesets-workflow-in-hybrid-monorepos.md), [0028](../../org/docs/adr/0028-version-only-deployable-artifacts-by-default.md)
-- **Release manifests and promotion tags** — [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md), [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)
+- **Release manifests and promotion tags** — [ADR 0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) (supersedes [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md)), [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)
 
 We need durable **repository-level** decisions for:
 
@@ -96,12 +96,12 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 
 ### 6. Encoding org release patterns
 
-- The orb should implement **workflow scaffolding** aligned with org ADRs (e.g. Changesets-driven publish flows; manifest validation and phased hooks for [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md) / [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
+- The orb should implement **workflow scaffolding** aligned with org ADRs (e.g. Changesets-driven publish flows; manifest validation and repo-defined deploy hooks for [ADR 0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) / [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
 - **Escape hatches** (custom script names, custom jobs, skipping steps) remain **first-class** so repos are not locked into one release topology.
 
 ### 7. Validation and errors
 
-- **Release manifest** validation must **fail the job** on any **schema or invariant violation** (per [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md)), printing a **short, actionable** message (what failed, which file, how to fix).
+- **Release manifest** validation must **fail the job** on any **schema or invariant violation** (per [ADR 0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)), printing a **short, actionable** message (what failed, which file, how to fix).
 
 ### 8. Versioning of this orb (pre-1.0)
 

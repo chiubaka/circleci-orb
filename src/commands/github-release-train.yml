@@ -32,7 +32,7 @@ parameters:
     default: "{{logical_train_id}}"
     description: >
       GitHub release title; default replaces {{logical_train_id}} with YYYY.MM.DD.N (UTC).
-      Overriding can break parity with release manifests (ADR 0030).
+      Overriding can break parity with release train identifiers and manifests (ADRs 0037, 0038).
   target-ref:
     type: string
     default: "<< pipeline.git.revision >>"

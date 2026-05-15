@@ -72,4 +72,4 @@ Justification: Feature-local schema keeps ownership and review locality aligned 
 
 - [ADR 0019](0019-vendor-specific-infrastructure-slices.md) covers the shared `infrastructure/<vendor>` pattern that Drizzle implementations should follow.
 - [ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md) covers production migration execution strategy once migrations are part of the repository.
-- [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) covers ordering coordinated deploy phases when migrations and application artifacts roll out together.
+- [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) covers coordinated release pin sets; ordering when migrations and application artifacts roll out together is owned by the repository’s canonical deploy implementation ([ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md)).

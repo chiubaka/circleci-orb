@@ -1,8 +1,10 @@
 ---
-status: accepted
+status: superseded
 date: 2026-04-07
 decision-makers: Daniel Chiu
 ---
+
+> **Superseded by [ADR 0038 — Release manifest pin sets and tooling-owned deploy order](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)** (accepted 2026-05-14). Normative manifest requirements and deploy-order ownership are defined there; the remainder of this document is **historical context** only.
 
 # Coordinated release model using release manifests and promotion tags
 
@@ -185,8 +187,9 @@ This approach is expected to evolve naturally into more advanced orchestration s
 
 ## Related ADRs
 
+- [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — **current** coordinated release manifest policy (supersedes this ADR)
 - [ADR 0037](0037-release-train-identifiers-and-github-releases.md) — canonical `YYYY.MM.DD.N` train identifier and GitHub Releases alignment
-- [ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md) — migrations as a distinct production step; order relative to artifact phases
+- [ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md) — migrations as a distinct production step; ordering relative to traffic is owned by deploy tooling ([ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md))
 - [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) — lockstep groups for related packages in library monorepos
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — application versioning and release intent
 - [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) — which packages are versioned as deployable artifacts

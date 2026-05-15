@@ -21,7 +21,7 @@ The question is:
 ## Relationship to existing org ADRs
 
 - **Versioning and releases:** Library and application versioning remains governed by Changesets and related ADRs ([ADR 0024](0024-use-changesets-for-library-monorepos.md), [ADR 0026](0026-use-changesets-for-application-releases.md), [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md), and adjacent release-model ADRs). Commit messages are **not** treated as authoritative release declarations.
-- **Separation of concerns:** This ADR defines **human and optional tooling** conventions for git history. It does not change how versions or changelogs are produced for packages and apps where Changesets (or coordinated release manifests per [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md)) is the source of truth.
+- **Separation of concerns:** This ADR defines **human and optional tooling** conventions for git history. It does not change how versions or changelogs are produced for packages and apps where Changesets (or coordinated release manifests per [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)) is the source of truth.
 
 ## Decision Drivers
 
