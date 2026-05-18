@@ -62,11 +62,16 @@ The release PR is **updated in place** on that branch; the **title and commit su
 - [`src/jobs/publish.yml`](../../src/jobs/publish.yml), [`src/jobs/verify-changesets.yml`](../../src/jobs/verify-changesets.yml), [`src/commands/verify-changesets.yml`](../../src/commands/verify-changesets.yml); [`src/commands/setup.yml`](../../src/commands/setup.yml) extended with `pre-install-steps`, `skip-pnpm-install`, `attach-workspace`.
 - Examples under [`src/examples/`](../../src/examples/).
 
-**Still gaps (this plan):**
+**Stage 2b/2c (done):** Release PR, gated publish, path-filtering examples, GitHub release train.
 
-- **Gated publish** workflow (path filtering + squash message gate; publish default path is already `changeset publish`).
-- **Deploy:** [`src/jobs/deploy.yml`](../../src/jobs/deploy.yml) → tag-style deploys unchanged.
-- **Manifests / promotion tags** — Stage 3.
+**Stage 3 (done — application repos opt-in):**
+
+- Shared UTC train id: [`src/scripts/lib/trainId.mjs`](../../src/scripts/lib/trainId.mjs) (+ bash [`trainId.sh`](../../src/scripts/lib/trainId.sh)).
+- Opt-in manifest on release PR: `create-release-manifest`, `deployable-packages` on [`changesets-release-pr`](../../src/jobs/changesets-release-pr.yml).
+- Validation: [`verify-release-manifest`](../../src/jobs/verify-release-manifest.yml), [`validateReleaseManifest.mjs`](../../src/scripts/validateReleaseManifest.mjs).
+- Coordinated deploy (commit-primary): [`coordinated-deploy`](../../src/jobs/coordinated-deploy.yml) vs legacy [`deploy`](../../src/jobs/deploy.yml) (artifact-tag package deploys).
+- Optional promotion tag on merge: `promotion-tag-prefix` on [`changesets-gated-publish`](../../src/jobs/changesets-gated-publish.yml) → client tag workflow → `coordinated-deploy`.
+- Examples: [`app-coordinated-deploy-staging-first.yml`](../../src/examples/app-coordinated-deploy-staging-first.yml), [`library-changesets-default.yml`](../../src/examples/library-changesets-default.yml).
 
 ```mermaid
 flowchart LR
@@ -179,30 +184,34 @@ flowchart LR
 
 ---
 
-## Stage 3 — Manifests and promotion tags (ADRs 0038–0031)
+## Stage 3 — Manifests and promotion tags (ADRs 0038–0031) — done
 
-**Goal:** Scripts and commands for `staging-*` / `prod-*` tags, `.releases/<id>.yml` validation (fail fast, helpful errors), then coordinated deploy via **repo-defined hooks** (for example `pnpm deploy:ci`-style entrypoints that apply manifest pins using the repository’s canonical deploy ordering), reusing patterns from [`deployMonorepoPackage.sh`](../../src/scripts/deployMonorepoPackage.sh).
+**Goal:** Point-in-time coordinated deploy: promotion tag selects a git commit; `.releases/<id>.yml` is the train BOM (validated, exposed as env); deploy order stays in repo tooling.
 
-**Work**
+**Shipped**
 
-- `parsePromotionTag.sh` → env: `PROMOTION_ENV`, `RELEASE_ID`.
-- `validateReleaseManifest.sh` → exit non-zero + message on violation.
-- `exportCoordinatedReleaseEnv.sh` (optional).
-- **`coordinated-deploy` job/command:** setup → validate → user-provided deploy script (ordering owned by repo tooling per ADR 0038).
-- Workflow docs: promotion tags vs artifact tags [0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md); pin-set manifests [0038](../../org/docs/adr/0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md).
-- Bats + fixtures under `test/fixtures/`.
+| Component | Path |
+|-----------|------|
+| Train id allocator | [`src/scripts/lib/trainId.mjs`](../../src/scripts/lib/trainId.mjs) |
+| Manifest writer (opt-in) | [`src/scripts/writeReleaseManifest.mjs`](../../src/scripts/writeReleaseManifest.mjs) |
+| Parse promotion tag | [`src/scripts/parsePromotionTag.sh`](../../src/scripts/parsePromotionTag.sh) |
+| Validate manifest | [`src/scripts/validateReleaseManifest.mjs`](../../src/scripts/validateReleaseManifest.mjs) |
+| Push promotion tag | [`src/commands/push-promotion-tag.yml`](../../src/commands/push-promotion-tag.yml) |
+| Coordinated deploy | [`src/commands/coordinated-deploy.yml`](../../src/commands/coordinated-deploy.yml), [`src/jobs/coordinated-deploy.yml`](../../src/jobs/coordinated-deploy.yml) |
 
-**Tooling:** Confirm `yq` / `jq` / node on [`docker-node`](../../src/executors/docker-node.yml) or install in command.
+**Point-in-time model:** `coordinated-deploy` runs at the promotion tag SHA; `deploy:coordinated` (or custom script) applies repo state. Manifest pins are required for audit; per-pin deploy is optional until repos need artifact-tag-only rollouts.
+
+**Library vs app:** Defaults unchanged for library monorepos (`create-release-manifest: false`, `promotion-tag-prefix: ""`).
 
 ---
 
 ## Delivery order
 
 1. **Stage 1** — done.
-2. **Stage 2** — complete **default publish retarget** (`changeset publish` default, script override escape hatch).
-3. **Stage 2b** — release PR automation (unblocks the merge signal for 2c).
-4. **Stage 2c** — gated publish pipeline.
-5. **Stage 3** — manifests / promotion tags (parallelizable with 2b/2c after Stage 1).
+2. **Stage 2** — done (`changeset publish` default).
+3. **Stage 2b** — done (release PR).
+4. **Stage 2c** — done (gated publish + GitHub release train).
+5. **Stage 3** — done (manifests, promotion tags, coordinated-deploy).
 
 ---
 

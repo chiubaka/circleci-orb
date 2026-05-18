@@ -1,0 +1,60 @@
+description: >
+  PR check for .releases/** changes: validates pin-only release manifests (ADR 0038). Filter the
+  workflow to paths .releases/** on the client. Pair with verify-changesets for application monorepos.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+  attach-workspace:
+    type: boolean
+    default: false
+  checkout:
+    type: boolean
+    default: true
+  init-submodules:
+    type: boolean
+    default: false
+  primary-branch:
+    type: string
+    default: "master"
+  resource-class:
+    default: small
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  skip-install:
+    type: boolean
+    default: false
+  verify-mode:
+    type: enum
+    enum:
+      - changed
+      - all
+    default: changed
+  workspace-at:
+    type: string
+    default: "."
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      attach-workspace: << parameters.attach-workspace >>
+      checkout: << parameters.checkout >>
+      init-submodules: << parameters.init-submodules >>
+      primary-branch: << parameters.primary-branch >>
+      skip-pnpm-install: << parameters.skip-install >>
+      workspace-at: << parameters.workspace-at >>
+  - verify-release-manifest:
+      app-dir: << parameters.app-dir >>
+      verify-mode: << parameters.verify-mode >>

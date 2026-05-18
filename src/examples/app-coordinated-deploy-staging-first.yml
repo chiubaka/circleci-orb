@@ -1,0 +1,50 @@
+description: >
+  Application monorepo (staging-first): Changesets release PR with .releases/ manifest, gated publish
+  that pushes staging-YYYY.MM.DD.N, and a tag-triggered coordinated-deploy workflow. Library repos
+  should omit create-release-manifest and promotion-tag-prefix (see publish-library-release.yml).
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.18.0
+    path-filtering: circleci/path-filtering@1.0.0
+
+  workflows:
+    verify:
+      jobs:
+        - chiubaka/verify-changesets:
+            filters:
+              branches:
+                ignore: master
+        - chiubaka/verify-release-manifest:
+            filters:
+              branches:
+                ignore: master
+
+    release-pr:
+      jobs:
+        - chiubaka/changesets-release-pr:
+            context: [github]
+            create-release-manifest: true
+            deployable-packages: server=packages/server,web=apps/web
+            filters:
+              branches:
+                only: master
+
+    publish:
+      jobs:
+        - chiubaka/changesets-gated-publish:
+            context: [github-packages-publish]
+            promotion-tag-prefix: staging
+            filters:
+              branches:
+                only: master
+
+    deploy-staging:
+      jobs:
+        - chiubaka/coordinated-deploy:
+            context: [deploy-staging]
+            deploy-script: deploy:coordinated
+            filters:
+              tags:
+                only: /^staging-.*/

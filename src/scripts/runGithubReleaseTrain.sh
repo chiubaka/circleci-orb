@@ -5,6 +5,9 @@
 # Optional test-only: UTC_DATE_OVERRIDE=YYYY.MM.DD fixes the calendar portion; GITHUB_RELEASE_TRAIN_KEEP_NOTES_FILE=true skips deleting the temp notes file after exit (Bats).
 set -euo pipefail
 
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/lib/trainId.sh"
+
 pkg_at_version() {
   node -e '
     const fs = require("fs");
@@ -21,10 +24,6 @@ extract_changelog_top() {
     /^## [0-9]/ { if (++s == 1) next; if (s > 1) exit }
     s == 1 { print }
   ' "$file"
-}
-
-regex_escape_basic() {
-  printf '%s' "$1" | sed 's/[][\\.^$*+?(){}|]/\\&/g'
 }
 
 assert_origin_is_github_com() {
@@ -49,52 +48,6 @@ assert_origin_is_github_com() {
   echo "  url: ${url}" >&2
   echo "  Fix origin, disable create-github-release, or use a github.com mirror for releases." >&2
   exit 1
-}
-
-utc_calendar_date_str() {
-  if [[ -n "${UTC_DATE_OVERRIDE:-}" ]]; then
-    printf '%s' "$UTC_DATE_OVERRIDE"
-    return
-  fi
-  date -u +%Y.%m.%d
-}
-
-# stdin: git ls-remote --tags style lines; args: train_tag_prefix date_str
-max_n_from_ls_remote_for_date() {
-  local prefix=$1 date_str=$2 escaped_prefix escaped_date pattern line ref tag_suffix n max_n=-1
-  escaped_prefix=$(regex_escape_basic "$prefix")
-  escaped_date=$(regex_escape_basic "$date_str")
-  pattern="^${escaped_prefix}${escaped_date}\\.[0-9]+$"
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    [[ -n "$line" ]] || continue
-    ref=$(awk '{print $2}' <<<"$line")
-    [[ "$ref" == refs/tags/* ]] || continue
-    ref=${ref#refs/tags/}
-    [[ "$ref" == *'^'* ]] && ref=${ref%^*}
-    [[ "$ref" =~ $pattern ]] || continue
-    tag_suffix=${ref#"$prefix"}
-    n=${tag_suffix##*.}
-    if [[ "$n" =~ ^[0-9]+$ ]] && [[ "$n" -gt "$max_n" ]]; then
-      max_n=$n
-    fi
-  done
-  if [[ "$max_n" -lt 0 ]]; then
-    printf '%s' "0"
-  else
-    printf '%s' "$max_n"
-  fi
-}
-
-compute_next_train_id_for_date() {
-  local prefix=$1 date_str=$2 ls_out max_n next_n
-  ls_out=$(git ls-remote --tags origin 2>/dev/null || true)
-  max_n=$(printf '%s\n' "$ls_out" | max_n_from_ls_remote_for_date "$prefix" "$date_str")
-  next_n=$((max_n + 1))
-  printf '%s' "${date_str}.${next_n}"
-}
-
-compute_next_train_id() {
-  compute_next_train_id_for_date "${TRAIN_TAG_PREFIX:-release/}" "$(utc_calendar_date_str)"
 }
 
 remote_train_tag_for_date_points_at_target() {

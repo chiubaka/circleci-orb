@@ -54,6 +54,20 @@ parameters:
     type: string
     default: "master"
     description: Default branch; release branch is release/<primary-branch>.
+  create-release-manifest:
+    type: boolean
+    default: false
+    description: >
+      Opt-in .releases/<YYYY.MM.DD.N>.yml on the release PR (application deployment repos).
+  deployable-packages:
+    type: string
+    default: ""
+    description: >
+      Comma-separated key=path pairs for deployables when create-release-manifest is true.
+  manifest-train-tag-prefix:
+    type: string
+    default: "release/"
+    description: Tag prefix for train id allocation (same allocator as github-release-train).
   registry-access:
     type: enum
     enum:
@@ -126,3 +140,6 @@ steps:
   - changesets-release-pr:
       app-dir: << parameters.app-dir >>
       primary-branch: << parameters.primary-branch >>
+      create-release-manifest: << parameters.create-release-manifest >>
+      deployable-packages: << parameters.deployable-packages >>
+      manifest-train-tag-prefix: << parameters.manifest-train-tag-prefix >>

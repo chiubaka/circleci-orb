@@ -1,0 +1,4 @@
+release: 2026.05.08.2
+
+artifacts:
+  server: server-v1.0.0

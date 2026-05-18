@@ -95,10 +95,14 @@ Corresponding manifest:
 
 ### Promotion flow
 
-1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id).
+1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id). For application monorepos using Changesets release PRs, the manifest SHOULD land on the release PR branch when the train is cut (see [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)).
 2. Create a **staging** promotion tag → triggers staging deployment.
 3. Validate the release in staging.
 4. Create a **prod** promotion tag referencing the **same commit** → triggers production deployment.
+
+**Automation:** Repos MAY configure CI to push a promotion tag on release merge when an environment prefix is set (for example `staging` or `prod` on gated publish). The tag MUST reference the merge commit that contains the manifest. **Staging deploy workflows MUST NOT** push `prod-*` tags; production promotion after staging validation remains **manual** unless the repo explicitly opts into `prod` on merge.
+
+**Dev / default branch:** Continuous deploys from the default branch are **out of band** from promotion trains and MUST NOT use `prod-*` promotion tags or artifact tags as production triggers.
 
 ### Invariants
 
