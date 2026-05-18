@@ -47,7 +47,7 @@ read_manifest_release_id() {
 
 push_promotion_tag_main() {
   local prefix raw_prefix release_id tag target_ref target_sha remote_sha on_existing
-  local repo_slug u r auth_header push_url manifest releases_dir
+  local repo_slug u r auth_header push_url manifest releases_dir app_dir
 
   prefix=${PROMOTION_TAG_PREFIX:-}
   if [[ -z "$prefix" ]]; then
@@ -56,11 +56,12 @@ push_promotion_tag_main() {
   fi
 
   raw_prefix=$prefix
-  while [[ "$raw_prefix" == *- ]]; do
-    raw_prefix=${raw_prefix%-}
-  done
+  if [[ "$raw_prefix" == *- ]]; then
+    echo "pushPromotionTag: promotion-tag-prefix must not include a trailing hyphen (got \"${prefix}\")." >&2
+    exit 1
+  fi
   if [[ -z "$raw_prefix" ]]; then
-    echo "pushPromotionTag: promotion-tag-prefix must not be only hyphens." >&2
+    echo "pushPromotionTag: promotion-tag-prefix must not be empty." >&2
     exit 1
   fi
 

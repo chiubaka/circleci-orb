@@ -112,6 +112,7 @@ build_force_with_lease_arg() {
 
 run_changesets_release_pr_main() {
   local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header push_url lease_arg push_output
+  local create_manifest_raw create_manifest_lower manifest_script
   # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}

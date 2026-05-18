@@ -11,9 +11,17 @@ setup() {
   assert_output --partial "skipping"
 }
 
+@test "rejects promotion-tag-prefix with trailing hyphen" {
+  run env GITHUB_TOKEN=fake PROMOTION_TAG_PREFIX=staging--- \
+    bash "$PROJECT_ROOT/src/scripts/pushPromotionTag.sh"
+  assert_failure
+  assert_output --partial "trailing hyphen"
+}
+
 @test "fails when prefix set but no manifest on commit" {
   cd "$BATS_TEST_TMPDIR" || exit 1
-  git init -b main >/dev/null 2>&1
+  git init >/dev/null 2>&1
+  git checkout -b main >/dev/null 2>&1
   git config user.email test@test
   git config user.name Test
   echo x >README.md

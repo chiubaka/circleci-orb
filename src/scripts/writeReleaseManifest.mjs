@@ -78,11 +78,18 @@ function readPackageVersion(pkgPath) {
 
 function gitLsRemoteTags() {
   try {
-    return execSync("git ls-remote --tags origin 2>/dev/null || true", {
+    return execSync("git ls-remote --tags origin", {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
     });
-  } catch {
-    return "";
+  } catch (error) {
+    const detail =
+      error.stderr?.toString?.().trim() ||
+      error.message ||
+      "unknown error";
+    fail(
+      `git ls-remote --tags origin failed (${detail}); cannot allocate train id safely.`,
+    );
   }
 }
 
