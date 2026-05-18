@@ -1,0 +1,48 @@
+description: >
+  Deploy repository state at the promotion tag commit (commit-primary semantics). Parses
+  staging-YYYY.MM.DD.N or prod-YYYY.MM.DD.N from CIRCLE_TAG, validates .releases/<release-id>.yml,
+  then runs pnpm run <deploy-script>. Exports PROMOTION_ENV, RELEASE_ID, RELEASE_MANIFEST_PATH,
+  and ARTIFACTS_JSON for the deploy script. Manifest pins are validated for audit; consuming each
+  artifact tag in deploy logic is optional unless the repo requires it. Distinct from the legacy
+  deploy command (artifact-tag monorepo package deploys).
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Repository root (tag pipeline checkout).
+  deploy-script:
+    type: string
+    description: >
+      Required package.json script (e.g. deploy:coordinated). Not deploy:ci — use the legacy deploy
+      command for per-package artifact tag deploys.
+  dry-run:
+    type: boolean
+    default: false
+    description: When true, runs pnpm run <deploy-script> -- --dry-run.
+  manifest-path:
+    type: string
+    default: ""
+    description: >
+      Override manifest file path. When empty, uses .releases/<RELEASE_ID>.yml after parsing the tag.
+  skip-manifest-validation:
+    type: boolean
+    default: false
+    description: Skip manifest schema validation (escape hatch; still parses promotion tag).
+  pre-deploy-steps:
+    type: steps
+    default: []
+    description: Steps after validation and before pnpm run deploy-script.
+
+steps:
+  - steps: << parameters.pre-deploy-steps >>
+  - run:
+      name: Coordinated deploy (promotion tag)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runCoordinatedDeploy.sh) >>
+      environment:
+        APP_DIR: .
+        DEPLOY_SCRIPT: << parameters.deploy-script >>
+        DRY_RUN: << parameters.dry-run >>
+        MANIFEST_PATH: << parameters.manifest-path >>
+        SKIP_MANIFEST_VALIDATION: << parameters.skip-manifest-validation >>

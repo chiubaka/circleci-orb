@@ -1,0 +1,38 @@
+description: >
+  After a release merge, push an environment promotion tag <prefix>-YYYY.MM.DD.N at the merge commit
+  when promotion-tag-prefix is non-empty (ADR 0031). Prefix must not include a trailing hyphen
+  (staging and prod are typical values). Requires .releases/<release-id>.yml on the commit (enable
+  create-release-manifest on changesets-release-pr). When prefix is empty, exits successfully without
+  pushing. Client workflows trigger coordinated-deploy on tag filters.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+  on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+    description: When the tag exists at the same SHA, skip exits 0; fail exits non-zero.
+  promotion-tag-prefix:
+    type: string
+    default: ""
+    description: >
+      Environment prefix without trailing hyphen (e.g. staging, prod). Empty disables this step.
+  target-ref:
+    type: string
+    default: "<< pipeline.git.revision >>"
+    description: Commit to tag (defaults to pipeline revision / CIRCLE_SHA1 in script).
+
+steps:
+  - run:
+      name: Push promotion tag (ADR 0031)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/pushPromotionTag.sh) >>
+      environment:
+        APP_DIR: .
+        ON_EXISTING_TAG: << parameters.on-existing-tag >>
+        PROMOTION_TAG_PREFIX: << parameters.promotion-tag-prefix >>
+        TARGET_REF: << parameters.target-ref >>

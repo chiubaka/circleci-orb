@@ -152,6 +152,19 @@ parameters:
       - fail
     default: skip
     description: Passed to github-release-train idempotency behavior when the train tag already exists.
+  promotion-tag-prefix:
+    type: string
+    default: ""
+    description: >
+      When non-empty (e.g. staging or prod), push <prefix>-<release-id> at the merge commit after
+      publish. Requires create-release-manifest on changesets-release-pr. Empty = no-op (library default).
+  promotion-on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+    description: Idempotency when the promotion tag already exists on origin.
 
 steps:
   - setup:
@@ -205,4 +218,8 @@ steps:
             prerelease: << parameters.release-train-prerelease >>
             title-template: << parameters.release-train-title-template >>
             on-existing-tag: << parameters.release-train-on-existing-tag >>
+  - push-promotion-tag:
+      app-dir: << parameters.app-dir >>
+      promotion-tag-prefix: << parameters.promotion-tag-prefix >>
+      on-existing-tag: << parameters.promotion-on-existing-tag >>
   - steps: << parameters.cleanup-steps >>

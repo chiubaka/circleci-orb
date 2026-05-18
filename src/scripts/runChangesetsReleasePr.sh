@@ -112,6 +112,7 @@ build_force_with_lease_arg() {
 
 run_changesets_release_pr_main() {
   local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header push_url lease_arg push_output
+  local create_manifest_raw create_manifest_lower manifest_script
   # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}
@@ -137,6 +138,26 @@ run_changesets_release_pr_main() {
   git reset --hard "origin/${primary}"
 
   "$pnpm_bin" exec changeset version
+
+  create_manifest_raw=${CREATE_RELEASE_MANIFEST:-false}
+  create_manifest_lower=$(printf '%s' "$create_manifest_raw" | tr '[:upper:]' '[:lower:]')
+  if [[ "$create_manifest_lower" == "true" ]] || [[ "$create_manifest_lower" == "1" ]]; then
+    if [[ -z "${DEPLOYABLE_PACKAGES:-}" ]]; then
+      echo "runChangesetsReleasePr: DEPLOYABLE_PACKAGES is required when create-release-manifest is true." >&2
+      echo "  Format: key=relative/path,key2=path2 (e.g. server=packages/server,web=apps/web)." >&2
+      exit 1
+    fi
+    manifest_script=${WRITE_RELEASE_MANIFEST_SCRIPT:-}
+    if [[ -z "$manifest_script" ]]; then
+      # shellcheck disable=SC3028
+      manifest_script="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/writeReleaseManifest.mjs"
+    fi
+    if [[ ! -f "$manifest_script" ]]; then
+      echo "runChangesetsReleasePr: writeReleaseManifest.mjs not found; set WRITE_RELEASE_MANIFEST_SCRIPT." >&2
+      exit 1
+    fi
+    node "$manifest_script"
+  fi
 
   if ! title=$(build_title); then
     echo "runChangesetsReleasePr: changeset version produced no package.json changes (e.g. empty or verification-only changesets); skipping release PR."

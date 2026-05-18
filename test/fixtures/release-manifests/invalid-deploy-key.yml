@@ -1,0 +1,7 @@
+release: 2026.05.08.1
+
+deploy:
+  - server
+
+artifacts:
+  server: server-v5.1.0

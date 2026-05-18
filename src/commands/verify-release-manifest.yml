@@ -1,0 +1,25 @@
+description: >
+  Validate pin-only .releases/<release-id>.yml manifests (ADR 0038). By default validates manifests
+  changed in the working tree (git diff and untracked). Set verify-mode to all to scan every file
+  under .releases/. Fails fast with actionable errors on schema violations.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+    description: Monorepo root containing .releases/.
+  verify-mode:
+    type: enum
+    enum:
+      - changed
+      - all
+    default: changed
+    description: changed validates only touched manifests; all validates every .releases/*.yml.
+
+steps:
+  - run:
+      name: Verify release manifests (ADR 0038)
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runVerifyReleaseManifest.sh) >>
+      environment:
+        VERIFY_RELEASE_MANIFEST_MODE: << parameters.verify-mode >>

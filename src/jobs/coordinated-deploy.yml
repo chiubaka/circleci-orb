@@ -1,0 +1,110 @@
+description: >
+  Tag-triggered coordinated deploy for application monorepos (ADR 0031, 0038). Wire a workflow
+  with filters.tags.only matching /^staging-/ or /^prod-/. Checkout is at the tag SHA; deploy applies
+  that commit (point-in-time). Requires a repo deploy:coordinated (or custom deploy-script) entrypoint.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+  attach-workspace:
+    type: boolean
+    default: false
+  checkout:
+    type: boolean
+    default: true
+  cleanup-steps:
+    type: steps
+    default: []
+  deploy-script:
+    type: string
+    default: "deploy:coordinated"
+  dry-run:
+    type: boolean
+    default: false
+  init-submodules:
+    type: boolean
+    default: false
+  manifest-path:
+    type: string
+    default: ""
+  npmrc-path:
+    type: string
+    default: ""
+  owner:
+    type: string
+    default: chiubaka
+  pre-deploy-steps:
+    type: steps
+    default: []
+  primary-branch:
+    type: string
+    default: "master"
+  registry-access:
+    type: enum
+    enum:
+      - read
+      - publish
+    default: read
+  registry-backend:
+    type: enum
+    enum:
+      - npmjs
+      - github-packages
+    default: github-packages
+  resource-class:
+    default: medium
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+  setup-steps:
+    type: steps
+    default: []
+  skip-install:
+    type: boolean
+    default: false
+  skip-manifest-validation:
+    type: boolean
+    default: false
+  always-auth:
+    type: boolean
+    default: true
+  workspace-at:
+    type: string
+    default: "."
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      attach-workspace: << parameters.attach-workspace >>
+      checkout: << parameters.checkout >>
+      init-submodules: << parameters.init-submodules >>
+      pre-install-steps:
+        - setup-npm-registry-auth:
+            always-auth: << parameters.always-auth >>
+            npmrc-path: << parameters.npmrc-path >>
+            owner: << parameters.owner >>
+            registry-access: << parameters.registry-access >>
+            registry-backend: << parameters.registry-backend >>
+      primary-branch: << parameters.primary-branch >>
+      skip-pnpm-install: << parameters.skip-install >>
+      workspace-at: << parameters.workspace-at >>
+  - steps: << parameters.setup-steps >>
+  - coordinated-deploy:
+      app-dir: << parameters.app-dir >>
+      deploy-script: << parameters.deploy-script >>
+      dry-run: << parameters.dry-run >>
+      manifest-path: << parameters.manifest-path >>
+      pre-deploy-steps: << parameters.pre-deploy-steps >>
+      skip-manifest-validation: << parameters.skip-manifest-validation >>
+  - steps: << parameters.cleanup-steps >>
