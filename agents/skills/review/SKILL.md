@@ -55,14 +55,14 @@ Run by default after any non-trivial code change and **before** you tell the use
 - [ ] Apply that preference consistently across all scopes (local variables, function parameters, and class members) unless a conventional short name is more recognizable within the domain.
 - [ ] When clarifying the guidance, examples such as `dependencies` over `deps`, `llmService` over `llm`, and `configuration` over `config` are helpful; list exceptions explicitly so reviewers can justify departures.
 - [ ] When a module's primary public export is a single PascalCase symbol, prefer matching file basenames (for example `ChatContext.ts`); allow standard exceptions (`index.ts`, tooling/config files, and multi-export modules with no single owner).
-- [ ] Favor self-documenting code via clear naming and decomposition; avoid comments or JSDoc used only to compensate for unclear structure.
-- [ ] Keep existing JSDoc-related lint expectations stable in routine feature work unless a task explicitly changes lint policy.
+- [ ] **JSDoc and comments:** When the diff touches `/**` blocks or JSDoc-driven lint fixes, run the checklist in `org/agents/skills/jsdoc/SKILL.md`.
 - [ ] **UI layout naming (review-time):** Prefer **descriptive** component and hook names over generic **Shell** (`AppLayout`, `RootLayout`, `RouteLayout`, `NavigationDrawer`, `MainContent`, or React Router’s `Layout` / `<Outlet />` vocabulary) unless **Shell** is unavoidable (for example, matching a documented industry term in prose such as PWA “app shell,” not as a default component basename). Generic `Shell` / `AppShell` / `NavigationShell` tends to blur scope and invite junk-drawer components; flag it when a more specific name would clarify what is fixed versus what swaps per route.
 - [ ] **React component decomposition (review-time):** Prefer **single responsibility** per component: one cohesive UI slice or behavior, **one primary reason to change**—similar in spirit to narrow application services. Avoid **monolith** components that cram multiple unrelated concerns into one file (for example mixing route/param resolution, app-wide layout chrome, several unrelated data domains, and large feature markup without seams). Prefer a thin **container** or **layout** that composes hooks and passes narrow props, plus **leaf** presentational components (lists, panels, forms, headers) with explicit names. Flag new or expanded “god” screen components; if an exception is warranted, the review should state why decomposition was deferred.
 
 ## API design and repository consistency
 
 - [ ] For small closed discriminant sets, prefer `enum` or const-object-plus-derived-type over open string unions unless openness is intentional.
+- [ ] When fixing `@typescript-eslint/no-redundant-type-constituents` on intentionally open strings, confirm the fix uses `as const` + derived type + `(string & {})` (or a genuinely closed union)—not bare `string` with a partial “for example” list; if values are documented in JSDoc, follow `org/agents/skills/jsdoc/SKILL.md`.
 - [ ] Disallow default exports in production modules; prefer named exports to keep API surfaces explicit and refactor-safe.
 
 ## Repository naming and mapping review
@@ -79,4 +79,5 @@ Run by default after any non-trivial code change and **before** you tell the use
 
 ## Related skills
 
+- Use `jsdoc` when the diff adds, edits, or removes JSDoc or documentation driven by JSDoc lint.
 - Use `test-driven-development` to verify test layout conventions (`src/` mirrored under `test/`, with test-only helpers kept under `test/`).

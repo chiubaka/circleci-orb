@@ -38,9 +38,10 @@ If uncertain, choose repo-level first, then promote to org-level only when porta
 ## Where edits belong
 
 - **Org-level defaults:** `org/agents/AGENTS.org.md`
+- **JSDoc authoring and review:** `org/agents/skills/jsdoc/SKILL.md` (org `AGENTS.org.md` keeps only ADR 0004 + pointer)
 - **Repo-level overrides:** local `AGENTS.md` inside `<!-- REPO_OVERRIDES_START -->` and `<!-- REPO_OVERRIDES_END -->`
 - **Repo review prompts/polish checks:** local `REVIEW-CHECKLIST.md`
-- **Durable architectural decisions:** ADRs at the appropriate scope (`org/docs/adr/`, `docs/adr/`, or `<package>/docs/adr/`)
+- **Durable architectural decisions:** ADRs at the appropriate scope (`org/docs/adr/`, `docs/adr/`, or `<package>/docs/adr/`). ADRs are human-facing decision records—use `create-adr` when drafting; do not phrase ADRs as agent runbooks or link normative requirements to skills.
 
 ## Critical rules
 

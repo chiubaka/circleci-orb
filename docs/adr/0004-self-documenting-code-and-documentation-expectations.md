@@ -42,7 +42,7 @@ Those two forces can be misread as “comments are the main clarity tool” or �
 
 - **Local guidance docs:** repository-level contributor guides should reference this ADR and restate the principle briefly for day-to-day work.
 - **Lint:** Existing `pnpm lint` continues to enforce JSDoc rules; no change to those rules under this ADR.
-- **Review:** Reviewers should use local review guidance (including a JSDoc section where available) for judgment on substance vs. redundancy.
+- **Review:** Reviewers should use local review guidance (including JSDoc substance, accuracy, and `{@link}` checks) for judgment on substance vs. redundancy—reject lint-satisfying placeholders (`@param param0`, `@returns the return`) and descriptions that only echo signatures.
 
 ## Pros and Cons of the Options
 
@@ -62,4 +62,6 @@ Those two forces can be misread as “comments are the main clarity tool” or �
 
 ## More Information
 
+- **Preservation during edits:** Code-first documentation does not authorize bulk removal of existing comments or JSDoc during refactors, lint upgrades, or cleanup. Contributors may update existing documentation for clarity, correctness, or formatting. Do not remove comments that carry meaningful context—especially when that context cannot be gleaned from the code itself. ESLint may require docs on some surfaces; it does not require removing docs elsewhere.
+- **Substantive JSDoc:** Authors ground JSDoc in the implementation, surrounding code, and usages (call sites, tests)—not lint placeholders. Cross-reference related types and concepts with `{@link}` in tag **descriptions**, not in the first `{…}` **type slot** (for example on `@returns`, `@throws`, `@yields`, or `@param {type} name`—but not on `@param name - description`, where the name follows `@param` first). Prefer description-only `@returns`, `@param`, and `@throws` when TypeScript already states the type; use `{type}` braces only when JSDoc adds information the signature cannot.
 - Related: [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) (where code lives by **feature module** and layer); this ADR does not change those boundaries—only how we document and clarify behavior within them.

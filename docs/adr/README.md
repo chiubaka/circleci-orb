@@ -48,6 +48,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md`
 - `0035-trial-adoption-of-conventional-commits.md`
 - `0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md`
+- `0037-domain-temporal-values-as-canonical-iso-strings.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
@@ -65,6 +66,8 @@ At minimum, an ADR should include:
 - `Consequences`
 
 ## Guidance for updates
+
+ADRs are decision records for **human** readers (contributors, reviewers, maintainers). Write decisions and rationale in the ADR itself; do not turn ADRs into agent runbooks or point normative requirements at agent skills. Repositories may mirror ADR principles in contributor guides, review practices, or agent skills separately.
 
 Before adding a new ADR:
 

@@ -45,6 +45,17 @@ When in doubt, choose the narrowest scope that still covers all intended adopter
 - **Repo-level:** `docs/adr/`
 - **Package-level:** `<package>/docs/adr/`
 
+## Primary audience (human readers)
+
+ADRs are **decision records for people**, not agent instruction files. Agents may help draft them, but the published ADR should read like documentation a teammate would review in a PR.
+
+When writing or editing an ADR:
+
+- Use organizational prose (`we`, `contributors`, `reviewers`)—not second-person commands to an AI (`you must`, `run the … skill`, `invoke …`).
+- State **what was decided**, **why**, and **consequences** in the ADR itself; do not replace normative ADR sections with pointers to `org/agents/skills/…`, `AGENTS.md`, or other agent-only surfaces as the source of truth.
+- It is fine to say repositories may document day-to-day practice in contributor guides or lint/review config; avoid making a specific agent skill path a requirement of the architecture decision.
+- Keep examples and confirmation steps human-actionable (review checks, lint policy, contributor docs)—the same concepts agents follow should live in skills, not in the ADR body.
+
 ## Org-level ADR portability rule (critical)
 
 Org-level ADRs must be self-contained and portable across repositories.
@@ -92,6 +103,7 @@ Decision: "In `packages/l3xo/backend`, keep evaluation orchestration in applicat
 
 ## Author checklist
 
+- [ ] Prose is written for human readers; no agent-runbook phrasing or normative links to agent skills.
 - [ ] Scope is correct (org vs repo vs package).
 - [ ] ADR file is in the correct folder for that scope.
 - [ ] ADR is based on `org/docs/adr/template.md`.

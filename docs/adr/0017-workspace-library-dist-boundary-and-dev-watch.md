@@ -15,7 +15,8 @@ A tempting shortcut is to add `compilerOptions.paths` in **consumer** packages (
 When consumer `tsconfig` maps a workspace package name to another package’s **source tree**, TypeScript merges those files into the consumer’s program graph. That causes several classes of problems:
 
 - **Alias collision with [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md):** each package defines `~/` → its own `src/*`. If the consumer pulls in library source as if it were part of the project, the library’s `~/` imports are resolved in the **consumer’s** `paths` context—wrong root, wrong module, or confusing duplicate diagnostics.
-- **Merged graphs:** the consumer typechecks implementation details and transitive files that should stay behind the library’s public barrel; refactors inside the library break unrelated projects in non-obvious ways.
+- **Merged graphs:** the consumer typechecks implementation details and transitive files that should stay behind the library’s public barrel; refactors inside the library break unrelated projects in non-obvious ways. This does **not** mean “every package’s program includes the entire monorepo”—it means the program grows to the **transitive closure of `src/`** along workspace imports (consumer → dependency → dependency-of-dependency, for each package still mapped to `src/`). That closure can still be large in deep stacks and is duplicated across packages when each app/library runs its own lint/typecheck.
+- **Tooling performance:** TypeScript-aware ESLint (and similar tools) build or reuse a TypeScript `Program` whose cost scales with files in that merged graph. Consuming sibling `src/` via `paths` inflates those programs compared to depending on dependency **declaration files** from `dist/`, which is a common cause of IDE and CI lint feeling slow or “stuck.”
 - **Tooling mismatch:** Vitest and ESLint TypeScript-aware plugins often follow the same `paths`; tests and lint then analyze a hybrid graph that does not match runtime (Node still loads `dist/` from `node_modules`).
 - **Project references:** mixing “link to source” with `composite` / solution-style setups increases ordering and emit ambiguity; the boundary between packages stops matching physical and published boundaries.
 
@@ -31,6 +32,7 @@ We need a single, consistent rule: **cross-package imports use package names; ty
 ## Considered Options
 
 - Map `@scope/lib` to library `src/` from consumer `tsconfig` (and mirror in Vitest/ESLint).
+- Map `@scope/lib` to library `src/` **and** replace intra-package `~/` with **package-scoped internal imports** (`@scope/lib/...` inside `@scope/lib`) so dependency `~/` does not collide in the consumer `paths` context (see [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md)).
 - Rely on full `pnpm build` after every library change; no watch.
 - Treat `dist/` as the typing and runtime boundary; add **`dev`** scripts on libraries that mirror **`build`** in watch mode (`tsup --watch` or `tsc --watch`); consumers use normal workspace resolution to `dist/`.
 
@@ -53,6 +55,36 @@ Justification: keeping resolution aligned with `exports` preserves package bound
 - Good, because public API discipline stays enforced at the barrel / `exports` level.
 - Bad, because developers must remember to run library watch (or a composite dev task) when working across packages; cold starts still need an initial build.
 
+## Pros and Cons of the Options
+
+### Map `@scope/lib` to library `src/` from consumer `tsconfig` (rejected)
+
+- Good, because the IDE and `tsc` can appear to use “always latest” dependency source without rebuilding `dist/`.
+- Bad, because of **`~/` alias collision** unless consumers add compensating `paths` (for example mapping `~/` to a dependency’s `src/`), which violates [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md).
+- Bad, because of **merged graphs**, **boundary blur**, **tooling/runtime mismatch**, and **ESLint/TypeScript program size** (see Context above).
+- Bad, because types from `src/` can be **newer than runtime** if `dist/` in `node_modules` is stale—the “no stale build” benefit applies to the typechecker, not necessarily to what Node executes.
+
+### Package-scoped internal imports plus `paths` → `src` (rejected)
+
+Same as mapping to `src/`, but each package uses `@scope/that-pkg/...` for its own modules instead of `~/...`, so consumers do not need foreign `~/` shims when pulling dependency source into the graph.
+
+- Good, because import specifiers are **unique per package**, which mitigates the `~/` collision symptom of the `src/` shortcut.
+- Good, because it preserves the “live source” DX that `paths` → `src` offers in the editor.
+- Bad, because it **does not un-merge graphs**: the consumer program still includes transitive dependency **implementation** `.ts` files, not just public types.
+- Bad, because **ESLint and TypeScript cost** still scale with that transitive file set; this is not a reliable fix for slow type-aware lint or IDE analysis.
+- Bad, because internal lines are indistinguishable from real **`@scope/pkg` cross-package imports**, weakening the `~/` vs `@scope/pkg` vocabulary from [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md).
+- Bad, because using `@scope/pkg/test/...` (or similar) for test-only modules **looks like a published subpath** and confuses what `@scope/pkg` actually exports—why [ADR 0011](0011-test-import-alias-hash-root.md) keeps `#/` for test-local imports instead of package subpaths.
+- Bad, because **runtime and `exports` discipline** still require a built `dist/` (or extensive subpath `exports` maps); this option mainly changes syntax, not package boundaries.
+
+**Do not** reintroduce consumer `paths` to sibling `src/` or adopt package-scoped internals to avoid `dist/` without explicitly accepting these tradeoffs.
+
+### Treat `dist/` as the boundary with library `dev` watch (chosen)
+
+- Good, because consumer programs stay smaller: own `src/` plus dependency **declarations** from `dist/`, aligned with runtime `exports`.
+- Good, because `~/` and `#/` remain strictly **per-package** per [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) and [ADR 0011](0011-test-import-alias-hash-root.md).
+- Good, because type-aware ESLint and TypeScript analyze graphs closer to what ships.
+- Bad, because cross-package work needs **`^build`**, an initial build, and/or library **`dev`** watch so `dist/` stays current.
+
 ### Confirmation
 
 - **Configuration:** consumed workspace packages expose `dist/` via `exports`; no consumer `paths` to sibling `src/`.
@@ -61,5 +93,5 @@ Justification: keeping resolution aligned with `exports` preserves package bound
 
 ## More Information
 
-- [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) — `~/` vs `@scope/pkg` and intra- vs inter-package imports.
-- [ADR 0011](0011-test-import-alias-hash-root.md) — `#/` for tests; keep merged graphs from pulling test paths into production unintentionally.
+- [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) — `~/` vs `@scope/pkg`, rejected `@/` and package-scoped internal imports.
+- [ADR 0011](0011-test-import-alias-hash-root.md) — `#/` for tests; rejected `@scope/pkg/test/...`-style self-imports that blur `exports`.
