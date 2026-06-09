@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# GitHub Release train (ADR 0037): UTC calendar train id YYYY.MM.DD.N, git tag prefix + id, title = logical id.
+# GitHub Release train (ADR 0038): UTC calendar train id YYYY.MM.DD.N, git tag prefix + id, title = logical id.
 # Release notes for default merge-commit mode come from HEAD~1..HEAD CHANGELOG.md diffs, formatted by
 # formatChangesetsBatchReleaseNotes.mjs (same shape as runChangesetsReleasePr.sh build_pr_body_file).
 # Optional test-only: UTC_DATE_OVERRIDE=YYYY.MM.DD fixes the calendar portion; GITHUB_RELEASE_TRAIN_KEEP_NOTES_FILE=true skips deleting the temp notes file after exit (Bats).

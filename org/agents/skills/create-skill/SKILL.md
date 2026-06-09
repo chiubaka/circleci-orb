@@ -36,6 +36,17 @@ If answers are mostly “yes” to portability, use org-level. If mostly “yes�
 
 Use kebab-case for `<skill-name>` and keep names action-oriented (for example, `create-skill`, `external-api-integration`).
 
+## Self-contained org skills (no `.cursor/` in the org repo)
+
+Org-level skills must bundle everything they need under `org/agents/skills/<skill-name>/`:
+
+- **Do not** add files under `.cursor/` in the **org repository** — no `.cursor/rules/`, no `.cursor/skills/`, and no other `.cursor/` projections for new skills.
+- **Consuming repos** discover org skills via `org/agents/scripts/bootstrap-skills.sh`, which links each org skill into `.agents/skills/<skill-name>/`. Tool-facing paths (`.cursor/skills`, `.claude/skills`) are symlinks managed by `org/agents/scripts/bootstrap.sh` in consuming repos — see [ADR 0003](../../../docs/adr/0003-agent-skills-canonical-location-and-symlinks.md).
+- For **commit-time** or **always-apply** behavior, encode triggers in the skill itself:
+  - Put strong trigger terms in the YAML `description` (for example `before any git commit`, `when the user asks to commit`).
+  - Add an explicit section in the skill body (for example **Before every commit**) with the mandatory steps.
+  - Do **not** create a separate Cursor rule in the org repo as a stand-in for skill content.
+
 ## Required portability rule for org-level skills
 
 Org-level skills must avoid hard dependencies on a single repository.
@@ -95,5 +106,6 @@ After creating a new org-level skill, re-sync org skills into the repository cop
 - [ ] Instructions are actionable and ordered.
 - [ ] At least one illustrative example is included.
 - [ ] For org-level: no mandatory repo-specific references.
+- [ ] For org-level: skill is self-contained under `org/agents/skills/<skill-name>/` — no new `.cursor/` files in the org repo.
 - [ ] For org-level skills in this org workflow: `org/agents/scripts/bootstrap-skills.sh` has been run to sync into `.agents/skills`.
 - [ ] For repo-level: repo assumptions are explicit and concrete.

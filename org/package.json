@@ -3,15 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "eslint \"**/*.md\" \"package.json\" \"eslint.config.mjs\"",
-    "lint:ci": "eslint \"**/*.md\" \"package.json\" \"eslint.config.mjs\"",
-    "lint:fix": "eslint \"**/*.md\" \"package.json\" \"eslint.config.mjs\" --fix"
+    "lint": "eslint \"**/*.md\" \"package.json\" \"eslint.config.ts\"",
+    "lint:ci": "eslint \"**/*.md\" \"package.json\" \"eslint.config.ts\"",
+    "lint:fix": "eslint \"**/*.md\" \"package.json\" \"eslint.config.ts\" --fix"
   },
   "devDependencies": {
     "@chiubaka/eslint-config": "0.7.1",
-    "eslint": "^10.2.0"
+    "eslint": "^10.2.0",
+    "jiti": "^2.4.2"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.33.1",
   "engines": {
     "node": ">=20.19.0"
   }

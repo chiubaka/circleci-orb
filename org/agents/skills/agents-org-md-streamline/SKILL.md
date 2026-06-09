@@ -168,6 +168,8 @@ When any of the following appear in `org/agents/AGENTS.org.md`, move them out un
 
 - Long ADR reference catalogs -> replace with a short ADR pointer and reference only ADRs that directly back a retained rule.
 - Self-documenting-code/readability guidance -> move to `org/agents/skills/review/SKILL.md`.
+- JSDoc authoring, review checks, `{@link}` placement, and TypeScript type-tag conventions -> move to `org/agents/skills/jsdoc/SKILL.md` (org guidance keeps ADR 0004 + pointer only).
+- ADR body text -> keep human-oriented in ADRs; do not relocate ADR normative content into agent skills (skills may operationalize ADR decisions for agents).
 - Tool-specific lint workaround policy (for example `security/detect-object-injection`) -> move to review skill.
 - Test layout conventions -> move to review skill (or TDD skill), not org generation rules.
 - Repository API naming consistency -> move to review skill.

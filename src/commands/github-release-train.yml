@@ -1,5 +1,5 @@
 description: >
-  After a Changesets publish merge, create one GitHub Release per publish batch (ADR 0037).
+  After a Changesets publish merge, create one GitHub Release per publish batch (ADR 0038).
   Computes logical train id YYYY.MM.DD.N from current UTC date and existing remote tags, creates
   git tag <train-tag-prefix><logical-id> (default release/2026.05.12.1), and runs gh release create
   with title equal to the logical id (default {{logical_train_id}}). Release notes default to a
@@ -32,7 +32,7 @@ parameters:
     default: "{{logical_train_id}}"
     description: >
       GitHub release title; default replaces {{logical_train_id}} with YYYY.MM.DD.N (UTC).
-      Overriding can break parity with release train identifiers and manifests (ADRs 0037, 0038).
+      Overriding can break parity with release train identifiers and manifests (ADRs 0038, 0039).
   target-ref:
     type: string
     default: "<< pipeline.git.revision >>"
@@ -68,7 +68,7 @@ steps:
       working_directory: << parameters.app-dir >>
       command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
   - run:
-      name: GitHub release train (ADR 0037)
+      name: GitHub release train (ADR 0038)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runGithubReleaseTrain.sh) >>
       environment:

@@ -126,10 +126,28 @@ Exported path constants (for frontend consumers, re-exported from `@chiubaka/esl
 - Libraries that publish or expose `dist/`: set `main` / `types` / `exports` as appropriate; add **`clean`** for build output; ensure task-runner output globs match actual artifacts.
 - Prefer **tsup** or **tsc** consistently with similar packages; keep `files` / `exports` accurate if publishing.
 
+### `dist/` layout: libraries vs apps
+
+- **Workspace libraries** (`packages/*`): emit to **package-local** `./dist` (`compilerOptions.outDir` in the package `tsconfig.json`, typically via `tsconfig.lib.json`). Point `package.json` `main` / `types` / `exports` at `./dist/...`. Consumers resolve artifacts through workspace `exports`, not a shared repo-root `dist/packages/<name>/` tree.
+- **Deployable apps** (`apps/*`): may emit to **repo-root** paths (for example `../../dist/apps/<app>/`) when the build tool or Docker image expects a centralized app artifact. Match `outDir`, bundler output, and Turbo outputs to that same path.
+- **Do not** point library builds at `../../dist/packages/<name>/` unless you also change `outDir`, `exports`, and publish scripts to that path—this repo uses package-local `dist/` for libraries.
+
+### Turbo task outputs
+
+- Root `turbo.json` already declares `outputs: ["dist/**"]`, which resolves **relative to each package directory** (library → `packages/<pkg>/dist/**`).
+- **Libraries:** usually **omit** a package-level `turbo.json`. Do **not** add overrides such as `../../dist/packages/<pkg>/**`—those paths are not produced by `tsc` here and break Turbo cache (`no output files found` warnings, ineffective caching).
+- **Apps** that write under repo-root `dist/apps/<app>/`: add `apps/<app>/turbo.json` with `outputs: ["../../dist/apps/<app>/**"]` so Turbo caches the real bundle output.
+- After scaffolding, confirm a forced build logs no Turbo “no output files found” warning and that a second build can cache library tasks when `packages/<pkg>/dist` is populated.
+
+### Gitignore
+
+- Repo-root `/dist` ignores centralized app (and similar) output.
+- Add or keep **`packages/*/dist`** so package-local library artifacts are not committed.
+
 ### Workspace libraries consumed by other packages (ADR 0017)
 
 - **Boundary:** consumers resolve `@scope/pkg` via `package.json` `exports` to **`dist/`**, not to the library’s `src/`.
-- **Do not** add `tsconfig` `paths` in apps or other packages that map a workspace package name to a sibling library’s source tree. That merges graphs, breaks per-package `~/` semantics (`org/docs/adr/0010-import-specifier-conventions-for-monorepo-packages.md`), and confuses Vitest / ESLint TypeScript resolution relative to runtime.
+- **Do not** add `tsconfig` `paths` in apps or other packages that map a workspace package name to a sibling library’s source tree. That merges graphs, breaks per-package `~/` semantics (`org/docs/adr/0010-import-specifier-conventions-for-monorepo-packages.md`), inflates type-aware ESLint/TS programs, and confuses Vitest / ESLint TypeScript resolution relative to runtime. **Do not** substitute package-scoped internal imports (`@scope/pkg/...` inside `@scope/pkg`) or `@scope/pkg/test/...` for `~/` / `#/` to make that shortcut “work”—see `org/docs/adr/0017-workspace-library-dist-boundary-and-dev-watch.md`.
 - **`dev` script:** for each library that other packages import, add **`dev`** mirroring **`build`** in watch mode—e.g. `tsup ... --watch` (omit `--clean` on watch for incremental rebuilds) or `tsc -p tsconfig.build.json --watch` when the library builds with `tsc`.
 - **Workflow:** when editing a library and its consumers, run **`pnpm dev`** at the repo root if wired, or **`pnpm --filter @scope/pkg dev`** for that library, so `dist/` stays current while you work.
 
@@ -183,3 +201,5 @@ packages/example-lib/
 - [ ] **Frontend** feature-modular apps: `sourceFileExtensions: ["ts", "tsx"]`, `FRONTEND_FEATURE_MODULE_INTERNAL_PATH_GLOBS`, `reservedTopLevelModules` includes **`app`** when using `src/app/` as composition; narrow **`boundaries/no-unknown`** override on the Vite **`main.tsx`** if it imports global CSS.
 - [ ] `vitest.config.ts` mirrors aliases (`~` to `src`, `#` to `test`) and includes `test/**/*.test.ts`.
 - [ ] `pnpm install` from root; Turbo sees the new package tasks.
+- [ ] **Library** `outDir` is `./dist`; `exports` → `./dist/...`; no package `turbo.json` unless there is a deliberate, documented exception; **never** `../../dist/packages/<pkg>/**` unless the whole package actually emits there.
+- [ ] **App** (if emitting to repo-root `dist/apps/<app>/`): `turbo.json` `outputs` matches bundler/`outDir`; root `/dist` + (for libraries elsewhere) `packages/*/dist` in `.gitignore`.

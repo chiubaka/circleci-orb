@@ -1,7 +1,7 @@
 description: >
   After a squash-merged release PR, run assert-release-merge then the same publish path as
   job publish (registry auth, optional build, pnpm exec changeset publish). By default, when
-  create-github-release is true, also creates a GitHub Release and UTC train git tag (ADR 0037).
+  create-github-release is true, also creates a GitHub Release and UTC train git tag (ADR 0038).
   Pair with a path-filtering + continuation workflow on the client so this job only runs for relevant merges.
 
 executor:

@@ -138,7 +138,7 @@ This model preserves the **GitOps-style** idea that a small **desired compositio
 
 - [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — **superseded** by this ADR for manifest format and deploy-order ownership
 - [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — artifact tags vs promotion tags; logical `release` identifier and promotion flow
-- [ADR 0037](0037-release-train-identifiers-and-github-releases.md) — canonical `YYYY.MM.DD.N` train identifier and GitHub Releases alignment
+- [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — canonical `YYYY.MM.DD.N` train identifier and GitHub Releases alignment
 - [ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md) — migrations as a distinct production step; ordering relative to traffic inside deploy tooling
 - [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) — lockstep groups for related packages in library monorepos
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — application versioning and release intent

@@ -6,6 +6,7 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Use `org/docs/adr/` for long-lived architecture and engineering conventions.
 - Prefer adding or updating an ADR for durable structural or convention changes.
 - Keep `AGENTS.md` short; ADRs hold detailed rationale and decision history.
+- **ADR audience (generation-time):** ADRs are written for **human** readers (contributors, reviewers, future maintainers)—not as agent runbooks. Record the decision, drivers, and consequences in clear prose; do not phrase ADRs as instructions to an AI or link to agent skills as normative requirements. Operational detail for agents belongs in skills or contributor guides; ADRs may note that repositories often mirror principles elsewhere without making those paths part of the decision record. When creating or editing ADRs, use `org/agents/skills/create-adr/SKILL.md`.
 
 ## Composition, wiring, and extending features
 
@@ -19,6 +20,14 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - For class-named modules (for example, `*Service.ts`, `*Evaluator.ts`), treat the class as the default boundary.
 - Do not export production helpers solely for tests; test class internals through public APIs unless helpers are genuinely shared utilities.
 - If ADR 0012 and ADR 0013 both seem applicable, prefer ADR 0012 defaults for class-owned orchestration modules.
+
+## Linting and ESLint
+
+- Do not add wholesale lint rule disables (for example `rules: { "some-rule": "off" }` scoped to broad file globs, entire packages, or workspace-wide config blocks) unless explicitly approved by a maintainer.
+- Prefer fixing violations or adjusting code to satisfy the rule.
+- When a rule truly cannot be satisfied, use a **line- or next-line** disable only (`eslint-disable-next-line` / `eslint-disable-line` with the specific rule id). Document the reason on the same line or immediately above the disable.
+- Do not use file-level `eslint-disable` without maintainer approval.
+- Do not turn off `reportUnusedDisableDirectives` or similar linter hygiene options to hide stale disables.
 
 ## Barrel files (`index.ts` / `index.tsx`)
 
@@ -53,6 +62,8 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 ## Style and readability
 
+- **Documentation (generation-time):** Follow `org/docs/adr/0004-self-documenting-code-and-documentation-expectations.md` (code-first, purposeful docs). When adding, editing, or reviewing JSDoc—or satisfying JSDoc lint—use `org/agents/skills/jsdoc/SKILL.md`.
+- **Open string unions (`@typescript-eslint/no-redundant-type-constituents`):** Do not “fix” `literal | string` by widening to plain `string`—that erases documented allowed values with no type benefit (`literal | string` already collapses to `string`). For intentionally open domains (built-ins plus arbitrary names), use `as const` + derived built-in type + `Type | (string & {})`, or a closed union only when the set is actually closed.
 - Keep `org/agents/AGENTS.org.md` focused on structural and generation-time constraints.
 - **Review before handoff (mandatory default):** Before concluding work, telling the user a task is finished, opening a PR, or pushing, run the checklist in `org/agents/skills/review/SKILL.md` unless the change is trivial (for example typo-only or a single obvious one-line fix). Treat it as part of the same completion bar as repo-root verification—lint and tests do not replace it. Run it after each meaningful slice of implementation, not only at the end of large tasks or when explicitly asked.
 - During planning for major behavior changes, consult `org/agents/skills/test-driven-development/SKILL.md` to drive a test-first implementation loop.

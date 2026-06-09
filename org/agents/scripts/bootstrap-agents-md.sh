@@ -80,6 +80,7 @@ trap cleanup EXIT
   echo "# Agent notes (repo conventions)"
   echo
   echo "$ORG_START"
+  echo
   cat "$ORG_SOURCE"
   echo
   echo "$ORG_END"
@@ -114,6 +115,7 @@ BEGIN {
   if ($0 == orgStart) {
     sawOrgStart++; inOrg=1;
     print $0;
+    print "";
     while ((getline line < "'"$ORG_SOURCE"'") > 0) {
       print line;
     }
@@ -161,6 +163,7 @@ END {
     echo "# Agent notes (repo conventions)"
     echo
     echo "$ORG_START"
+    echo
     cat "$ORG_SOURCE"
     echo
     echo "$ORG_END"

@@ -27,7 +27,7 @@ We need a package-local convention for test support imports that improves ergono
 - Introduce `@test/` or `@tests/` for `test/`.
 - Introduce custom punctuation aliases (for example `!/`, `$/`, or `%/`) for `test/`.
 - Introduce `#/` for `test/`.
-- Use real package self-imports for local test internals.
+- Use real package self-imports for local test internals (for example `@scope/pkg/test/...` or `@scope/pkg/...` subpaths).
 
 ## Decision Outcome
 
@@ -93,9 +93,14 @@ Justification: `#/` creates a non-overlapping namespace next to `~/` and `@scope
 
 - Good, because it aligns with package naming semantics.
 - Bad, because it is verbose and can encourage exposure of internal file structure.
+- Bad, because test paths such as `@scope/pkg/test/...` **look like published package subpaths**, which blurs what is actually exported from `@scope/pkg` in `package.json` `exports`—the same confusion as using `@scope/pkg/...` for all production-local imports (rejected in [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md)).
+- Bad, because it keeps the **`@...` namespace overloaded** for workspace packages; `#/` stays visually distinct from `@scope/pkg` at the import site.
+
+A broader variant—**package-scoped internal imports for all of `src/`** (not only tests)—was also considered and rejected for the same boundary and verbosity reasons; see [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) and [ADR 0017](0017-workspace-library-dist-boundary-and-dev-watch.md).
 
 ## More Information
 
-- [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) — `~/` for intra-package source imports and `@scope/pkg` for inter-package imports.
+- [ADR 0010](0010-import-specifier-conventions-for-monorepo-packages.md) — `~/` for intra-package source imports, `@scope/pkg` for inter-package imports, and rejected package-scoped internals.
+- [ADR 0017](0017-workspace-library-dist-boundary-and-dev-watch.md) — `dist/` boundary; do not use package subpaths to pull test or production `src/` into consumer graphs.
 - [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md) — package boundaries and module structure.
 - [ADR 0008](0008-barrel-files-public-api-boundaries.md) — public API boundaries and import discipline.

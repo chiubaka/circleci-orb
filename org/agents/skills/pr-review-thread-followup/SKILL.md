@@ -76,6 +76,8 @@ From the repo root, use `gh`:
 
 Capture `owner`, `repo`, and PR `number` via `gh repo view --json nameWithOwner` / `gh pr view` JSON (or equivalent `gh` output) for subsequent `gh api` calls.
 
+If `gh pr checks` shows a **failing coverage or Codecov check**, read and follow `org/agents/skills/pr-coverage-followup/SKILL.md` as part of this run (triage gaps, add meaningful tests, re-push) before posting thread replies that claim the PR is ready.
+
 Before drafting any reply text, classify **commenting identity** (see **Commenting identity**)—for example `gh api user --jq '{login,type}'`—so you know whether the human-delegation prefix applies.
 
 ### 2. List **unresolved** review threads
@@ -98,6 +100,7 @@ For **each** thread (not just the first note):
 2. **Decide validity**: valid / invalid / partially valid / needs product or human call.
 3. **Act**:
    - **Valid** — implement the fix (minimal, targeted), run the relevant checks, commit/push as the workflow requires.
+   - **Coverage / Codecov** — when the thread or CI concerns missing test coverage, read and follow `org/agents/skills/pr-coverage-followup/SKILL.md` before replying; add tests only where coverage is meaningful, never padding to pass thresholds.
    - **Invalid or declined** — do **not** silently ignore; prepare a concise, respectful explanation.
    - **Ambiguous** — prefer a short honest note in-thread over guessing; optionally ask the reviewer in the same reply.
 
@@ -138,4 +141,6 @@ If you fixed the issue in code, still **explain** in the thread so reviewers do 
 
 ## Related skills
 
+- `pr-coverage-followup` — when CI or review threads involve Codecov or coverage failures; run this skill during the same PR follow-up pass so tests are meaningful, not threshold padding.
 - `review` — internal quality checklist before handoff; use together with this workflow when shipping fixes for review feedback.
+- `test-driven-development` — test layout and quality when adding coverage for valid review feedback.
