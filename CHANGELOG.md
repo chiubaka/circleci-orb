@@ -1,5 +1,19 @@
 # @chiubaka/circleci-orb
 
+## 0.18.0
+
+### Minor Changes
+
+- c5cba08: Add release manifest support and coordinated deploy for application monorepos.
+
+  Introduces a shared UTC train id module, opt-in `create-release-manifest` on the changesets release PR job, `verify-release-manifest`, commit-primary `coordinated-deploy`, and optional `promotion-tag-prefix` on gated publish. Library consumers keep prior defaults with no required config changes.
+
+### Patch Changes
+
+- 82d7f77: Fix Codecov CLI GPG verification by importing the PGP key from the current keybase account (`codecovsecops`).
+
+  The previous keybase account was retired and returned no key, which caused the `test` job coverage upload step to fail GPG signature verification.
+
 ## 0.17.1
 
 ### Patch Changes
