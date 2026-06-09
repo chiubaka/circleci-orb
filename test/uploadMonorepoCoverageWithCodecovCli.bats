@@ -402,7 +402,7 @@ EOF
   cat >"$mock_bin_dir/curl" <<'EOF'
 #! /usr/bin/env bash
 last="${@: -1}"
-if [[ "$1" == "-s" && "$2" == "https://keybase.io/codecovsecurity/pgp_keys.asc" ]]; then
+if [[ "$1" == "-s" && "$2" == "https://keybase.io/codecovsecops/pgp_keys.asc" ]]; then
   printf 'fake-key'
   exit 0
 fi
