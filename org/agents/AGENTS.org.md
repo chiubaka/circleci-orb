@@ -38,6 +38,12 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Add exports only when there is a real consumer for the barrel surface.
 - If barrel constraints expose cycles, refactor first (extract shared types/logic, invert dependency via ports) before considering narrow lint exceptions.
 
+## Release notes and versioning (Changesets)
+
+- Do **not** manually edit package `CHANGELOG.md` files or bump published `package.json` `version` fields for release-impacting work. Those files are updated by **`@changesets/cli`** at release time (see `org/docs/adr/0024-use-changesets-for-library-monorepos.md`).
+- For user-facing release notes, add a markdown file under **`.changeset/`** at the repo root and follow `org/agents/skills/changeset/SKILL.md` (prefer `pnpm changeset` when interactive prompts are available).
+- Editing `CHANGELOG.md` or versions by hand is allowed only when the user explicitly requests a changelog fix, a repo does not use Changesets, or release tooling output must be corrected.
+
 ## Skills and portability
 
 - Treat `org/agents/skills` as the shared org skill source intended for subtree distribution.
