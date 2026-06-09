@@ -57,7 +57,7 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 
 - Orb examples and docs list **default** usage and **override** patterns.
 - Bats tests cover new shell helpers; manifest validation tests include **invalid** fixtures expecting **non-zero exit** and clear messages.
-- Repo-level implementation plan stays aligned with this ADR: see [`docs/plans/orb-release-and-registry-workflows.md`](../plans/orb-release-and-registry-workflows.md).
+- Workflow examples under [`src/examples/`](../../src/examples/) stay aligned with this ADR.
 
 ---
 
@@ -97,6 +97,8 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 ### 6. Encoding org release patterns
 
 - The orb should implement **workflow scaffolding** aligned with org ADRs (e.g. Changesets-driven publish flows; manifest validation and repo-defined deploy hooks for [ADR 0039](../../org/docs/adr/0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) / [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
+- **Library monorepos (default):** `verify-changesets`, `changesets-release-pr`, and `changesets-gated-publish` with default parameters — no `.releases/` manifests, no promotion tags.
+- **Application deployment monorepos (opt-in):** `create-release-manifest` + `deployable-packages` on release PR; optional `promotion-tag-prefix` on gated publish; tag-filtered `coordinated-deploy` job (commit-primary) separate from legacy **`deploy`** (artifact-tag monorepo package deploys).
 - **Escape hatches** (custom script names, custom jobs, skipping steps) remain **first-class** so repos are not locked into one release topology.
 
 ### 7. Validation and errors
@@ -130,5 +132,5 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 
 ## More Information
 
-- Implementation backlog and staged delivery: [`docs/plans/orb-release-and-registry-workflows.md`](../plans/orb-release-and-registry-workflows.md).
+- Orb workflow examples: [`src/examples/`](../../src/examples/).
 - Org ADRs remain the **source of policy** for versioning and releases; this ADR governs **how this orb** exposes those patterns in CircleCI.

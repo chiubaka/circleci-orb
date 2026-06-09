@@ -61,5 +61,10 @@ setup() {
   assert_output --partial "assert-release-merge:"
   assert_output --partial "install-github-cli:"
   assert_output --partial "github-release-train:"
+  assert_output --partial "verify-release-manifest:"
+  assert_output --partial "coordinated-deploy:"
+  assert_output --partial "push-promotion-tag:"
+  assert_output --partial "create-release-manifest:"
+  assert_output --partial "promotion-tag-prefix:"
   assert_output --partial "Stage Chiubaka release notes formatter"
 }

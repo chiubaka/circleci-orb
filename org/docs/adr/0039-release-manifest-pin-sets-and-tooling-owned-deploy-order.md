@@ -45,6 +45,11 @@ Justification: The manifest stays a lightweight **bill of materials** for the tr
 - Bad, because reviewers who only read `.releases/` no longer see artifact-to-artifact order; they must rely on the canonical deploy implementation and its review culture.
 - Bad, because generic CI cannot infer order from the manifest; pipelines must invoke the repository’s documented deploy entrypoint (or equivalent) so behavior stays aligned with the implementation.
 
+### Repository scope
+
+- **Application deployment monorepos** that coordinate multi-deployable promotion trains SHOULD adopt `.releases/` manifests (opt-in via automation such as the Chiubaka CircleCI orb `create-release-manifest` parameter).
+- **Library-only monorepos** following [ADR 0024](0024-use-changesets-for-library-monorepos.md) do **not** require `.releases/`; they MAY use [ADR 0037](0037-release-train-identifiers-and-github-releases.md) GitHub Releases without manifests.
+
 ### Confirmation
 
 - Release manifests participating in this model conform to the **Format** and **Rules** below.
@@ -98,7 +103,7 @@ artifacts:
 - The `release` field MUST match the **logical release identifier** used with promotion tags: the `YYYY.MM.DD.N` portion shared across environments, as defined in [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md). Promotion tags add the `staging-` or `prod-` prefix to that identifier; the manifest `release` value does not include the environment prefix.
 - The `artifacts` mapping MUST be present. Keys name **high-level deployables** (for example `server`, `web`, `ios`), not low-level steps such as individual database migration commands.
 - All artifact values MUST reference **immutable artifact tags** ([ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
-- CI or other automation performing coordinated deploys MUST deploy **exactly** the versions specified in the manifest for each listed deployable; no inference or “latest” resolution is allowed for those identities.
+- CI or other automation performing coordinated deploys MUST treat manifest artifact values as the **audited pin set** for the train. Repos that deploy **pre-built artifacts by immutable tag** MUST deploy **exactly** those manifest values with no “latest” inference. Repos that apply **commit-primary** coordinated deploys (checkout at the promotion tag SHA and rebuild or roll out from that tree) MUST still validate the manifest and expose pins via `ARTIFACTS_JSON` / `RELEASE_MANIFEST_PATH`; consuming each pin inside deploy logic is optional until the repo requires mixed or off-repo artifact deploys.
 - The manifest MUST be committed to the repository and version-controlled.
 - A release manifest commit remains the source of truth for **which artifact tags** constitute that coordinated release.
 
@@ -131,6 +136,10 @@ Future ADRs MAY reintroduce optional manifest-level phases for repositories that
 ## More Information
 
 This model preserves the **GitOps-style** idea that a small **desired composition** document pins released identities, while **apply order** matches how most teams already structure infrastructure and CI.
+
+**When manifests are authored:** For application repos using coordinated promotion, the normative recommendation is to **commit the manifest on the release cut** (Changesets release PR, after `changeset version`) so pins reflect post-version semver (typically predicted `<deployable>-v<semver>` tags). Optional refresh after publish is allowed when immutable artifact tags differ from predicted pins.
+
+**Commit-primary coordinated deploy:** A promotion tag selects a **git commit**; deploy automation runs from that checkout (Pulumi, `deploy:*`, etc.). The manifest is the train **bill of materials** for humans and audit; strict per-pin consumption in deploy scripts is required only when the repo deploys pre-built artifacts by tag rather than from source at the tagged commit.
 
 **Versioning vs composition:** Changesets and semver remain the system of record for **artifact** version bumps and user-facing release intent ([ADR 0026](0026-use-changesets-for-application-releases.md)). The manifest pins **which immutable artifact tags** belong to a coordinated train; it does not replace package versioning policy ([ADR 0028](0028-version-only-deployable-artifacts-by-default.md), [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) for library ecosystems).
 

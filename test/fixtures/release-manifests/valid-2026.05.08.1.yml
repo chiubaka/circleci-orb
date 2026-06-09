@@ -1,0 +1,5 @@
+release: 2026.05.08.1
+
+artifacts:
+  server: server-v5.1.0
+  web: web-v2.3.0

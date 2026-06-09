@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Squash-merge subject prefix gate + optional .changeset deletion check. See docs/plans/orb-release-and-registry-workflows.md.
+# Squash-merge subject prefix gate + optional .changeset deletion check. See README and ADR 0001.
 set -euo pipefail
 
 subject=${COMMIT_SUBJECT_OVERRIDE:-}

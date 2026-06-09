@@ -1,0 +1,36 @@
+description: >
+  Application monorepo with release manifests but manual promotion tags (no promotion-tag-prefix on
+  gated publish). Push staging-* or prod-* via git/GitHub UI; coordinated-deploy runs on tag pipelines.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.18.0
+
+  workflows:
+    release-pr:
+      jobs:
+        - chiubaka/changesets-release-pr:
+            context: [github]
+            create-release-manifest: true
+            deployable-packages: server=packages/server,web=apps/web
+            filters:
+              branches:
+                only: main
+
+    publish:
+      jobs:
+        - chiubaka/changesets-gated-publish:
+            context: [github-packages-publish]
+            filters:
+              branches:
+                only: main
+
+    deploy:
+      jobs:
+        - chiubaka/coordinated-deploy:
+            context: [deploy]
+            deploy-script: deploy:coordinated
+            filters:
+              tags:
+                only: /^(staging|prod)-.*/

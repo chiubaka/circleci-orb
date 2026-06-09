@@ -1,0 +1,34 @@
+description: >
+  Library monorepo default path: Changesets verify, release PR, and gated publish with all new
+  application-only parameters at defaults (no .releases/, no promotion tags). No client migration
+  required when upgrading the orb.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.18.0
+
+  workflows:
+    verify:
+      jobs:
+        - chiubaka/verify-changesets:
+            filters:
+              branches:
+                ignore: master
+
+    release-pr:
+      jobs:
+        - chiubaka/changesets-release-pr:
+            context: [github]
+            filters:
+              branches:
+                only: master
+
+    publish:
+      jobs:
+        - chiubaka/changesets-gated-publish:
+            context: [github-packages-publish]
+            create-github-release: true
+            filters:
+              branches:
+                only: master
