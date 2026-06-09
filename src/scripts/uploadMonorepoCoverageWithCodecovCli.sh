@@ -70,7 +70,7 @@ codecov_validate_cli() {
 
   if ! (
     cd "$install_dir" || exit 1
-    curl -s https://keybase.io/codecovsecops/pgp_keys.asc | gpg --no-default-keyring --import
+    curl -fsS "${curl_retry[@]}" --connect-timeout 2 https://keybase.io/codecovsecops/pgp_keys.asc | gpg --no-default-keyring --import
     local base sha_url
     base="${CODECOV_CLI_URL:-https://cli.codecov.io}"
     base="${base}/${CODECOV_VERSION:-latest}/${CODECOV_OS?}"
