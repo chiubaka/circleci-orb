@@ -152,6 +152,15 @@ parameters:
       - fail
     default: skip
     description: Passed to github-release-train idempotency behavior when the train tag already exists.
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: bump-type
+    description: >
+      Passed to github-release-train. bump-type (default) uses Major / Minor / Patch sections; category
+      uses Features / Improvements / Bug Fixes / Other Changes for stakeholder-facing application repos.
   promotion-tag-prefix:
     type: string
     default: ""
@@ -218,6 +227,7 @@ steps:
             prerelease: << parameters.release-train-prerelease >>
             title-template: << parameters.release-train-title-template >>
             on-existing-tag: << parameters.release-train-on-existing-tag >>
+            release-notes-grouping: << parameters.release-notes-grouping >>
   - push-promotion-tag:
       app-dir: << parameters.app-dir >>
       promotion-tag-prefix: << parameters.promotion-tag-prefix >>

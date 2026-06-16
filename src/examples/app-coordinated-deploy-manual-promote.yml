@@ -14,6 +14,7 @@ usage:
             context: [github]
             create-release-manifest: true
             deployable-packages: server=packages/server,web=apps/web
+            release-notes-grouping: category
             filters:
               branches:
                 only: main
@@ -22,6 +23,7 @@ usage:
       jobs:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
+            release-notes-grouping: category
             filters:
               branches:
                 only: main

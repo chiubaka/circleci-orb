@@ -7,5 +7,6 @@ Architecture and workflow decisions that apply **only to this repository** (the 
 | ADR | Title |
 |-----|--------|
 | [0001](0001-chiubaka-circleci-orb-design-defaults-and-escape-hatches.md) | Chiubaka CircleCI orb: design defaults, jobs vs commands, and escape hatches |
+| [0002](0002-category-based-release-notes-for-application-repos.md) | Category-based release notes for application monorepos |
 
 New repo-level ADRs should follow [`org/docs/adr/template.md`](../../org/docs/adr/template.md).

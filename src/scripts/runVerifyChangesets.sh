@@ -7,6 +7,55 @@ verify_script=${VERIFY_SCRIPT:-}
 primary_branch=${PRIMARY_BRANCH:-master}
 base_ref=$primary_branch
 
+_resolve_category_prefix_verifier() {
+  if [[ -n "${VERIFY_CHANGESET_CATEGORY_PREFIXES_SCRIPT:-}" && -f "${VERIFY_CHANGESET_CATEGORY_PREFIXES_SCRIPT}" ]]; then
+    printf '%s\n' "$VERIFY_CHANGESET_CATEGORY_PREFIXES_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/verifyChangesetCategoryPrefixes.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runVerifyChangesets: set VERIFY_CHANGESET_CATEGORY_PREFIXES_SCRIPT or keep verifyChangesetCategoryPrefixes.mjs next to this script." >&2
+  return 1
+}
+
+list_changed_changeset_markdown_paths() {
+  local merge_base=$1
+  while IFS=$'\t' read -r status changed_file renamed_file; do
+    candidate_path=${renamed_file:-$changed_file}
+    case "$status" in
+      A*|M*|R*|C*) ;;
+      *) continue ;;
+    esac
+    if [[ "$candidate_path" == .changeset/*.md ]]; then
+      basename=${candidate_path##*/}
+      [[ "$(printf '%s' "$basename" | tr '[:upper:]' '[:lower:]')" == "readme.md" ]] && continue
+      printf '%s\n' "$candidate_path"
+    fi
+  done < <(git diff --name-status "$merge_base"...HEAD)
+}
+
+verify_changeset_category_prefixes() {
+  local merge_base=$1 require_lower verifier
+  require_lower=$(printf '%s' "${REQUIRE_CHANGESET_CATEGORY_PREFIX:-false}" | tr '[:upper:]' '[:lower:]')
+  if [[ "$require_lower" != "true" && "$require_lower" != "1" ]]; then
+    return 0
+  fi
+  if ! verifier=$(_resolve_category_prefix_verifier); then
+    return 1
+  fi
+  local -a paths=()
+  mapfile -t paths < <(list_changed_changeset_markdown_paths "$merge_base" | grep -v '^$' || true)
+  if [[ ${#paths[@]} -eq 0 ]]; then
+    return 0
+  fi
+  node "$verifier" "${paths[@]}"
+}
+
 if [[ -z "$verify_script" ]]; then
   if ! git rev-parse --verify --quiet "$base_ref" >/dev/null; then
     git fetch origin "$primary_branch":"refs/remotes/origin/$primary_branch" --depth=1 >/dev/null 2>&1 || true
@@ -42,6 +91,8 @@ if [[ -z "$verify_script" ]]; then
     echo "No changeset markdown file changes found versus $primary_branch." >&2
     exit 1
   fi
+
+  verify_changeset_category_prefixes "$merge_base"
 
   exec "$pnpm_bin" exec changeset status
 fi

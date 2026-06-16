@@ -13,6 +13,7 @@ usage:
     verify:
       jobs:
         - chiubaka/verify-changesets:
+            require-changeset-category-prefix: true
             filters:
               branches:
                 ignore: master
@@ -27,6 +28,7 @@ usage:
             context: [github]
             create-release-manifest: true
             deployable-packages: server=packages/server,web=apps/web
+            release-notes-grouping: category
             filters:
               branches:
                 only: master
@@ -36,6 +38,7 @@ usage:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
             promotion-tag-prefix: staging
+            release-notes-grouping: category
             filters:
               branches:
                 only: master

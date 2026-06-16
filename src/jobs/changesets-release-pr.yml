@@ -68,6 +68,15 @@ parameters:
     type: string
     default: "release/"
     description: Tag prefix for train id allocation (same allocator as github-release-train).
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: bump-type
+    description: >
+      Passed to changesets-release-pr. category groups release-PR notes under Features / Improvements /
+      Bug Fixes / Other Changes (application repos); bump-type keeps Major / Minor / Patch (libraries).
   registry-access:
     type: enum
     enum:
@@ -143,3 +152,4 @@ steps:
       create-release-manifest: << parameters.create-release-manifest >>
       deployable-packages: << parameters.deployable-packages >>
       manifest-train-tag-prefix: << parameters.manifest-train-tag-prefix >>
+      release-notes-grouping: << parameters.release-notes-grouping >>

@@ -4,7 +4,8 @@ description: >
   git tag <train-tag-prefix><logical-id> (default release/2026.05.12.1), and runs gh release create
   with title equal to the logical id (default {{logical_train_id}}). Release notes default to a
   grouped summary from CHANGELOG.md files changed between HEAD~1 and HEAD (merge-commit mode):
-  Major/Minor/Patch sections, nested bullets per package, and a Published versions list. Empty
+  Major/Minor/Patch sections by default, or Features/Improvements/Bug Fixes when release-notes-grouping
+  is category; nested bullets per package, and a Published versions list. Empty
   changelog diff fails the step. Requires origin to point at github.com, GITHUB_TOKEN with
   contents:write for tag + release, and gh on PATH (use install-github-cli before this command).
 
@@ -61,6 +62,15 @@ parameters:
     description: >
       merge-commit builds grouped notes from HEAD~1..HEAD CHANGELOG.md paths (non-empty list required).
       body-file uses notes-extra-file as the entire body (file must exist).
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: bump-type
+    description: >
+      bump-type (default) groups notes under Major / Minor / Patch. category groups under Features /
+      Improvements / Bug Fixes / Other Changes (application repos; see ADR 0026 / 0038).
 
 steps:
   - run:
@@ -81,3 +91,5 @@ steps:
         ON_EXISTING_TAG: << parameters.on-existing-tag >>
         NOTES_EXTRA_FILE: << parameters.notes-extra-file >>
         RELEASE_NOTES_SOURCE: << parameters.release-notes-source >>
+        RELEASE_NOTES_GROUPING: << parameters.release-notes-grouping >>
+        CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-changesetCategoryPrefixes.mjs

@@ -98,7 +98,7 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 
 - The orb should implement **workflow scaffolding** aligned with org ADRs (e.g. Changesets-driven publish flows; manifest validation and repo-defined deploy hooks for [ADR 0039](../../org/docs/adr/0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) / [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
 - **Library monorepos (default):** `verify-changesets`, `changesets-release-pr`, and `changesets-gated-publish` with default parameters — no `.releases/` manifests, no promotion tags.
-- **Application deployment monorepos (opt-in):** `create-release-manifest` + `deployable-packages` on release PR; optional `promotion-tag-prefix` on gated publish; tag-filtered `coordinated-deploy` job (commit-primary) separate from legacy **`deploy`** (artifact-tag monorepo package deploys).
+- **Application deployment monorepos (opt-in):** `create-release-manifest` + `deployable-packages` on release PR; optional `promotion-tag-prefix` on gated publish; `release-notes-grouping: category` with `require-changeset-category-prefix: true` on verify; tag-filtered `coordinated-deploy` job (commit-primary) separate from legacy **`deploy`** (artifact-tag monorepo package deploys).
 - **Escape hatches** (custom script names, custom jobs, skipping steps) remain **first-class** so repos are not locked into one release topology.
 
 ### 7. Validation and errors
