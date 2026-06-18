@@ -4,6 +4,26 @@ setup() {
   VERIFY="$PROJECT_ROOT/src/scripts/verifyChangesetCategoryPrefixes.mjs"
 }
 
+@test "verifyChangesetCategoryPrefixes passes Breaking and Security prefixes" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p .changeset
+  cat >.changeset/breaking.md <<'EOF'
+---
+"@t/pkg": major
+---
+Breaking: Remove legacy export
+EOF
+  cat >.changeset/security.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Security: Patch auth bypass
+EOF
+
+  run node "$VERIFY" .changeset/breaking.md .changeset/security.md
+  assert_success
+}
+
 @test "verifyChangesetCategoryPrefixes passes valid changeset files" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   mkdir -p .changeset

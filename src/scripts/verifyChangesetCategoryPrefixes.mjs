@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Validate that changed .changeset/*.md files use category summary prefixes (application monorepos).
+ * Validate that changed .changeset/*.md files use org category summary prefixes.
  * Invoked as: node verifyChangesetCategoryPrefixes.mjs <changeset.md> [...]
  */
 import fs from "node:fs";

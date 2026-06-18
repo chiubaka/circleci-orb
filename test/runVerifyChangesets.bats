@@ -169,6 +169,81 @@ EOF
   assert_output --partial "invalid changeset category prefix"
 }
 
+@test "require-changeset-category-prefix rejects unknown prefix tokens" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-unknown-prefix"
+  mkdir -p "${repo_dir}/.changeset"
+  cd "${repo_dir}"
+  git init -b master >/dev/null
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  cat >.changeset/base.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Feature: base
+EOF
+  git add .changeset/base.md
+  git commit -m "base" >/dev/null
+  git checkout -b feature >/dev/null
+  cat >.changeset/new-change.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Changelog: not a valid prefix
+EOF
+  git add .changeset/new-change.md
+  git commit -m "add bad changeset" >/dev/null
+
+  mock=$(mock_create)
+
+  PNPM_BINARY="${mock}" \
+  VERIFY_SCRIPT='' \
+  PRIMARY_BRANCH=master \
+  REQUIRE_CHANGESET_CATEGORY_PREFIX=true \
+  run runVerifyChangesets.sh
+
+  assert_failure
+  assert_equal "$(mock_get_call_num "${mock}")" 0
+  assert_output --partial "invalid changeset category prefix"
+}
+
+@test "require-changeset-category-prefix passes Security prefix" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-security-prefix"
+  mkdir -p "${repo_dir}/.changeset"
+  cd "${repo_dir}"
+  git init -b master >/dev/null
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  cat >.changeset/base.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Feature: base
+EOF
+  git add .changeset/base.md
+  git commit -m "base" >/dev/null
+  git checkout -b feature >/dev/null
+  cat >.changeset/new-change.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Security: Patch CVE-2026-1234
+EOF
+  git add .changeset/new-change.md
+  git commit -m "add security changeset" >/dev/null
+
+  mock=$(mock_create)
+
+  PNPM_BINARY="${mock}" \
+  VERIFY_SCRIPT='' \
+  PRIMARY_BRANCH=master \
+  REQUIRE_CHANGESET_CATEGORY_PREFIX=true \
+  run runVerifyChangesets.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${mock}")" 1
+}
+
 @test "require-changeset-category-prefix passes when changed changeset has prefix" {
   repo_dir="${BATS_TEST_TMPDIR}/repo-good-prefix"
   mkdir -p "${repo_dir}/.changeset"

@@ -6,11 +6,11 @@ set -euo pipefail
 prefixes_out=${CHANGESET_CATEGORY_PREFIXES_STAGE_PATH:-/tmp/chiubaka-changesetCategoryPrefixes.mjs}
 cat >"$prefixes_out" <<'CHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF'
 /**
- * Canonical category prefix tokens for application-monorepo Changesets (ADR 0002, org ADR 0038).
- * Maps summary headline prefixes to release-note sections: Features / Improvements / Bug Fixes / Other Changes.
+ * Canonical category prefix tokens for org Changesets category prefixes (ADR 0002, org ADR 0038).
+ * Maps summary headline prefixes to release-note sections across library and application monorepos.
  */
 
-/** @typedef {'features' | 'improvements' | 'bugfixes' | 'other'} CategoryBucket */
+/** @typedef {'breaking' | 'security' | 'features' | 'improvements' | 'bugfixes' | 'deprecations' | 'other'} CategoryBucket */
 
 /**
  * Accepted headline prefixes (case-insensitive). Each entry maps to a release-note section.
@@ -18,48 +18,80 @@ cat >"$prefixes_out" <<'CHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF'
  */
 export const CATEGORY_PREFIX_GUIDE = [
   {
+    bucket: "breaking",
+    section: "Breaking Changes",
+    prefixes: ["Breaking:", "Breaking Change:"],
+    whenToUse:
+      "Semver-major or API-incompatible change consumers must react to before upgrading.",
+  },
+  {
+    bucket: "security",
+    section: "Security",
+    prefixes: ["Security:"],
+    whenToUse:
+      "Security patch, vulnerability fix, or hardening change worth highlighting separately from ordinary bug fixes.",
+  },
+  {
     bucket: "features",
     section: "Features",
     prefixes: ["Feature:", "Features:"],
     whenToUse:
-      "New user-visible capability, screen, workflow, integration, or behavior that did not exist before.",
+      "New capability, API surface, workflow, integration, or behavior that did not exist before.",
   },
   {
     bucket: "improvements",
     section: "Improvements",
     prefixes: ["Improvement:", "Improvements:"],
     whenToUse:
-      "Enhancement to existing behavior—clearer copy, better performance, UX polish, refactors with user impact—without a wholly new capability.",
+      "Enhancement to existing behavior—clearer API, better performance, UX polish, refactors with consumer impact—without a wholly new capability.",
   },
   {
     bucket: "bugfixes",
     section: "Bug Fixes",
     prefixes: ["Fix:", "Fixes:", "Bug Fix:", "Bug Fixes:"],
     whenToUse:
-      "Correction of incorrect, broken, or regressed behavior relative to intended product behavior.",
+      "Correction of incorrect, broken, or regressed behavior relative to intended behavior.",
+  },
+  {
+    bucket: "deprecations",
+    section: "Deprecations",
+    prefixes: ["Deprecation:", "Deprecated:"],
+    whenToUse:
+      "Announcement that an API, option, or behavior is deprecated and scheduled for removal.",
   },
   {
     bucket: "other",
     section: "Other Changes",
     prefixes: ["Other:", "Other Changes:"],
     whenToUse:
-      "Release-note-worthy work that is not a feature, improvement, or bug fix (e.g. internal-only ops, deps, tooling). " +
+      "Release-note-worthy work that is not breaking, security, feature, improvement, bug fix, or deprecation (e.g. internal-only ops, deps, tooling). " +
       "Use this prefix explicitly—omitting a prefix is invalid in category mode.",
   },
 ];
 
-export const CATEGORY_ORDER = ["features", "improvements", "bugfixes", "other"];
+export const CATEGORY_ORDER = [
+  "breaking",
+  "security",
+  "features",
+  "improvements",
+  "bugfixes",
+  "deprecations",
+  "other",
+];
 
 export const CATEGORY_SECTION_TITLE = {
+  breaking: "### Breaking Changes",
+  security: "### Security",
   features: "### Features",
   improvements: "### Improvements",
   bugfixes: "### Bug Fixes",
+  deprecations: "### Deprecations",
   other: "### Other Changes",
 };
 
-/** Headline must start with one of the accepted category tokens. */
+/** Headline must start with one of the accepted category tokens (longer tokens first). */
 export const CATEGORY_TOKEN_RE =
-  /^(?:Feature|Features|Improvement|Improvements|Fix|Fixes|Bug\s+Fix(?:es)?|Other(?:\s+Changes)?)\s*:\s*/i;
+  /^(?:Breaking\s+Change|Breaking|Security|Deprecation|Deprecated|Feature|Features|Improvement|Improvements|Bug\s+Fix(?:es)?|Fix(?:es)?|Other(?:\s+Changes)?)\s*:\s*/i;
 
 /**
  * @param {string} text Summary headline (first line of changeset body or changelog bullet text).
@@ -73,9 +105,12 @@ export function classifyCategoryToken(text) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+  if (token === "breaking" || token === "breaking change") return "breaking";
+  if (token === "security") return "security";
   if (token === "feature" || token === "features") return "features";
   if (token === "improvement" || token === "improvements") return "improvements";
   if (token === "fix" || token === "fixes" || token.startsWith("bug fix")) return "bugfixes";
+  if (token === "deprecation" || token === "deprecated") return "deprecations";
   if (token === "other" || token === "other changes") return "other";
   return null;
 }
@@ -104,7 +139,7 @@ export function validateChangesetSummaryCategory(content) {
     return {
       ok: false,
       error:
-        `summary headline must start with a category prefix (Feature:, Improvement:, Fix:, Other:, etc.); ` +
+        `summary headline must start with a category prefix (Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.); ` +
         `got: ${JSON.stringify(headline)}`,
     };
   }
@@ -142,8 +177,9 @@ cat >"$out" <<'CHIUBAKA_ORB_FORMATTER_V1_EOF'
  * Build grouped release notes from Changesets-style CHANGELOG.md files.
  *
  * Default (bump-type): group under ### Major|Minor|Patch Changes; uncategorized bullets -> Patch.
- * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Features / Improvements /
- * Bug Fixes / Other Changes; bullets without a recognized prefix fail formatting.
+ * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Breaking Changes / Security /
+ * Features / Improvements / Bug Fixes / Deprecations / Other Changes; bullets without a recognized
+ * prefix fail formatting.
  *
  * Invoked as: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]
  *
@@ -190,9 +226,12 @@ function buildCategoryConfig(prefixes) {
     fallbackBucket: null,
     classifyHeading(line) {
       const t = String(line).trim();
+      if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
+      if (/^###\s*Security\s*$/i.test(t)) return "security";
       if (/^###\s*Features?\s*$/i.test(t)) return "features";
       if (/^###\s*Improvements?\s*$/i.test(t)) return "improvements";
       if (/^###\s*(?:Bug\s+)?Fix(?:es)?\s*$/i.test(t)) return "bugfixes";
+      if (/^###\s*Deprecations?\s*$/i.test(t)) return "deprecations";
       if (/^###\s*Other(?:\s+Changes)?\s*$/i.test(t)) return "other";
       return null;
     },
@@ -330,7 +369,7 @@ function parseVersionBody(bodyLines, config) {
       .join("; ");
     throw new Error(
       `formatChangesetsBatchReleaseNotes: ${unclassified.length} changelog bullet(s) missing a category prefix ` +
-        `(Feature:, Improvement:, Fix:, Other:, etc.). Examples: ${samples}`,
+        `(Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.). Examples: ${samples}`,
     );
   }
   return buckets;
@@ -429,8 +468,9 @@ cat >"$rewrite_out" <<'CHIUBAKA_ORB_REWRITER_V1_EOF'
 #!/usr/bin/env node
 /**
  * Rewrite the top version block in Changesets CHANGELOG.md files from bump-type headings
- * (Major / Minor / Patch) to product category headings (Features / Improvements / Bug Fixes /
- * Other Changes) using the summary prefix token convention (Feature:, Fix:, Other:, etc.).
+ * (Major / Minor / Patch) to category headings (Breaking Changes / Security / Features /
+ * Improvements / Bug Fixes / Deprecations / Other Changes) using the summary prefix token
+ * convention (Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.).
  *
  * Invoked as: node rewriteChangelogCategories.mjs <changelog.md> [...]
  *
@@ -500,9 +540,12 @@ function classifyBumpHeading(line) {
 
 function classifyCategoryHeading(line) {
   const t = String(line).trim();
+  if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
+  if (/^###\s*Security\s*$/i.test(t)) return "security";
   if (/^###\s*Features?\s*$/i.test(t)) return "features";
   if (/^###\s*Improvements?\s*$/i.test(t)) return "improvements";
   if (/^###\s*(?:Bug\s+)?Fix(?:es)?\s*$/i.test(t)) return "bugfixes";
+  if (/^###\s*Deprecations?\s*$/i.test(t)) return "deprecations";
   if (/^###\s*Other(?:\s+Changes)?\s*$/i.test(t)) return "other";
   return null;
 }
@@ -588,7 +631,7 @@ function collectBlocksFromBody(bodyLines, prefixes) {
       .join("; ");
     throw new Error(
       `rewriteChangelogCategories: ${unclassified.length} bullet(s) missing a category prefix ` +
-        `(Feature:, Improvement:, Fix:, Other:, etc.). Examples: ${samples}`,
+        `(Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.). Examples: ${samples}`,
     );
   }
   return buckets;

@@ -4,8 +4,9 @@ description: >
   git tag <train-tag-prefix><logical-id> (default release/2026.05.12.1), and runs gh release create
   with title equal to the logical id (default {{logical_train_id}}). Release notes default to a
   grouped summary from CHANGELOG.md files changed between HEAD~1 and HEAD (merge-commit mode):
-  Major/Minor/Patch sections by default, or Features/Improvements/Bug Fixes when release-notes-grouping
-  is category; nested bullets per package, and a Published versions list. Empty
+  Major/Minor/Patch sections when release-notes-grouping is bump-type, or Breaking Changes / Security /
+  Features / Improvements / Bug Fixes / Deprecations / Other Changes when release-notes-grouping is
+  category; nested bullets per package, and a Published versions list. Empty
   changelog diff fails the step. Requires origin to point at github.com, GITHUB_TOKEN with
   contents:write for tag + release, and gh on PATH (use install-github-cli before this command).
 
@@ -67,10 +68,11 @@ parameters:
     enum:
       - bump-type
       - category
-    default: bump-type
+    default: category
     description: >
-      bump-type (default) groups notes under Major / Minor / Patch. category groups under Features /
-      Improvements / Bug Fixes / Other Changes (application repos; see ADR 0026 / 0038).
+      category (default) groups notes under Breaking Changes / Security / Features / Improvements /
+      Bug Fixes / Deprecations / Other Changes. bump-type groups under Major / Minor / Patch
+      (legacy escape hatch).
 
 steps:
   - run:

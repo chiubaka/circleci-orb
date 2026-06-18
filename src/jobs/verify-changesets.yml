@@ -50,10 +50,10 @@ parameters:
     description: Passed to verify-changesets command (empty uses pnpm exec changeset status).
   require-changeset-category-prefix:
     type: boolean
-    default: false
+    default: true
     description: >
-      When true, PR changesets must use category summary prefixes (application monorepos with
-      release-notes-grouping category). Library monorepos leave false.
+      When true, PR changesets must use category summary prefixes (Breaking:, Security:, Feature:,
+      Fix:, Deprecation:, Other:, and accepted variants).
 
 steps:
   - setup:
