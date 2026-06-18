@@ -4,7 +4,7 @@ setup() {
 }
 
 @test "embedded formatter in stage script matches formatChangesetsBatchReleaseNotes.mjs" {
-  local embedded expected
+  local embedded expected embedded_prefixes expected_prefixes
   embedded="$(python3 -c "
 from pathlib import Path
 import sys
@@ -16,4 +16,15 @@ sys.stdout.write(t[i : end + 1])
 " "$PROJECT_ROOT/src/scripts/stageFormatChangesetsBatchReleaseNotes.sh")"
   expected="$(cat "$PROJECT_ROOT/src/scripts/formatChangesetsBatchReleaseNotes.mjs")"
   assert_equal "$expected" "$embedded"
+  embedded_prefixes="$(python3 -c "
+from pathlib import Path
+import sys
+t = Path(sys.argv[1]).read_text()
+start_m = \"<<'CHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF'\\n\"
+i = t.index(start_m) + len(start_m)
+end = t.index('\\nCHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF', i)
+sys.stdout.write(t[i : end + 1])
+" "$PROJECT_ROOT/src/scripts/stageFormatChangesetsBatchReleaseNotes.sh")"
+  expected_prefixes="$(cat "$PROJECT_ROOT/src/scripts/changesetCategoryPrefixes.mjs")"
+  assert_equal "$expected_prefixes" "$embedded_prefixes"
 }

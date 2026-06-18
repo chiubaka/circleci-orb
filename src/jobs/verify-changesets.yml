@@ -48,6 +48,12 @@ parameters:
     type: string
     default: ""
     description: Passed to verify-changesets command (empty uses pnpm exec changeset status).
+  require-changeset-category-prefix:
+    type: boolean
+    default: false
+    description: >
+      When true, PR changesets must use category summary prefixes (application monorepos with
+      release-notes-grouping category). Library monorepos leave false.
 
 steps:
   - setup:
@@ -60,4 +66,5 @@ steps:
       app-dir: << parameters.app-dir >>
       verify-script: << parameters.verify-script >>
       primary-branch: << parameters.primary-branch >>
+      require-changeset-category-prefix: << parameters.require-changeset-category-prefix >>
   - steps: << parameters.cleanup-steps >>

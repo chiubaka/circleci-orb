@@ -8,12 +8,21 @@ usage:
     chiubaka: chiubaka/circleci-orb@0.18.0
 
   workflows:
+    verify:
+      jobs:
+        - chiubaka/verify-changesets:
+            require-changeset-category-prefix: true
+            filters:
+              branches:
+                ignore: main
+
     release-pr:
       jobs:
         - chiubaka/changesets-release-pr:
             context: [github]
             create-release-manifest: true
             deployable-packages: server=packages/server,web=apps/web
+            release-notes-grouping: category
             filters:
               branches:
                 only: main
@@ -22,6 +31,7 @@ usage:
       jobs:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
+            release-notes-grouping: category
             filters:
               branches:
                 only: main

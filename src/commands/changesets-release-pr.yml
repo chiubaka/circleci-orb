@@ -31,6 +31,15 @@ parameters:
     default: "release/"
     description: >
       Remote tag prefix when allocating the logical release id (aligns with github-release-train).
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: bump-type
+    description: >
+      bump-type (default) groups release-PR notes under Major / Minor / Patch. category groups under
+      Features / Improvements / Bug Fixes / Other Changes using summary prefix tokens (Feature:, Fix:, etc.).
 
 steps:
   - run:
@@ -43,8 +52,11 @@ steps:
       command: << include(scripts/runChangesetsReleasePr.sh) >>
       environment:
         FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs
+        REWRITE_CHANGELOG_CATEGORIES_SCRIPT: /tmp/chiubaka-rewriteChangelogCategories.mjs
+        CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-changesetCategoryPrefixes.mjs
         APP_DIR: .
         PRIMARY_BRANCH: << parameters.primary-branch >>
         CREATE_RELEASE_MANIFEST: << parameters.create-release-manifest >>
         DEPLOYABLE_PACKAGES: << parameters.deployable-packages >>
         MANIFEST_TRAIN_TAG_PREFIX: << parameters.manifest-train-tag-prefix >>
+        RELEASE_NOTES_GROUPING: << parameters.release-notes-grouping >>

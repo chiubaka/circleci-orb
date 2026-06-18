@@ -63,6 +63,39 @@ list_changed_changelog_paths() {
   } | { grep -E '(^|/)CHANGELOG\.md$' || :; } | LC_ALL=C sort -u
 }
 
+_resolve_rewriter_script() {
+  if [[ -n "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT:-}" && -f "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT}" ]]; then
+    printf '%s\n' "$REWRITE_CHANGELOG_CATEGORIES_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/rewriteChangelogCategories.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runChangesetsReleasePr: set REWRITE_CHANGELOG_CATEGORIES_SCRIPT or keep rewriteChangelogCategories.mjs next to this script." >&2
+  return 1
+}
+
+rewrite_changelogs_for_category_grouping() {
+  local grouping_lower rewriter fmt
+  grouping_lower=$(printf '%s' "${RELEASE_NOTES_GROUPING:-bump-type}" | tr '[:upper:]' '[:lower:]')
+  if [[ "$grouping_lower" != "category" ]]; then
+    return 0
+  fi
+  if ! rewriter=$(_resolve_rewriter_script); then
+    return 1
+  fi
+  local -a cpaths=()
+  mapfile -t cpaths < <(list_changed_changelog_paths | grep -v '^$' || true)
+  if [[ ${#cpaths[@]} -eq 0 ]]; then
+    return 0
+  fi
+  node "$rewriter" "${cpaths[@]}"
+}
+
 _resolve_formatter_script() {
   if [[ -n "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT:-}" && -f "${FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT}" ]]; then
     printf '%s\n' "$FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT"
@@ -138,6 +171,8 @@ run_changesets_release_pr_main() {
   git reset --hard "origin/${primary}"
 
   "$pnpm_bin" exec changeset version
+
+  rewrite_changelogs_for_category_grouping
 
   create_manifest_raw=${CREATE_RELEASE_MANIFEST:-false}
   create_manifest_lower=$(printf '%s' "$create_manifest_raw" | tr '[:upper:]' '[:lower:]')

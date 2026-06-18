@@ -16,8 +16,18 @@ parameters:
     type: string
     default: "master"
     description: Branch used as the PR diff base for changeset file checks.
+  require-changeset-category-prefix:
+    type: boolean
+    default: false
+    description: >
+      When true (application monorepos with release-notes-grouping category), require each changed
+      .changeset/*.md summary headline to start with Feature:, Improvement:, Fix:, or Other: (accepted variants).
 
 steps:
+  - run:
+      name: Stage changeset category prefix scripts
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageChangesetCategoryPrefixScripts.sh) >>
   - run:
       name: Verify changesets
       working_directory: << parameters.app-dir >>
@@ -25,3 +35,6 @@ steps:
       environment:
         VERIFY_SCRIPT: << parameters.verify-script >>
         PRIMARY_BRANCH: << parameters.primary-branch >>
+        REQUIRE_CHANGESET_CATEGORY_PREFIX: << parameters.require-changeset-category-prefix >>
+        CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-changesetCategoryPrefixes.mjs
+        VERIFY_CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-verifyChangesetCategoryPrefixes.mjs
