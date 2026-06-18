@@ -4,15 +4,19 @@ setup() {
   REWRITER="$PROJECT_ROOT/src/scripts/rewriteChangelogCategories.mjs"
 }
 
-@test "rewriter converts bump headings to category headings and strips tokens" {
+@test "rewriter converts bump headings to all seven category headings and strips tokens" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   mkdir -p pkg
   cat >pkg/CHANGELOG.md <<'EOF'
 # @t/pkg
 ## 1.2.0
-### Minor Changes
+### Major Changes
+- Breaking: Remove legacy export
 - Feature: Add carousel
+### Minor Changes
+- Security: Patch auth bypass
 - Improvement: Relabel field
+- Deprecation: Old client helper
 ### Patch Changes
 - Fix: Correct typo
 - Other: ops-only note
@@ -21,28 +25,39 @@ EOF
   run node "$REWRITER" pkg/CHANGELOG.md
   assert_success
 
+  run grep -F "### Breaking Changes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "### Security" pkg/CHANGELOG.md
+  assert_success
   run grep -F "### Features" pkg/CHANGELOG.md
   assert_success
   run grep -F "### Improvements" pkg/CHANGELOG.md
   assert_success
   run grep -F "### Bug Fixes" pkg/CHANGELOG.md
   assert_success
+  run grep -F "### Deprecations" pkg/CHANGELOG.md
+  assert_success
   run grep -F "### Other Changes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Remove legacy export" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Patch auth bypass" pkg/CHANGELOG.md
   assert_success
   run grep -F "Add carousel" pkg/CHANGELOG.md
   assert_success
   run grep -F "Relabel field" pkg/CHANGELOG.md
   assert_success
+  run grep -F "Old client helper" pkg/CHANGELOG.md
+  assert_success
   run grep -F "Correct typo" pkg/CHANGELOG.md
   assert_success
   run grep -F "ops-only note" pkg/CHANGELOG.md
   assert_success
-  run grep -F "Feature:" pkg/CHANGELOG.md
+  run grep -F "Breaking:" pkg/CHANGELOG.md
   assert_failure
   run grep -F "### Minor Changes" pkg/CHANGELOG.md
   assert_failure
 }
-
 @test "rewriter fails when a bullet lacks a category prefix" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   mkdir -p pkg

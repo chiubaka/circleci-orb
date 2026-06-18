@@ -20,12 +20,37 @@ setup() {
       ['Bug Fixes: x', 'bugfixes'],
       ['Other: x', 'other'],
       ['Other Changes: x', 'other'],
+      ['Breaking: x', 'breaking'],
+      ['Breaking Change: x', 'breaking'],
+      ['Security: x', 'security'],
+      ['Deprecation: x', 'deprecations'],
+      ['Deprecated: x', 'deprecations'],
       ['Bug   Fix: x', 'bugfixes'],
       ['Other   Changes: x', 'other'],
       ['plain summary', null],
     ];
     for (const [text, want] of cases) {
       const got = classifyCategoryToken(text);
+      if (got !== want) {
+        console.error('for', text, 'want', want, 'got', got);
+        process.exit(1);
+      }
+    }
+  "
+  assert_success
+}
+
+@test "stripCategoryPrefix removes accepted prefix tokens" {
+  run node -e "
+    import { stripCategoryPrefix } from '$PREFIXES';
+    const cases = [
+      ['Breaking: Remove old API', 'Remove old API'],
+      ['Security: Patch CVE', 'Patch CVE'],
+      ['Feature: Add export', 'Add export'],
+      ['Deprecation: Old helper', 'Old helper'],
+    ];
+    for (const [text, want] of cases) {
+      const got = stripCategoryPrefix(text);
       if (got !== want) {
         console.error('for', text, 'want', want, 'got', got);
         process.exit(1);

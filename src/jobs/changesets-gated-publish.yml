@@ -157,10 +157,11 @@ parameters:
     enum:
       - bump-type
       - category
-    default: bump-type
+    default: category
     description: >
-      Passed to github-release-train. bump-type (default) uses Major / Minor / Patch sections; category
-      uses Features / Improvements / Bug Fixes / Other Changes for stakeholder-facing application repos.
+      Passed to github-release-train. category (default) uses Breaking Changes / Security / Features /
+      Improvements / Bug Fixes / Deprecations / Other Changes. bump-type uses Major / Minor / Patch
+      (legacy escape hatch).
   promotion-tag-prefix:
     type: string
     default: ""

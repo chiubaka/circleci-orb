@@ -150,6 +150,62 @@ EOF
   rm -f "$out"
 }
 
+@test "category mode orders all seven sections in CATEGORY_ORDER" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog app 1.0.0 "### Other Changes
+- Other: tagged other entry
+### Deprecations
+- Deprecation: old API
+### Bug Fixes
+- Fix: bug
+### Improvements
+- Improvement: imp
+### Features
+- Feature: feat
+### Security
+- Security: patch CVE
+### Breaking Changes
+- Breaking: remove endpoint"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
+  assert_success
+  [[ $(grep -n "### Breaking Changes" "$out" | cut -d: -f1) -lt $(grep -n "### Security" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "### Security" "$out" | cut -d: -f1) -lt $(grep -n "### Features" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "### Features" "$out" | cut -d: -f1) -lt $(grep -n "### Improvements" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "### Improvements" "$out" | cut -d: -f1) -lt $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) -lt $(grep -n "### Deprecations" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "### Deprecations" "$out" | cut -d: -f1) -lt $(grep -n "### Other Changes" "$out" | cut -d: -f1) ]]
+  rm -f "$out"
+}
+
+@test "category mode places Breaking Security and Deprecation bullets under correct headings" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog lib 2.0.0 "- Breaking: drop legacy export
+- Security: rotate signing keys
+- Deprecation: prefer new client"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" lib/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Breaking Changes" "$out"
+  assert_success
+  run grep -F "### Security" "$out"
+  assert_success
+  run grep -F "### Deprecations" "$out"
+  assert_success
+  run grep -F "drop legacy export" "$out"
+  assert_success
+  run grep -F "rotate signing keys" "$out"
+  assert_success
+  run grep -F "prefer new client" "$out"
+  assert_success
+  rm -f "$out"
+}
+
 @test "category mode orders sections Features Improvements Bug Fixes Other" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1

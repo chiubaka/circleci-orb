@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Rewrite the top version block in Changesets CHANGELOG.md files from bump-type headings
- * (Major / Minor / Patch) to product category headings (Features / Improvements / Bug Fixes /
- * Other Changes) using the summary prefix token convention (Feature:, Fix:, Other:, etc.).
+ * (Major / Minor / Patch) to category headings (Breaking Changes / Security / Features /
+ * Improvements / Bug Fixes / Deprecations / Other Changes) using the summary prefix token
+ * convention (Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.).
  *
  * Invoked as: node rewriteChangelogCategories.mjs <changelog.md> [...]
  *
@@ -72,9 +73,12 @@ function classifyBumpHeading(line) {
 
 function classifyCategoryHeading(line) {
   const t = String(line).trim();
+  if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
+  if (/^###\s*Security\s*$/i.test(t)) return "security";
   if (/^###\s*Features?\s*$/i.test(t)) return "features";
   if (/^###\s*Improvements?\s*$/i.test(t)) return "improvements";
   if (/^###\s*(?:Bug\s+)?Fix(?:es)?\s*$/i.test(t)) return "bugfixes";
+  if (/^###\s*Deprecations?\s*$/i.test(t)) return "deprecations";
   if (/^###\s*Other(?:\s+Changes)?\s*$/i.test(t)) return "other";
   return null;
 }
@@ -160,7 +164,7 @@ function collectBlocksFromBody(bodyLines, prefixes) {
       .join("; ");
     throw new Error(
       `rewriteChangelogCategories: ${unclassified.length} bullet(s) missing a category prefix ` +
-        `(Feature:, Improvement:, Fix:, Other:, etc.). Examples: ${samples}`,
+        `(Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.). Examples: ${samples}`,
     );
   }
   return buckets;

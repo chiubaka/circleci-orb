@@ -73,10 +73,11 @@ parameters:
     enum:
       - bump-type
       - category
-    default: bump-type
+    default: category
     description: >
-      Passed to changesets-release-pr. category groups release-PR notes under Features / Improvements /
-      Bug Fixes / Other Changes (application repos); bump-type keeps Major / Minor / Patch (libraries).
+      Passed to changesets-release-pr. category (default) groups release-PR notes under Breaking
+      Changes / Security / Features / Improvements / Bug Fixes / Deprecations / Other Changes.
+      bump-type keeps Major / Minor / Patch (legacy escape hatch).
   registry-access:
     type: enum
     enum:

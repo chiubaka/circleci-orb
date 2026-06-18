@@ -18,10 +18,10 @@ parameters:
     description: Branch used as the PR diff base for changeset file checks.
   require-changeset-category-prefix:
     type: boolean
-    default: false
+    default: true
     description: >
-      When true (application monorepos with release-notes-grouping category), require each changed
-      .changeset/*.md summary headline to start with Feature:, Improvement:, Fix:, or Other: (accepted variants).
+      When true, require each changed .changeset/*.md summary headline to start with an accepted
+      category prefix (Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.).
 
 steps:
   - run:

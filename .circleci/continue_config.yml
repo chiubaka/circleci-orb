@@ -60,6 +60,7 @@ workflows:
       - chiubaka/verify-changesets:
           name: verify-changesets
           primary-branch: master
+          require-changeset-category-prefix: true
           filters:
             branches:
               ignore: /^(master|release\/.*)$/
@@ -102,6 +103,7 @@ workflows:
           context:
             - github-release-pr-bot
           primary-branch: master
+          release-notes-grouping: category
           registry-backend: npmjs
           registry-access: read
           publish-script: release:orb
@@ -142,6 +144,7 @@ workflows:
           context:
             - github-release-pr-bot
           primary-branch: master
+          release-notes-grouping: category
           registry-backend: npmjs
           filters:
             branches:
