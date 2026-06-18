@@ -56,7 +56,17 @@ verify_changeset_category_prefixes() {
   node "$verifier" "${paths[@]}"
 }
 
+require_prefix_lower=$(printf '%s' "${REQUIRE_CHANGESET_CATEGORY_PREFIX:-false}" | tr '[:upper:]' '[:lower:]')
+need_merge_base=false
+if [[ "$require_prefix_lower" == "true" || "$require_prefix_lower" == "1" ]]; then
+  need_merge_base=true
+fi
 if [[ -z "$verify_script" ]]; then
+  need_merge_base=true
+fi
+
+merge_base=""
+if [[ "$need_merge_base" == true ]]; then
   if ! git rev-parse --verify --quiet "$base_ref" >/dev/null; then
     git fetch origin "$primary_branch":"refs/remotes/origin/$primary_branch" --depth=1 >/dev/null 2>&1 || true
     base_ref="origin/$primary_branch"
@@ -72,7 +82,11 @@ if [[ -z "$verify_script" ]]; then
     echo "ERROR: could not determine merge-base between HEAD and $base_ref" >&2
     exit 1
   fi
+fi
 
+verify_changeset_category_prefixes "$merge_base"
+
+if [[ -z "$verify_script" ]]; then
   has_changeset_markdown_change=false
   while IFS=$'\t' read -r status changed_file renamed_file; do
     candidate_path=${renamed_file:-$changed_file}
@@ -91,8 +105,6 @@ if [[ -z "$verify_script" ]]; then
     echo "No changeset markdown file changes found versus $primary_branch." >&2
     exit 1
   fi
-
-  verify_changeset_category_prefixes "$merge_base"
 
   exec "$pnpm_bin" exec changeset status
 fi

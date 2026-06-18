@@ -69,7 +69,11 @@ export const CATEGORY_TOKEN_RE =
 export function classifyCategoryToken(text) {
   const m = String(text).match(CATEGORY_TOKEN_RE);
   if (!m) return null;
-  const token = m[0].replace(/:\s*$/, "").trim().toLowerCase();
+  const token = m[0]
+    .replace(/:\s*$/, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
   if (token === "feature" || token === "features") return "features";
   if (token === "improvement" || token === "improvements") return "improvements";
   if (token === "fix" || token === "fixes" || token.startsWith("bug fix")) return "bugfixes";

@@ -8,6 +8,14 @@ usage:
     chiubaka: chiubaka/circleci-orb@0.18.0
 
   workflows:
+    verify:
+      jobs:
+        - chiubaka/verify-changesets:
+            require-changeset-category-prefix: true
+            filters:
+              branches:
+                ignore: main
+
     release-pr:
       jobs:
         - chiubaka/changesets-release-pr:

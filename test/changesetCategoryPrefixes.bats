@@ -20,6 +20,8 @@ setup() {
       ['Bug Fixes: x', 'bugfixes'],
       ['Other: x', 'other'],
       ['Other Changes: x', 'other'],
+      ['Bug   Fix: x', 'bugfixes'],
+      ['Other   Changes: x', 'other'],
       ['plain summary', null],
     ];
     for (const [text, want] of cases) {
