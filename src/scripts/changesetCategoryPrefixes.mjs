@@ -119,6 +119,65 @@ export function stripCategoryPrefix(text) {
 }
 
 /**
+ * Strip Changesets changelog bullet metadata before category matching.
+ * `@changesets/cli/changelog` re-exports `@changesets/changelog-git`, which prefixes bullets with
+ * `<shortSha>: ` when a changeset commit is known. `@changesets/changelog-github` may prefix with
+ * PR/commit links and a `Thanks …! - ` segment before the summary headline.
+ *
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {string} Headline suitable for {@link classifyCategoryToken}.
+ */
+export function stripChangelogBulletAnnotations(text) {
+  let t = String(text).trim();
+  if (classifyCategoryToken(t) !== null) return t;
+
+  const github = t.match(/^[\s\S]+?\s+-\s+([\s\S]+)$/);
+  if (github) {
+    const candidate = github[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  const git = t.match(/^[0-9a-f]{7,40}\s*:\s*([\s\S]+)$/i);
+  if (git) {
+    const candidate = git[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  const linkedCommit = t.match(
+    /^\[(?:`)?[0-9a-f]{7,40}(?:`)?\]\([^)]+\)\s*:?\s*([\s\S]+)$/i,
+  );
+  if (linkedCommit) {
+    const candidate = linkedCommit[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  let prev;
+  do {
+    prev = t;
+    t = t.replace(/^\[[^\]]+\]\([^)]+\)\s+/i, "").trim();
+    if (classifyCategoryToken(t) !== null) return t;
+  } while (t !== prev);
+
+  return String(text).trim();
+}
+
+/**
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {CategoryBucket | null}
+ */
+export function classifyChangelogBullet(text) {
+  return classifyCategoryToken(stripChangelogBulletAnnotations(text));
+}
+
+/**
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {string}
+ */
+export function stripChangelogBulletCategoryPrefix(text) {
+  return stripCategoryPrefix(stripChangelogBulletAnnotations(text));
+}
+
+/**
  * @param {string} content Full changeset markdown file contents.
  * @returns {{ ok: true, headline: string, bucket: CategoryBucket } | { ok: false, error: string }}
  */

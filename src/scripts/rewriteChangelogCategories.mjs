@@ -126,18 +126,21 @@ function collectUntilNextHeading(lines, start) {
 }
 
 function collectBlocksFromBody(bodyLines, prefixes) {
-  const { classifyCategoryToken, CATEGORY_ORDER, stripCategoryPrefix } = prefixes;
+  const { classifyChangelogBullet, CATEGORY_ORDER, stripChangelogBulletCategoryPrefix } =
+    prefixes;
   /** @type {Record<string, string[][][]>} */
   const buckets = Object.fromEntries(CATEGORY_ORDER.map((key) => [key, []]));
   const unclassified = [];
 
   function addBlocks(blocks) {
     for (const block of blocks) {
-      const bucket = classifyCategoryToken(bulletSummaryText(block));
+      const bucket = classifyChangelogBullet(bulletSummaryText(block));
       if (bucket === null) {
         unclassified.push(block);
       } else {
-        buckets[bucket].push(stripCategoryTokenFromBlock(block, stripCategoryPrefix));
+        buckets[bucket].push(
+          stripCategoryTokenFromBlock(block, stripChangelogBulletCategoryPrefix),
+        );
       }
     }
   }

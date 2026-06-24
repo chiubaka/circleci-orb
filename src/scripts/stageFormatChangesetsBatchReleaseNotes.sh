@@ -126,6 +126,65 @@ export function stripCategoryPrefix(text) {
 }
 
 /**
+ * Strip Changesets changelog bullet metadata before category matching.
+ * `@changesets/cli/changelog` re-exports `@changesets/changelog-git`, which prefixes bullets with
+ * `<shortSha>: ` when a changeset commit is known. `@changesets/changelog-github` may prefix with
+ * PR/commit links and a `Thanks …! - ` segment before the summary headline.
+ *
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {string} Headline suitable for {@link classifyCategoryToken}.
+ */
+export function stripChangelogBulletAnnotations(text) {
+  let t = String(text).trim();
+  if (classifyCategoryToken(t) !== null) return t;
+
+  const github = t.match(/^[\s\S]+?\s+-\s+([\s\S]+)$/);
+  if (github) {
+    const candidate = github[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  const git = t.match(/^[0-9a-f]{7,40}\s*:\s*([\s\S]+)$/i);
+  if (git) {
+    const candidate = git[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  const linkedCommit = t.match(
+    /^\[(?:`)?[0-9a-f]{7,40}(?:`)?\]\([^)]+\)\s*:?\s*([\s\S]+)$/i,
+  );
+  if (linkedCommit) {
+    const candidate = linkedCommit[1].trim();
+    if (classifyCategoryToken(candidate) !== null) return candidate;
+  }
+
+  let prev;
+  do {
+    prev = t;
+    t = t.replace(/^\[[^\]]+\]\([^)]+\)\s+/i, "").trim();
+    if (classifyCategoryToken(t) !== null) return t;
+  } while (t !== prev);
+
+  return String(text).trim();
+}
+
+/**
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {CategoryBucket | null}
+ */
+export function classifyChangelogBullet(text) {
+  return classifyCategoryToken(stripChangelogBulletAnnotations(text));
+}
+
+/**
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {string}
+ */
+export function stripChangelogBulletCategoryPrefix(text) {
+  return stripCategoryPrefix(stripChangelogBulletAnnotations(text));
+}
+
+/**
  * @param {string} content Full changeset markdown file contents.
  * @returns {{ ok: true, headline: string, bucket: CategoryBucket } | { ok: false, error: string }}
  */
@@ -169,6 +228,7 @@ export function formatAcceptedPrefixesList() {
     (g) => `${g.section}: ${g.prefixes.join(", ")}`,
   ).join("; ");
 }
+
 CHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF
 out=${FORMAT_CHANGESETS_BATCH_STAGE_PATH:-/tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs}
 cat >"$out" <<'CHIUBAKA_ORB_FORMATTER_V1_EOF'
@@ -218,8 +278,7 @@ const BUMP_TYPE_CONFIG = {
 };
 
 function buildCategoryConfig(prefixes) {
-  const { classifyCategoryToken, CATEGORY_ORDER, CATEGORY_SECTION_TITLE, CATEGORY_TOKEN_RE } =
-    prefixes;
+  const { classifyChangelogBullet, CATEGORY_ORDER, CATEGORY_SECTION_TITLE } = prefixes;
   return {
     order: CATEGORY_ORDER,
     titles: CATEGORY_SECTION_TITLE,
@@ -239,7 +298,7 @@ function buildCategoryConfig(prefixes) {
       const first = block[0];
       const m = String(first).match(/^[-*]\s?(.*)$/);
       const text = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-      return classifyCategoryToken(text);
+      return classifyChangelogBullet(text);
     },
   };
 }
@@ -377,7 +436,7 @@ function parseVersionBody(bodyLines, config) {
 
 function emitNestedUnderPackage(blocks, prefixes) {
   const out = [];
-  const stripFn = prefixes?.stripCategoryPrefix ?? ((t) => t);
+  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
   for (const block of blocks) {
     if (!block || block.length === 0) continue;
     const first = block[0];
@@ -462,6 +521,7 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
+
 CHIUBAKA_ORB_FORMATTER_V1_EOF
 rewrite_out=${REWRITE_CHANGELOG_CATEGORIES_STAGE_PATH:-/tmp/chiubaka-rewriteChangelogCategories.mjs}
 cat >"$rewrite_out" <<'CHIUBAKA_ORB_REWRITER_V1_EOF'
@@ -593,18 +653,21 @@ function collectUntilNextHeading(lines, start) {
 }
 
 function collectBlocksFromBody(bodyLines, prefixes) {
-  const { classifyCategoryToken, CATEGORY_ORDER, stripCategoryPrefix } = prefixes;
+  const { classifyChangelogBullet, CATEGORY_ORDER, stripChangelogBulletCategoryPrefix } =
+    prefixes;
   /** @type {Record<string, string[][][]>} */
   const buckets = Object.fromEntries(CATEGORY_ORDER.map((key) => [key, []]));
   const unclassified = [];
 
   function addBlocks(blocks) {
     for (const block of blocks) {
-      const bucket = classifyCategoryToken(bulletSummaryText(block));
+      const bucket = classifyChangelogBullet(bulletSummaryText(block));
       if (bucket === null) {
         unclassified.push(block);
       } else {
-        buckets[bucket].push(stripCategoryTokenFromBlock(block, stripCategoryPrefix));
+        buckets[bucket].push(
+          stripCategoryTokenFromBlock(block, stripChangelogBulletCategoryPrefix),
+        );
       }
     }
   }
@@ -694,4 +757,5 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
+
 CHIUBAKA_ORB_REWRITER_V1_EOF
