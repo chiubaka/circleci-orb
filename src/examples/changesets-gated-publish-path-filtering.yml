@@ -26,6 +26,7 @@ usage:
         - jq/install
         - chiubaka/compute-changesets-publish-parameters:
             base-revision: master
+            # include-pr-metadata: true  # forward CIRCLE_PULL_REQUEST / CIRCLE_PR_NUMBER to continuation
         - continuation/continue:
             configuration_path: .circleci/continue_config.yml
             parameters: /tmp/pipeline-parameters.json
@@ -44,6 +45,12 @@ usage:
   #     run-changesets-publish:
   #       type: boolean
   #       default: false
+  #     circle_pull_request:
+  #       type: string
+  #       default: ""
+  #     circle_pr_number:
+  #       type: string
+  #       default: ""
   #   orbs:
   #     chiubaka: chiubaka/circleci-orb@0.15.0
   #   workflows:

@@ -32,14 +32,19 @@ create_repo_with_remote() {
 }
 
 run_compute_script() {
-  local repo_dir
-  local output_path
-  repo_dir="$1"
-  output_path="$repo_dir/out.json"
-  CIRCLE_SHA1="$(git -C "$repo_dir" rev-parse HEAD)" \
-    BASE_REVISION=master \
-    OUTPUT_PATH="$output_path" \
-    bash -c "cd \"$repo_dir\" && bash \"$PROJECT_ROOT/src/scripts/computeChangesetsPublishParameters.sh\" >/dev/null"
+  local repo_dir="$1"
+  shift
+  local output_path="$repo_dir/out.json"
+  local -a env_args=(
+    "CIRCLE_SHA1=$(git -C "$repo_dir" rev-parse HEAD)"
+    BASE_REVISION=master
+    "OUTPUT_PATH=$output_path"
+  )
+  while (($# > 0)); do
+    env_args+=("$1")
+    shift
+  done
+  env "${env_args[@]}" bash -c "cd \"$repo_dir\" && bash \"$PROJECT_ROOT/src/scripts/computeChangesetsPublishParameters.sh\" >/dev/null"
   cat "$output_path"
 }
 
@@ -50,7 +55,7 @@ run_compute_script() {
   git -C "$repo_dir" commit -m "docs: changelog update" >/dev/null
 
   result="$(run_compute_script "$repo_dir")"
-  assert_equal "$result" '{"run-changesets-publish": true}'
+  assert_equal "$result" '{"run-changesets-publish":true}'
 }
 
 @test "returns true when package version field changes" {
@@ -60,7 +65,7 @@ run_compute_script() {
   git -C "$repo_dir" commit -m "feat: bump version" >/dev/null
 
   result="$(run_compute_script "$repo_dir")"
-  assert_equal "$result" '{"run-changesets-publish": true}'
+  assert_equal "$result" '{"run-changesets-publish":true}'
 }
 
 @test "returns false when no changelog or version changes exist" {
@@ -70,7 +75,7 @@ run_compute_script() {
   git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
 
   result="$(run_compute_script "$repo_dir")"
-  assert_equal "$result" '{"run-changesets-publish": false}'
+  assert_equal "$result" '{"run-changesets-publish":false}'
 }
 
 @test "recovers from shallow clone merge-base failure path" {
@@ -109,5 +114,75 @@ run_compute_script() {
 
   assert_success
   run cat "$output_path"
-  assert_output '{"run-changesets-publish": true}'
+  assert_output '{"run-changesets-publish":true}'
+}
+
+@test "omits PR metadata by default" {
+  repo_dir="$(create_repo_with_remote)"
+  printf '%s\n' 'notes' >"$repo_dir/README.md"
+  git -C "$repo_dir" add README.md
+  git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
+
+  result="$(
+    run_compute_script "$repo_dir" \
+      CIRCLE_PULL_REQUEST='https://github.com/org/repo/pull/42' \
+      CIRCLE_PR_NUMBER='42'
+  )"
+  assert_equal "$result" '{"run-changesets-publish":false}'
+}
+
+@test "includes PR metadata when enabled" {
+  repo_dir="$(create_repo_with_remote)"
+  printf '%s\n' 'notes' >"$repo_dir/README.md"
+  git -C "$repo_dir" add README.md
+  git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
+
+  result="$(
+    run_compute_script "$repo_dir" \
+      CIRCLE_PULL_REQUEST='https://github.com/org/repo/pull/42' \
+      CIRCLE_PR_NUMBER='42' \
+      INCLUDE_PR_METADATA=true
+  )"
+  assert_equal "$result" '{"run-changesets-publish":false,"circle_pull_request":"https://github.com/org/repo/pull/42","circle_pr_number":"42"}'
+}
+
+@test "derives PR number from pull request URL when number env is empty" {
+  repo_dir="$(create_repo_with_remote)"
+  printf '%s\n' 'notes' >"$repo_dir/README.md"
+  git -C "$repo_dir" add README.md
+  git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
+
+  result="$(
+    run_compute_script "$repo_dir" \
+      CIRCLE_PULL_REQUEST='https://github.com/org/repo/pull/99' \
+      INCLUDE_PR_METADATA=true
+  )"
+  assert_equal "$result" '{"run-changesets-publish":false,"circle_pull_request":"https://github.com/org/repo/pull/99","circle_pr_number":"99"}'
+}
+
+@test "emits empty PR metadata strings when env vars are unset" {
+  repo_dir="$(create_repo_with_remote)"
+  printf '%s\n' 'notes' >"$repo_dir/README.md"
+  git -C "$repo_dir" add README.md
+  git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
+
+  result="$(run_compute_script "$repo_dir" INCLUDE_PR_METADATA=true)"
+  assert_equal "$result" '{"run-changesets-publish":false,"circle_pull_request":"","circle_pr_number":""}'
+}
+
+@test "merges computed parameters into an existing output file" {
+  repo_dir="$(create_repo_with_remote)"
+  output_path="$repo_dir/out.json"
+  printf '%s\n' '{"custom-parameter": "keep"}' >"$output_path"
+  printf '%s\n' 'notes' >"$repo_dir/README.md"
+  git -C "$repo_dir" add README.md
+  git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
+
+  result="$(
+    run_compute_script "$repo_dir" \
+      CIRCLE_PULL_REQUEST='https://github.com/org/repo/pull/7' \
+      CIRCLE_PR_NUMBER='7' \
+      INCLUDE_PR_METADATA=true
+  )"
+  assert_equal "$result" '{"custom-parameter":"keep","run-changesets-publish":false,"circle_pull_request":"https://github.com/org/repo/pull/7","circle_pr_number":"7"}'
 }
