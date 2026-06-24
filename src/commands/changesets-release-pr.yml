@@ -36,10 +36,11 @@ parameters:
     enum:
       - bump-type
       - category
-    default: bump-type
+    default: category
     description: >
-      bump-type (default) groups release-PR notes under Major / Minor / Patch. category groups under
-      Features / Improvements / Bug Fixes / Other Changes using summary prefix tokens (Feature:, Fix:, etc.).
+      category (default) groups release-PR notes under Breaking Changes / Security / Features /
+      Improvements / Bug Fixes / Deprecations / Other Changes using summary prefix tokens.
+      bump-type groups under Major / Minor / Patch (legacy escape hatch).
 
 steps:
   - run:

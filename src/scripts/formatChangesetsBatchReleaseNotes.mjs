@@ -3,8 +3,9 @@
  * Build grouped release notes from Changesets-style CHANGELOG.md files.
  *
  * Default (bump-type): group under ### Major|Minor|Patch Changes; uncategorized bullets -> Patch.
- * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Features / Improvements /
- * Bug Fixes / Other Changes; bullets without a recognized prefix fail formatting.
+ * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Breaking Changes / Security /
+ * Features / Improvements / Bug Fixes / Deprecations / Other Changes; bullets without a recognized
+ * prefix fail formatting.
  *
  * Invoked as: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]
  *
@@ -51,9 +52,12 @@ function buildCategoryConfig(prefixes) {
     fallbackBucket: null,
     classifyHeading(line) {
       const t = String(line).trim();
+      if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
+      if (/^###\s*Security\s*$/i.test(t)) return "security";
       if (/^###\s*Features?\s*$/i.test(t)) return "features";
       if (/^###\s*Improvements?\s*$/i.test(t)) return "improvements";
       if (/^###\s*(?:Bug\s+)?Fix(?:es)?\s*$/i.test(t)) return "bugfixes";
+      if (/^###\s*Deprecations?\s*$/i.test(t)) return "deprecations";
       if (/^###\s*Other(?:\s+Changes)?\s*$/i.test(t)) return "other";
       return null;
     },
@@ -191,7 +195,7 @@ function parseVersionBody(bodyLines, config) {
       .join("; ");
     throw new Error(
       `formatChangesetsBatchReleaseNotes: ${unclassified.length} changelog bullet(s) missing a category prefix ` +
-        `(Feature:, Improvement:, Fix:, Other:, etc.). Examples: ${samples}`,
+        `(Breaking:, Security:, Feature:, Fix:, Deprecation:, Other:, etc.). Examples: ${samples}`,
     );
   }
   return buckets;

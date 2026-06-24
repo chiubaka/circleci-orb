@@ -1,7 +1,6 @@
 description: >
-  Library monorepo default path: Changesets verify, release PR, and gated publish with all new
-  application-only parameters at defaults (no .releases/, no promotion tags). No client migration
-  required when upgrading the orb.
+  Library monorepo default path: Changesets verify, release PR, and gated publish with org-standard
+  category release notes and prefix enforcement. No .releases/ manifests or promotion tags.
 
 usage:
   version: 2.1
@@ -12,6 +11,7 @@ usage:
     verify:
       jobs:
         - chiubaka/verify-changesets:
+            require-changeset-category-prefix: true
             filters:
               branches:
                 ignore: master
@@ -20,6 +20,7 @@ usage:
       jobs:
         - chiubaka/changesets-release-pr:
             context: [github]
+            release-notes-grouping: category
             filters:
               branches:
                 only: master
@@ -29,6 +30,7 @@ usage:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
             create-github-release: true
+            release-notes-grouping: category
             filters:
               branches:
                 only: master
