@@ -132,6 +132,28 @@ EOF
   rm -f "$out"
 }
 
+@test "category mode accepts changelog-git shortSha prefixed bullets" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog directus 2026.06.24.1 "### Minor Changes
+- 977f100: Feature: Show application deadlines
+- 51fd230: Improvement: Editors can control display order
+### Patch Changes
+- abcdef0: Fix: Correct deadline parsing"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" directus/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Features" "$out"
+  assert_success
+  run grep -F "Show application deadlines" "$out"
+  assert_success
+  run grep -F "977f100:" "$out"
+  assert_failure
+  rm -f "$out"
+}
+
 @test "category mode places Other-prefixed bullets under Other Changes" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1

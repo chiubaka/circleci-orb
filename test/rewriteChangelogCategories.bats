@@ -74,6 +74,39 @@ EOF
   assert_success
 }
 
+@test "rewriter accepts default changelog-git bullets with shortSha prefix" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p pkg
+  cat >pkg/CHANGELOG.md <<'EOF'
+# @t/directus
+## 2026.06.24.1
+### Minor Changes
+- 977f100: Feature: Show application deadlines on learning opportunities
+- 51fd230: Improvement: Editors can control display order
+### Patch Changes
+- abcdef0: Fix: Correct deadline parsing
+- fedcba9: Other: Internal dependency maintenance
+EOF
+
+  run node "$REWRITER" pkg/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Features" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "### Improvements" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "### Bug Fixes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "### Other Changes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Show application deadlines on learning opportunities" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "977f100:" pkg/CHANGELOG.md
+  assert_failure
+  run grep -F "Feature:" pkg/CHANGELOG.md
+  assert_failure
+}
+
 @test "embedded rewriter in stage script matches rewriteChangelogCategories.mjs" {
   local embedded expected
   embedded="$(python3 -c "

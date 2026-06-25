@@ -44,8 +44,7 @@ const BUMP_TYPE_CONFIG = {
 };
 
 function buildCategoryConfig(prefixes) {
-  const { classifyCategoryToken, CATEGORY_ORDER, CATEGORY_SECTION_TITLE, CATEGORY_TOKEN_RE } =
-    prefixes;
+  const { classifyChangelogBullet, CATEGORY_ORDER, CATEGORY_SECTION_TITLE } = prefixes;
   return {
     order: CATEGORY_ORDER,
     titles: CATEGORY_SECTION_TITLE,
@@ -65,7 +64,7 @@ function buildCategoryConfig(prefixes) {
       const first = block[0];
       const m = String(first).match(/^[-*]\s?(.*)$/);
       const text = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-      return classifyCategoryToken(text);
+      return classifyChangelogBullet(text);
     },
   };
 }
@@ -203,7 +202,7 @@ function parseVersionBody(bodyLines, config) {
 
 function emitNestedUnderPackage(blocks, prefixes) {
   const out = [];
-  const stripFn = prefixes?.stripCategoryPrefix ?? ((t) => t);
+  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
   for (const block of blocks) {
     if (!block || block.length === 0) continue;
     const first = block[0];
