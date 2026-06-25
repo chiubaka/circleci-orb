@@ -80,3 +80,38 @@ setup() {
   "
   assert_success
 }
+
+@test "classifyChangelogBullet strips changelog-git shortSha prefix" {
+  run node -e "
+    import {
+      classifyChangelogBullet,
+      stripChangelogBulletCategoryPrefix,
+    } from '$PREFIXES';
+    const text = '977f100: Feature: Show application deadlines';
+    if (classifyChangelogBullet(text) !== 'features') process.exit(1);
+    if (stripChangelogBulletCategoryPrefix(text) !== 'Show application deadlines') process.exit(2);
+  "
+  assert_success
+}
+
+@test "classifyChangelogBullet handles changelog-github metadata prefix" {
+  run node -e "
+    import {
+      classifyChangelogBullet,
+      stripChangelogBulletCategoryPrefix,
+    } from '$PREFIXES';
+    const text = '[#42](https://github.com/org/repo/pull/42) [\`977f100\`](https://github.com/org/repo/commit/977f100) Thanks [@alice](https://github.com/alice)! - Fix: Correct deadline parsing';
+    if (classifyChangelogBullet(text) !== 'bugfixes') process.exit(1);
+    if (stripChangelogBulletCategoryPrefix(text) !== 'Correct deadline parsing') process.exit(2);
+  "
+  assert_success
+}
+
+@test "classifyChangelogBullet still rejects genuinely prefix-less bullets" {
+  run node -e "
+    import { classifyChangelogBullet } from '$PREFIXES';
+    if (classifyChangelogBullet('977f100: missing prefix line') !== null) process.exit(1);
+    if (classifyChangelogBullet('plain summary') !== null) process.exit(2);
+  "
+  assert_success
+}
