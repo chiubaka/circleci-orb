@@ -80,10 +80,15 @@ steps:
       working_directory: << parameters.app-dir >>
       command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
   - run:
+      name: Stage UTC train id helpers
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageLibTrainId.sh) >>
+  - run:
       name: GitHub release train (ADR 0038)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runGithubReleaseTrain.sh) >>
       environment:
+        TRAIN_ID_SCRIPT: /tmp/chiubaka-lib-trainId.sh
         FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs
         TRAIN_TAG_PREFIX: << parameters.train-tag-prefix >>
         DRAFT: << parameters.draft >>

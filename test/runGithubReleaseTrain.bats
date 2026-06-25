@@ -351,3 +351,82 @@ EOF
   assert_success
   rm -f "$nf"
 }
+
+@test "fails when inlined without staged train id helpers" {
+  local clone script_dir
+  script_dir="${BATS_TEST_TMPDIR}/circleci-github-train-inline-missing"
+  mkdir -p "$script_dir"
+  cp "$PROJECT_ROOT/src/scripts/runGithubReleaseTrain.sh" "$script_dir/runGithubReleaseTrain.sh"
+
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  clone=$(_github_train_init_clone)
+  cd "$clone" || exit 1
+  mkdir -p pkg
+  printf '%s\n' '{"name":"@t/a","version":"1.0.0"}' >pkg/package.json
+  cat >pkg/CHANGELOG.md <<'EOF'
+## 1.0.0
+- x
+EOF
+  git add . && git commit -m "changelog" >/dev/null 2>&1 && git push origin master >/dev/null 2>&1
+
+  run env GITHUB_TOKEN=fake UTC_DATE_OVERRIDE=2099.01.01 \
+    bash "${script_dir}/runGithubReleaseTrain.sh"
+
+  assert_failure
+  assert_output --partial "set TRAIN_ID_SCRIPT"
+}
+
+@test "inlined copy runs via staged train id helpers" {
+  local clone script_dir staged_train_id staged_formatter staged_prefixes bindir gh_mock
+  script_dir="${BATS_TEST_TMPDIR}/circleci-github-train-inline-staged"
+  staged_train_id="${BATS_TEST_TMPDIR}/chiubaka-lib-trainId.sh"
+  staged_formatter="${BATS_TEST_TMPDIR}/chiubaka-formatChangesetsBatchReleaseNotes.mjs"
+  staged_prefixes="${BATS_TEST_TMPDIR}/chiubaka-changesetCategoryPrefixes.mjs"
+  mkdir -p "$script_dir"
+  cp "$PROJECT_ROOT/src/scripts/runGithubReleaseTrain.sh" "$script_dir/runGithubReleaseTrain.sh"
+  TRAIN_ID_STAGE_PATH="$staged_train_id" \
+    bash "$PROJECT_ROOT/src/scripts/stageLibTrainId.sh"
+  CHANGESET_CATEGORY_PREFIXES_STAGE_PATH="$staged_prefixes" \
+  FORMAT_CHANGESETS_BATCH_STAGE_PATH="$staged_formatter" \
+    bash "$PROJECT_ROOT/src/scripts/stageFormatChangesetsBatchReleaseNotes.sh"
+
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  clone=$(_github_train_init_clone)
+  cd "$clone" || exit 1
+  mkdir -p pkg
+  printf '%s\n' '{"name":"@t/a","version":"1.0.0"}' >pkg/package.json
+  cat >pkg/CHANGELOG.md <<'EOF'
+## 1.0.0
+- x
+EOF
+  git add . && git commit -m "changelog" >/dev/null 2>&1 && git push origin master >/dev/null 2>&1
+
+  gh_mock="$(mock_create)"
+  bindir=$(mktemp -d)
+  ln -sf "$gh_mock" "${bindir}/gh"
+
+  run env GITHUB_TOKEN=fake UTC_DATE_OVERRIDE=2099.01.01 \
+    TRAIN_ID_SCRIPT="$staged_train_id" \
+    FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT="$staged_formatter" \
+    CHANGESET_CATEGORY_PREFIXES_SCRIPT="$staged_prefixes" \
+    PATH="${bindir}:$PATH" \
+    bash "${script_dir}/runGithubReleaseTrain.sh"
+
+  assert_success
+  assert_equal "$(mock_get_call_num "$gh_mock")" "1"
+}
+
+@test "embedded lib train id helpers match source module" {
+  local embedded expected
+  embedded="$(python3 -c "
+from pathlib import Path
+import sys
+t = Path(sys.argv[1]).read_text()
+start_m = \"<<'CHIUBAKA_ORB_LIB_TRAIN_ID_V1_EOF'\\n\"
+i = t.index(start_m) + len(start_m)
+end = t.index('\\nCHIUBAKA_ORB_LIB_TRAIN_ID_V1_EOF', i)
+sys.stdout.write(t[i : end + 1])
+" "$PROJECT_ROOT/src/scripts/stageLibTrainId.sh")"
+  expected="$(cat "$PROJECT_ROOT/src/scripts/lib/trainId.sh")"
+  assert_equal "$expected" "$embedded"
+}

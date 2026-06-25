@@ -47,6 +47,13 @@ steps:
       name: Stage Chiubaka release notes formatter
       working_directory: << parameters.app-dir >>
       command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
+  - when:
+      condition: << parameters.create-release-manifest >>
+      steps:
+        - run:
+            name: Stage release manifest writer
+            working_directory: << parameters.app-dir >>
+            command: << include(scripts/stageReleaseManifestWriter.sh) >>
   - run:
       name: Changesets release PR (version + push + gh)
       working_directory: << parameters.app-dir >>
@@ -55,6 +62,7 @@ steps:
         FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-formatChangesetsBatchReleaseNotes.mjs
         REWRITE_CHANGELOG_CATEGORIES_SCRIPT: /tmp/chiubaka-rewriteChangelogCategories.mjs
         CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-changesetCategoryPrefixes.mjs
+        WRITE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-writeReleaseManifest.mjs
         APP_DIR: .
         PRIMARY_BRANCH: << parameters.primary-branch >>
         CREATE_RELEASE_MANIFEST: << parameters.create-release-manifest >>
