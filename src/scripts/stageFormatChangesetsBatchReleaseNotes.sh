@@ -713,6 +713,16 @@ function renderCategoryBody(buckets, prefixes) {
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
 }
 
+function joinChangelogSections(...sections) {
+  return (
+    sections
+      .filter((section) => section !== "")
+      .join("\n\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trimEnd() + "\n"
+  );
+}
+
 function rewriteChangelogFile(absPath, prefixes) {
   const raw = fs.readFileSync(absPath, "utf8");
   const section = extractTopVersionSection(raw);
@@ -724,11 +734,8 @@ function rewriteChangelogFile(absPath, prefixes) {
   const newBody = renderCategoryBody(buckets, prefixes);
   const before = section.lines.slice(0, section.bodyStart).join("\n");
   const after = section.lines.slice(section.bodyEnd).join("\n");
-  const parts = [before];
-  if (newBody) parts.push(newBody);
-  if (after) parts.push(after);
-  const text = parts.filter((p, idx) => p !== "" || idx === 0).join("\n");
-  fs.writeFileSync(absPath, text.endsWith("\n") ? text : `${text}\n`, "utf8");
+  const text = joinChangelogSections(before, newBody, after);
+  fs.writeFileSync(absPath, text, "utf8");
   return true;
 }
 
