@@ -2,8 +2,6 @@
 "@chiubaka/circleci-orb": patch
 ---
 
-Fix: Stage orb helper scripts for CircleCI consumers (release manifest writer and train id helpers).
+Fix: Stage writeReleaseManifest.mjs for changesets-release-pr when create-release-manifest is enabled.
 
-- Stage writeReleaseManifest.mjs for changesets-release-pr when create-release-manifest is enabled (WRITE_RELEASE_MANIFEST_SCRIPT).
-- Stage lib/trainId.sh for github-release-train (TRAIN_ID_SCRIPT).
-- Remove unused fatal trainId source from push-promotion-tag so promotion tags work when the script is inlined without lib/ on disk.
+CircleCI consumers no longer fail with "writeReleaseManifest.mjs not found" because the orb materializes the manifest writer to /tmp and sets WRITE_RELEASE_MANIFEST_SCRIPT, matching the verify-release-manifest staging pattern.
