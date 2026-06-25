@@ -1,6 +1,17 @@
 # @chiubaka/circleci-orb
 
+## 0.20.1
+### Bug Fixes
+
+- Stage lib/trainId.sh for github-release-train and unblock push-promotion-tag in CircleCI consumers.
+
+  Stage UTC train id bash helpers to /tmp (TRAIN_ID_SCRIPT) for github-release-train, and remove an unused fatal trainId source from push-promotion-tag so promotion-tag-prefix works when orb scripts are inlined without lib/ on disk.
+
+- Stage writeReleaseManifest.mjs for changesets-release-pr when create-release-manifest is enabled.
+
+  CircleCI consumers no longer fail with "writeReleaseManifest.mjs not found" because the orb materializes the manifest writer to /tmp and sets WRITE_RELEASE_MANIFEST_SCRIPT, matching the verify-release-manifest staging pattern.
 ## 0.20.0
+
 ### Features
 
 - Add optional `include-pr-metadata` for PR continuation parameters.
@@ -12,6 +23,7 @@
 - Recognize category prefixes on changelog bullets that include Changesets commit annotations (`<shortSha>:` prefixes).
 - Trust category section headings in batch release note formatting when `rewriteChangelogCategories` has already stripped prefix tokens from changelog bullets.
 - Stage `validateReleaseManifest.mjs` for `verify-release-manifest` in CircleCI consumers so sibling `.mjs` files are not required on disk. Repos without `.releases/` manifests skip cleanly; repos with manifests validate via `VALIDATE_RELEASE_MANIFEST_SCRIPT`.
+
 ## 0.19.0
 
 ### Minor Changes
