@@ -393,11 +393,9 @@ function parseVersionBody(bodyLines, config) {
           buckets[cat].push(b);
         } else {
           const bucket = config.classifyBulletBlock(b);
-          if (bucket === null) {
-            unclassified.push(b);
-          } else {
-            buckets[bucket].push(b);
-          }
+          // rewriteChangelogCategories strips prefix tokens after placing bullets under category
+          // headings; trust the section when the headline no longer carries a prefix token.
+          buckets[bucket ?? cat].push(b);
         }
       }
     } else {

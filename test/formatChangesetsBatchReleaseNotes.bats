@@ -132,6 +132,30 @@ EOF
   rm -f "$out"
 }
 
+@test "category mode accepts bullets under category headings after rewriteChangelogCategories" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog app 1.0.0 "### Features
+- Add optional include-pr-metadata for PR continuation parameters.
+### Bug Fixes
+- Recognize category prefixes on changelog bullets that include Changesets commit annotations.
+- Stage validateReleaseManifest.mjs for verify-release-manifest in CircleCI consumers."
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Features" "$out"
+  assert_success
+  run grep -F "### Bug Fixes" "$out"
+  assert_success
+  run grep -F "include-pr-metadata" "$out"
+  assert_success
+  run grep -F "validateReleaseManifest.mjs" "$out"
+  assert_success
+  rm -f "$out"
+}
+
 @test "category mode accepts changelog-git shortSha prefixed bullets" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
