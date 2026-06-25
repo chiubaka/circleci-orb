@@ -6,14 +6,47 @@
 #   - any CHANGELOG.md path changed in the diff, or
 #   - any package.json had its top-level "version" field value change (including new files).
 #
+# Optional INCLUDE_PR_METADATA=true merges circle_pull_request and circle_pr_number for consumers
+# whose continuation pipelines need PR context (CircleCI does not propagate CIRCLE_PULL_REQUEST).
+#
 # Environment: CIRCLE_SHA1 (required), BASE_REVISION (default master), OUTPUT_PATH (default
-# /tmp/pipeline-parameters.json), SAME_BASE_RUN (default true).
+# /tmp/pipeline-parameters.json), SAME_BASE_RUN (default true), INCLUDE_PR_METADATA (default false).
 set -euo pipefail
 
 OUTPUT_PATH="${OUTPUT_PATH:-/tmp/pipeline-parameters.json}"
 BASE_REVISION="${BASE_REVISION:-master}"
 same_base_raw="${SAME_BASE_RUN:-true}"
 SAME_BASE_RUN_LOWER=$(printf '%s' "$same_base_raw" | tr '[:upper:]' '[:lower:]')
+include_pr_metadata_raw="${INCLUDE_PR_METADATA:-false}"
+INCLUDE_PR_METADATA_LOWER=$(printf '%s' "$include_pr_metadata_raw" | tr '[:upper:]' '[:lower:]')
+
+include_pr_metadata_enabled() {
+  [[ "$INCLUDE_PR_METADATA_LOWER" == "true" ]] || [[ "$include_pr_metadata_raw" == "1" ]]
+}
+
+write_pipeline_parameters() {
+  local publish_bool="$1"
+  local json
+  json=$(jq -nc --argjson flag "$publish_bool" '{"run-changesets-publish": $flag}')
+
+  if include_pr_metadata_enabled; then
+    local pull_request="${CIRCLE_PULL_REQUEST:-}"
+    local pr_number="${CIRCLE_PR_NUMBER:-}"
+    if [[ -z "$pr_number" && -n "$pull_request" ]]; then
+      pr_number="${pull_request##*/}"
+    fi
+    json=$(
+      jq -c --arg pull_request "$pull_request" --arg pr_number "$pr_number" \
+        '. + {circle_pull_request: $pull_request, circle_pr_number: $pr_number}' <<<"$json"
+    )
+  fi
+
+  if [[ -f "$OUTPUT_PATH" ]]; then
+    json=$(jq -cs '.[0] * .[1]' "$OUTPUT_PATH" <(printf '%s' "$json"))
+  fi
+
+  printf '%s\n' "$json" >"$OUTPUT_PATH"
+}
 
 : "${CIRCLE_SHA1:?CIRCLE_SHA1 is required}"
 
@@ -28,14 +61,14 @@ if ! MERGE_BASE=$(git merge-base "origin/${BASE_REVISION}" "$CIRCLE_SHA1" 2>/dev
   fi
 fi
 if ! MERGE_BASE=$(git merge-base "origin/${BASE_REVISION}" "$CIRCLE_SHA1" 2>/dev/null) || [[ -z "$MERGE_BASE" ]]; then
-  echo '{"run-changesets-publish": false}' >"$OUTPUT_PATH"
+  write_pipeline_parameters false
   echo "Unable to compute merge-base for origin/${BASE_REVISION} and ${CIRCLE_SHA1}: wrote false to ${OUTPUT_PATH}" >&2
   exit 0
 fi
 
 if [[ "$MERGE_BASE" == "$CIRCLE_SHA1" ]]; then
   if [[ "$SAME_BASE_RUN_LOWER" != "true" ]] && [[ "$same_base_raw" != "1" ]]; then
-    echo '{"run-changesets-publish": false}' >"$OUTPUT_PATH"
+    write_pipeline_parameters false
     echo "Same revision as base (SAME_BASE_RUN disallows same-base run): wrote false to ${OUTPUT_PATH}"
     exit 0
   fi
@@ -51,7 +84,7 @@ if [[ "$MERGE_BASE" == "$CIRCLE_SHA1" ]]; then
     if git rev-parse "${CIRCLE_SHA1}~1" >/dev/null 2>&1; then
       PREVIOUS_REVISION=$(git rev-parse "${CIRCLE_SHA1}~1")
     else
-      echo '{"run-changesets-publish": false}' >"$OUTPUT_PATH"
+      write_pipeline_parameters false
       echo "Unable to resolve previous revision for ${CIRCLE_SHA1}: wrote false to ${OUTPUT_PATH}" >&2
       exit 0
     fi
@@ -96,9 +129,9 @@ if [[ "$publish" != "true" ]]; then
 fi
 
 if [[ "$publish" == "true" ]]; then
-  echo '{"run-changesets-publish": true}' >"$OUTPUT_PATH"
+  write_pipeline_parameters true
 else
-  echo '{"run-changesets-publish": false}' >"$OUTPUT_PATH"
+  write_pipeline_parameters false
 fi
 
 echo "Wrote $(cat "$OUTPUT_PATH") to ${OUTPUT_PATH}"

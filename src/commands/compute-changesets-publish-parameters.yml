@@ -3,8 +3,11 @@ description: >
   from git diff against origin/<base-revision>, matching release-related paths (CHANGELOG.md or
   package.json top-level version changes). Pair with circleci/continuation continue (optional
   pipeline parameter run-changesets-publish) and/or a gated-publish job pre-step that reads the same
-  JSON. Requires git, jq, and fetch access to origin. Install jq first (for example circleci/jq
-  jq/install) when using minimal images such as cimg/base.
+  JSON. Optionally forward CIRCLE_PULL_REQUEST and CIRCLE_PR_NUMBER as continuation pipeline
+  parameters (include-pr-metadata) because setup workflows do not propagate those env vars into
+  continuation pipelines (for example Codecov PR association). Requires git, jq, and fetch access to
+  origin. Install jq first (for example circleci/jq jq/install) when using minimal images such as
+  cimg/base.
 
 parameters:
   base-revision:
@@ -19,6 +22,13 @@ parameters:
     type: boolean
     default: true
     description: When false, skip publish flag when merge-base equals CIRCLE_SHA1 (path-filtering style).
+  include-pr-metadata:
+    type: boolean
+    default: false
+    description: >
+      When true, also write circle_pull_request and circle_pr_number (empty string when unset) for
+      continuation pipeline.parameters. CIRCLE_PR_NUMBER falls back to the trailing path segment of
+      CIRCLE_PULL_REQUEST when the number env var is empty.
 
 steps:
   - run:
@@ -27,4 +37,5 @@ steps:
         BASE_REVISION: << parameters.base-revision >>
         OUTPUT_PATH: << parameters.output-path >>
         SAME_BASE_RUN: << parameters.same-base-run >>
+        INCLUDE_PR_METADATA: << parameters.include-pr-metadata >>
       command: << include(scripts/computeChangesetsPublishParameters.sh) >>
