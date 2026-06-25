@@ -18,8 +18,13 @@ parameters:
 
 steps:
   - run:
+      name: Stage release manifest validator
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageReleaseManifestValidator.sh) >>
+  - run:
       name: Verify release manifests (ADR 0038)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runVerifyReleaseManifest.sh) >>
       environment:
         VERIFY_RELEASE_MANIFEST_MODE: << parameters.verify-mode >>
+        VALIDATE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-validateReleaseManifest.mjs

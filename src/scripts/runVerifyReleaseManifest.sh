@@ -15,22 +15,35 @@ list_manifest_paths() {
   } | grep -E '^\.releases/[^/]+\.yml$' | LC_ALL=C sort -u || true
 }
 
+_resolve_validator_script() {
+  if [[ -n "${VALIDATE_RELEASE_MANIFEST_SCRIPT:-}" && -f "${VALIDATE_RELEASE_MANIFEST_SCRIPT}" ]]; then
+    printf '%s\n' "$VALIDATE_RELEASE_MANIFEST_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/validateReleaseManifest.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runVerifyReleaseManifest: set VALIDATE_RELEASE_MANIFEST_SCRIPT or keep validateReleaseManifest.mjs next to this script." >&2
+  return 1
+}
+
 run_verify_release_manifest_main() {
   local app_dir validator paths path n=0
   app_dir=${APP_DIR:-.}
   cd "$app_dir"
 
-  # shellcheck disable=SC3028
-  validator="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/validateReleaseManifest.mjs"
-  if [[ ! -f "$validator" ]]; then
-    echo "runVerifyReleaseManifest: validateReleaseManifest.mjs not found." >&2
-    exit 1
-  fi
-
   mapfile -t paths < <(list_manifest_paths | grep -v '^$' || true)
   if [[ ${#paths[@]} -eq 0 ]]; then
     echo "runVerifyReleaseManifest: no .releases/*.yml to validate; skipping."
     exit 0
+  fi
+
+  if ! validator=$(_resolve_validator_script); then
+    exit 1
   fi
 
   for path in "${paths[@]}"; do
