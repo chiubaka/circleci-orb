@@ -155,6 +155,7 @@ run_compute_script() {
   result="$(
     run_compute_script "$repo_dir" \
       CIRCLE_PULL_REQUEST='https://github.com/org/repo/pull/99' \
+      CIRCLE_PR_NUMBER='' \
       INCLUDE_PR_METADATA=true
   )"
   assert_equal "$result" '{"run-changesets-publish":false,"circle_pull_request":"https://github.com/org/repo/pull/99","circle_pr_number":"99"}'
@@ -166,7 +167,12 @@ run_compute_script() {
   git -C "$repo_dir" add README.md
   git -C "$repo_dir" commit -m "docs: add readme" >/dev/null
 
-  result="$(run_compute_script "$repo_dir" INCLUDE_PR_METADATA=true)"
+  result="$(
+    run_compute_script "$repo_dir" \
+      CIRCLE_PULL_REQUEST='' \
+      CIRCLE_PR_NUMBER='' \
+      INCLUDE_PR_METADATA=true
+  )"
   assert_equal "$result" '{"run-changesets-publish":false,"circle_pull_request":"","circle_pr_number":""}'
 }
 
