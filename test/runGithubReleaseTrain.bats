@@ -367,7 +367,7 @@ EOF
 ## 1.0.0
 - x
 EOF
-  git add . && git commit -m "changelog" && git push origin master
+  git add . && git commit -m "changelog" >/dev/null 2>&1 && git push origin master >/dev/null 2>&1
 
   run env GITHUB_TOKEN=fake UTC_DATE_OVERRIDE=2099.01.01 \
     bash "${script_dir}/runGithubReleaseTrain.sh"
@@ -399,7 +399,7 @@ EOF
 ## 1.0.0
 - x
 EOF
-  git add . && git commit -m "changelog" && git push origin master
+  git add . && git commit -m "changelog" >/dev/null 2>&1 && git push origin master >/dev/null 2>&1
 
   gh_mock="$(mock_create)"
   bindir=$(mktemp -d)

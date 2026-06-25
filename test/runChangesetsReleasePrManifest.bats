@@ -118,6 +118,7 @@ _init_git_with_origin() {
     RELEASES_DIR=.releases-source \
     node "$PROJECT_ROOT/src/scripts/writeReleaseManifest.mjs"
   assert_success
+  assert_output --partial "RELEASE_ID=2099.12.31.1"
   source_manifest=$(cat ".releases-source/2099.12.31.1.yml")
 
   rm -rf ".releases-source"
@@ -126,6 +127,7 @@ _init_git_with_origin() {
     RELEASES_DIR=.releases-staged \
     node "$staged_writer"
   assert_success
+  assert_output --partial "RELEASE_ID=2099.12.31.1"
   staged_manifest=$(cat ".releases-staged/2099.12.31.1.yml")
 
   assert_equal "$source_manifest" "$staged_manifest"
