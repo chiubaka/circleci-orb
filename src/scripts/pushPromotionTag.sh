@@ -2,9 +2,6 @@
 # Push staging- or prod- promotion tag at merge commit when prefix is set (ADR 0031). No-op when empty.
 set -euo pipefail
 
-# shellcheck disable=SC1091
-source "$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/lib/trainId.sh"
-
 remote_peeled_commit_for_tag() {
   local tag=$1 line
   line=$(git ls-remote origin "refs/tags/${tag}^{}" | head -1 || true)

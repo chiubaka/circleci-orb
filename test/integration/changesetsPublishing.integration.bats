@@ -69,4 +69,6 @@ setup() {
   assert_output --partial "Stage Chiubaka release notes formatter"
   assert_output --partial "Stage release manifest writer"
   assert_output --partial "WRITE_RELEASE_MANIFEST_SCRIPT"
+  assert_output --partial "Stage UTC train id helpers"
+  assert_output --partial "TRAIN_ID_SCRIPT"
 }

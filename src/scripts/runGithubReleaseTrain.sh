@@ -5,8 +5,23 @@
 # Optional test-only: UTC_DATE_OVERRIDE=YYYY.MM.DD fixes the calendar portion; GITHUB_RELEASE_TRAIN_KEEP_NOTES_FILE=true skips deleting the temp notes file after exit (Bats).
 set -euo pipefail
 
-# shellcheck disable=SC1091
-source "$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/lib/trainId.sh"
+_source_train_id_helpers() {
+  local train_id_script
+  if [[ -n "${TRAIN_ID_SCRIPT:-}" && -f "${TRAIN_ID_SCRIPT}" ]]; then
+    train_id_script=$TRAIN_ID_SCRIPT
+  else
+    # shellcheck disable=SC3028
+    train_id_script="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/lib/trainId.sh"
+  fi
+  if [[ ! -f "$train_id_script" ]]; then
+    echo "runGithubReleaseTrain: set TRAIN_ID_SCRIPT or keep lib/trainId.sh next to this script." >&2
+    exit 1
+  fi
+  # shellcheck disable=SC1090
+  source "$train_id_script"
+}
+
+_source_train_id_helpers
 
 pkg_at_version() {
   node -e '
