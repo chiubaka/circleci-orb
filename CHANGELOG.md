@@ -1,5 +1,17 @@
 # @chiubaka/circleci-orb
 
+## 0.20.0
+### Features
+
+- Add optional `include-pr-metadata` for PR continuation parameters.
+
+  CircleCI setup workflows do not propagate `CIRCLE_PULL_REQUEST` / `CIRCLE_PR_NUMBER` into continuation pipelines; opt in when downstream jobs (for example Codecov PR association) need that context.
+
+### Bug Fixes
+
+- Recognize category prefixes on changelog bullets that include Changesets commit annotations (`<shortSha>:` prefixes).
+- Trust category section headings in batch release note formatting when `rewriteChangelogCategories` has already stripped prefix tokens from changelog bullets.
+- Stage `validateReleaseManifest.mjs` for `verify-release-manifest` in CircleCI consumers so sibling `.mjs` files are not required on disk. Repos without `.releases/` manifests skip cleanly; repos with manifests validate via `VALIDATE_RELEASE_MANIFEST_SCRIPT`.
 ## 0.19.0
 
 ### Minor Changes
