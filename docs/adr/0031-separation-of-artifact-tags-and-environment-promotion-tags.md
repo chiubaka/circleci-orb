@@ -12,7 +12,7 @@ The system requires both artifact versioning (for example, `server-v1.2.3`) and 
 
 The problem is: how do we clearly separate artifact identity from deployment intent while maintaining a tag-based workflow?
 
-This decision works together with [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md), which defines the release manifest and phased deploy model. Artifact tags identify built artifacts; promotion tags trigger environment deploys that must read pinned versions from the manifest.
+This decision works together with [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md), which defines the release manifest (pin set) and delegates deploy ordering to the repository’s canonical deploy implementation. Artifact tags identify built artifacts; promotion tags trigger environment deploys that must read pinned versions from the manifest. Historical phased-manifest requirements appear in superseded [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md).
 
 ## Decision Drivers
 
@@ -50,7 +50,7 @@ Justification: This approach cleanly separates artifact creation from deployment
 
 - Artifact tags must never trigger production deployments
 - CI pipelines for staging/production coordinated deploys must trigger only from promotion tags (for repos following this model)
-- Promotion tags must reference a commit containing a valid release manifest ([ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md))
+- Promotion tags must reference a commit containing a valid release manifest ([ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md))
 - Code review ensures tag naming conventions are followed
 
 ## Tagging conventions
@@ -74,7 +74,7 @@ Promotion tags trigger deployments to specific environments:
 
 ### Logical release identifier
 
-The substring `YYYY.MM.DD.N` (for example, `2026.04.06.1`) is the **logical release id**. It MUST match the `release` field in the release manifest and the manifest filename `.releases/<release-id>.yml` ([ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md)). Promotion tags prepend `staging-` or `prod-` to that same identifier so staging and production promotions remain auditable and distinct while referring to one coordinated release definition.
+The substring `YYYY.MM.DD.N` (for example, `2026.04.06.1`) is the **logical release id**. It MUST match the `release` field in the release manifest and the manifest filename `.releases/<release-id>.yml` ([ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)). Promotion tags prepend `staging-` or `prod-` to that same identifier so staging and production promotions remain auditable and distinct while referring to one coordinated release definition.
 
 ### Increment (`N`) rules
 
@@ -95,10 +95,14 @@ Corresponding manifest:
 
 ### Promotion flow
 
-1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id).
+1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id). For application monorepos using Changesets release PRs, the manifest SHOULD land on the release PR branch when the train is cut (see [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)).
 2. Create a **staging** promotion tag → triggers staging deployment.
 3. Validate the release in staging.
 4. Create a **prod** promotion tag referencing the **same commit** → triggers production deployment.
+
+**Automation:** Repos MAY configure CI to push a promotion tag on release merge when an environment prefix is set (for example `staging` or `prod` on gated publish). The tag MUST reference the merge commit that contains the manifest. **Staging deploy workflows MUST NOT** push `prod-*` tags; production promotion after staging validation remains **manual** unless the repo explicitly opts into `prod` on merge.
+
+**Dev / default branch:** Continuous deploys from the default branch are **out of band** from promotion trains and MUST NOT use `prod-*` promotion tags or artifact tags as production triggers.
 
 ### Invariants
 
@@ -154,6 +158,7 @@ Application versioning and changelog intent remain driven by Changesets where ap
 
 ## Related ADRs
 
+- [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — canonical release train identifier and GitHub Releases alignment
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — application versioning and user-facing release intent
 - [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) — which artifacts are versioned
-- [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — release manifest format, deploy phases, and coordination rules
+- [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — release manifest format (pin sets) and coordination rules; superseded [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) for historical phased manifests
