@@ -1,6 +1,21 @@
 # @chiubaka/circleci-orb
 
+## 0.21.0
+
+### Features
+
+- Add mint-github-token command to export GITHUB_TOKEN from a GitHub App or an existing PAT.
+
+  When `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, and `GITHUB_APP_INSTALLATION_ID` are set, mints a short-lived installation access token and exports it as `GITHUB_TOKEN` and `GH_TOKEN` (including via `BASH_ENV` for later steps). When those app variables are unset and `GITHUB_TOKEN` is already provided, passes it through unchanged.
+
+### Bug Fixes
+
+- Emit markdownlint-compliant blank lines around changelog headings after category rewrite.
+
+  `rewriteChangelogCategories` now joins rewritten version blocks with blank lines before and after `##` and `###` headings so generated `CHANGELOG.md` files pass `markdown/blanks-around-headings` (MD022) under `@chiubaka/eslint-config`.
+
 ## 0.20.1
+
 ### Bug Fixes
 
 - Stage lib/trainId.sh for github-release-train and unblock push-promotion-tag in CircleCI consumers.
@@ -10,6 +25,7 @@
 - Stage writeReleaseManifest.mjs for changesets-release-pr when create-release-manifest is enabled.
 
   CircleCI consumers no longer fail with "writeReleaseManifest.mjs not found" because the orb materializes the manifest writer to /tmp and sets WRITE_RELEASE_MANIFEST_SCRIPT, matching the verify-release-manifest staging pattern.
+
 ## 0.20.0
 
 ### Features
