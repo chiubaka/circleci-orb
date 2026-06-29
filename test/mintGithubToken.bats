@@ -3,6 +3,11 @@ setup() {
   load "helpers/setup"
   _setup
   unset GITHUB_TOKEN GH_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  # CircleCI sets BASH_ENV globally; export_github_token appends token exports there.
+  # Isolate it so later bats files are not polluted when bash sources BASH_ENV.
+  _ORIGINAL_BASH_ENV="${BASH_ENV:-}"
+  BASH_ENV="${BATS_TEST_TMPDIR}/mint_github_token_bash_env"
+  : >"$BASH_ENV"
   MINT_GITHUB_TOKEN_SOURCE_ONLY=true
   # shellcheck disable=SC1091
   source "$PROJECT_ROOT/src/scripts/mintGithubToken.sh"
@@ -22,6 +27,12 @@ setup() {
 
 teardown() {
   unset GITHUB_TOKEN GH_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  if [[ -n "${_ORIGINAL_BASH_ENV:-}" ]]; then
+    BASH_ENV="$_ORIGINAL_BASH_ENV"
+  else
+    unset BASH_ENV
+  fi
+  unset _ORIGINAL_BASH_ENV
 }
 
 @test "resolve_github_token returns provided GITHUB_TOKEN when app credentials are unset" {
