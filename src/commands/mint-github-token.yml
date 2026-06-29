@@ -1,0 +1,23 @@
+description: >
+  Export GITHUB_TOKEN (and GH_TOKEN) for downstream orb steps. When GITHUB_APP_ID,
+  GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID are set in the environment,
+  mints a short-lived GitHub App installation access token. When none of those are set
+  but GITHUB_TOKEN is already provided (for example from a CircleCI context PAT), uses
+  that value unchanged. Appends exports to BASH_ENV when present so later steps in the
+  same job inherit the token. Run before changesets-release-pr, github-release-train,
+  push-promotion-tag, or setup-npm-registry-auth when using a client-owned GitHub App.
+
+parameters:
+  github-api-url:
+    type: string
+    default: "https://api.github.com"
+    description: >
+      GitHub REST API base URL. Override for GitHub Enterprise Server; github.com
+      installations use the default.
+
+steps:
+  - run:
+      name: Mint or resolve GitHub token
+      command: << include(scripts/mintGithubToken.sh) >>
+      environment:
+        GITHUB_API_URL: << parameters.github-api-url >>
