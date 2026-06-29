@@ -107,6 +107,46 @@ EOF
   assert_failure
 }
 
+@test "rewriter emits markdownlint MD022 blanks around headings" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p pkg
+  cat >pkg/CHANGELOG.md <<'EOF'
+# @t/pkg
+
+## 2.0.0
+### Patch Changes
+- Fix: Correct spacing
+
+## 1.0.0
+
+### Patch Changes
+
+- Fix: Older release
+EOF
+
+  run node "$REWRITER" pkg/CHANGELOG.md
+  assert_success
+
+  run python3 - "$BATS_TEST_TMPDIR/pkg/CHANGELOG.md" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+lines = open(path, encoding="utf-8").read().splitlines()
+heading = re.compile(r"^#{1,6}\s")
+for index, line in enumerate(lines):
+    if not heading.match(line):
+        continue
+    if index > 0 and lines[index - 1].strip() != "":
+        print(f"missing blank before heading at line {index + 1}: {line!r}", file=sys.stderr)
+        sys.exit(1)
+    if index + 1 < len(lines) and lines[index + 1].strip() != "":
+        print(f"missing blank after heading at line {index + 1}: {line!r}", file=sys.stderr)
+        sys.exit(1)
+PY
+  assert_success
+}
+
 @test "embedded rewriter in stage script matches rewriteChangelogCategories.mjs" {
   local embedded expected
   embedded="$(python3 -c "
