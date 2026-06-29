@@ -38,6 +38,8 @@ This ADR is the **frontend complement** to [ADR 0007](0007-vertical-feature-modu
 
 **Portability:** Trees use `src/` as a shorthand; in a monorepo the same layout may live under `packages/<app>/src/` (or similar). Exact package names and ESLint boundary plugins are **repository-specific**; this ADR records **invariants**, not one repo’s config.
 
+**Scope:** The responsibility-area layout, layer meanings, **Rule 6**, **`lib/`** discipline, and the **Placement decision procedure** below apply to **all frontend-style host modules**—not only a primary web client. That includes embedded admin or extension UIs, plugin host modules, and other non-primary frontend packages that adopt vertical feature modules per [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md). Such hosts use the same per-module layer vocabulary (including optional module **`lib/`**) even when they omit a top-level **`app/`** composition subtree or ship as a secondary surface beside a main client.
+
 ## Decision Drivers
 
 - Clear ownership and maintainability at scale
@@ -157,6 +159,7 @@ src/
     domain/
     application/
     infrastructure/
+    lib/                       # optional; see module lib/ charter below
     presentation/
     index.ts
 ```
@@ -175,6 +178,23 @@ When `infrastructure/` grows multiple adapter families, use **`infrastructure/<c
 - **`presentation/`** — screens, components, hooks, layouts, providers, context wiring, and interaction state
 - **`app/`** — route registration, top-level layout composition, top-level navigation, global providers, and genuinely cross-domain screen composition
 - **`core/`** — foundational cross-cutting code not owned by any responsibility area; same **high bar** as `core` in ADR 0007—not a default dump
+- **`lib/`** (module-scoped) — optional per responsibility area; see **Module `lib/` slice** below
+
+### Module `lib/` slice (per feature module)
+
+A responsibility area **may** define **`lib/`** at the module root (alongside `domain/`, `application/`, …) when it needs **dependency-free, framework-free, domain-agnostic** technical helpers that:
+
+- are used by **more than one** of the module’s own layers (`domain/`, `application/`, `infrastructure/`, `presentation/`), and
+- do **not** meet the **`core`** bar (not yet—or not ever—shared across modules).
+
+**Charter:**
+
+- **`lib/`** holds **technical** helpers only: coercion, structural parsing/decoding of **plain wire shapes** (no adapter/SDK types), small collection/string/date utilities scoped to the module, and similar **domain-agnostic** code.
+- **`lib/` must not** import from `domain/`, `application/`, `infrastructure/`, or `presentation/`. **Any** layer may import from **`lib/`** through **`lib/index.ts`** (a **required** first-class slice barrel per [ADR 0008](0008-barrel-files-public-api-boundaries.md)).
+- **`lib/` is not** a substitute for `domain/` selectors/predicates/policies, **`infrastructure/`** mappers that touch adapter types, or **`core/lib`** for cross-module reuse.
+- Prefer **role-named** subdirectories under `lib/` (for example `lib/coercion/`, `lib/relations/`) over flat catch-all files.
+
+The same **`lib/`** slice rules apply in backend feature modules per [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md).
 
 ### `presentation/` internal shape (illustrative)
 
@@ -246,11 +266,13 @@ import { InternalUserRow } from "~/users/presentation/components/InternalUserRow
 
 **Cross-package** consumption uses **`@scope/pkg`** public APIs, not `~/` paths into another package’s filesystem.
 
-### Rule 6: Utilities should be named by role, not hidden behind generic `utils`
+### Rule 6: Utilities should be named by role, not hidden behind generic `utils` or catch-all file names
 
-- Cross-cutting technical utilities belong in `core/lib` (only when they meet the `core` bar)
-- Domain-meaningful pure helpers belong in the relevant module and should be named by role
-- Avoid generic `utils` directories by default; keep single-use helpers local until real reuse exists
+- Cross-cutting technical utilities belong in **`core/lib`** only when they meet the **`core`** bar
+- **Module-scoped** cross-layer technical utilities belong in that module’s **`lib/`** when they meet the **Module `lib/` slice** charter above—not in `domain/` as a grab-bag
+- Domain-meaningful pure helpers belong in the relevant module’s **`domain/`** and should be named by role (`selectors/`, `predicates/`, `policies/`, …)
+- Avoid generic **`utils/`** directories **and** generic catch-all **file** names such as **`values.ts`**, **`helpers.ts`**, **`misc.ts`**, or **`common.ts`** at any layer; split by role or colocate single-use helpers privately until real reuse exists
+- **`domain/`** must not become a dependency-free junk drawer for generic coercion or wire-shape helpers—use **`lib/`** (module-scoped) or **`core/lib`** (cross-module) instead
 
 Examples:
 
@@ -260,6 +282,13 @@ users/domain/
     getDisplayName.ts
   predicates/
     isInvitableUser.ts
+
+locations/lib/
+  coercion/
+    toStringOrUndefined.ts
+    toRecord.ts
+  relations/
+    extractRelatedId.ts
 
 invoices/domain/
   policies/
@@ -272,6 +301,8 @@ Prefer that over:
 
 ```text
 users/domain/utils/userUtils.ts
+users/domain/helpers.ts
+users/domain/values.ts
 invoices/domain/utils/invoiceUtils.ts
 ```
 
@@ -280,6 +311,39 @@ invoices/domain/utils/invoiceUtils.ts
 - Responsibility areas expose application behavior to React through provider/context wiring where that pattern fits
 - Prefer a high-level hook such as `useUsers`, `useInvoices`, or `useAuth` as the primary presentation language
 - Narrower hooks may wrap the high-level hook when useful
+
+### Placement decision procedure (pure helpers and decoders)
+
+Use this procedure to pick **exactly one** home. Apply it inside **every** frontend-style host module in scope (see **Scope** above) and in backend feature modules per [ADR 0007](0007-vertical-feature-modules-hexagonal-slices-and-packages.md).
+
+1. **Domain-meaningful pure logic?** — selector, predicate, policy, value-object operation, invariant, or entity behavior tied to the module’s vocabulary → **`domain/`**, in a **role-named** path (for example `domain/selectors/getComparisonOptionKey.ts`, `domain/policies/canArchiveInvoice.ts`). Never a generic `helpers.ts` / `values.ts`.
+
+2. **Adapter or wire mapping with adapter/SDK/I/O concerns?** — DTO mappers, SDK type transforms, HTTP envelope parsing, persistence row mapping → **`infrastructure/`** (in the appropriate `<category>/` subtree with category barrels).
+
+3. **Pure vendor/wire-shape decoder (edge case)?**
+   - Touches **adapter/SDK types**, performs I/O, or is only needed when talking to an external system → **`infrastructure/`**.
+   - **Dependency-free** structural decode/normalization of a plain wire shape (no adapter imports), used by **multiple layers** including **`domain/`**, and **not** domain vocabulary itself → module **`lib/`** (role-named path).
+   - **`domain/`** must depend on it **and** the logic encodes **domain normalization or comparison rules** for a value object or entity (not merely generic shape extraction) → **`domain/`** in a role-named path (or **`core`** / shared domain package when cross-module—same **`core`** bar as ADR 0007).
+
+4. **Generic, domain-agnostic, dependency-free technical helper?**
+   - Used by **one layer only** → keep **private** to that layer until a second layer needs it.
+   - Used by **two or more layers within one module** → module **`lib/`**.
+   - Used by **multiple modules** → **`core/lib`** (only if the **`core`** bar is met).
+
+5. **Presentation-only display formatting?** — label copy, JSX-oriented formatting, or UI mapping with no domain rule → **`presentation/`**. If the mapping is a **stable domain display rule** (for example enum → canonical display label used by multiple layers), treat it as a **selector** in **`domain/`**.
+
+**Worked examples** (illustrative names; each has exactly one home):
+
+| Helper                                                                       | Home                                                                                                                                                                                 | Why                                                                                                                |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `toRecord`, `toStringOrUndefined`                                            | module **`lib/coercion/`** (or **`core/lib/coercion/`** if shared across modules)                                                                                                    | Generic coercion; domain-agnostic; dependency-free                                                                 |
+| `extractRelatedId`                                                           | module **`lib/relations/`**                                                                                                                                                          | Pure relation-shape decode; no adapter types; consumed by **`domain/`** and at least one other layer               |
+| Geometry / GeoJSON parser **`domain/`** depends on for coordinate comparison | **`domain/`** (role-named, e.g. `domain/geometry/parseGeoJsonCoordinates.ts`) when normalization is domain rules; module **`lib/`** when it is only dependency-free shape extraction | **`domain/`** when the parser encodes module geometric vocabulary; **`lib/`** when it is generic structural decode |
+| `formatCoordinates`                                                          | **`domain/`** (value-object render/selector)                                                                                                                                         | Domain-meaningful formatting of a value object                                                                     |
+| `getComparisonOptionKey`                                                     | **`domain/selectors/`**                                                                                                                                                              | Selector                                                                                                           |
+| Enum → display label used as a domain rule                                   | **`domain/selectors/`**                                                                                                                                                              | Stable domain display selector                                                                                     |
+| Enum → label only for one screen’s JSX                                       | **`presentation/`**                                                                                                                                                                  | Presentation-only                                                                                                  |
+| Wire enum → domain enum                                                      | **`infrastructure/`** mapper                                                                                                                                                         | Adapter/wire mapping                                                                                               |
 
 ## Complete example
 
@@ -742,17 +806,19 @@ They should remain domain-agnostic; a domain-specific component such as `Invoice
 When placing new code, ask in order:
 
 1. Is this fundamentally owned by a single responsibility area? → place it in that module
-2. Is this primarily thin composition across several modules? → place it in `app/`
+2. Is this primarily thin composition across several modules? → place it in `app/` (when this host has an `app/` subtree)
 3. Is this cross-domain concern deep enough to have its own concepts and lifecycle? → new top-level module
 4. Is this reusable presentation from another module? → import only through that module’s **public** barrel (or documented public surface)
-5. Is this generic technical functionality with no domain ownership? → consider `core/lib` or `core/presentation` only if the **`core` bar** is met
+5. Is this a pure helper or decoder? → run the **Placement decision procedure** above (exactly one bucket)
+6. Is this generic technical functionality with no domain ownership shared across modules? → **`core/lib`** or **`core/presentation`** only if the **`core` bar** is met
 
 Principles:
 
 - Implementation ownership follows **primary reason to change**
 - Route visibility **alone** does not determine implementation ownership
 - `app/` is a composition layer, not a second feature layer
-- `core/` is foundational, not a dumping ground
+- `core/` is foundational, not a dumping ground; module **`lib/`** is for cross-layer helpers within one module, not a second `core`
+- **`domain/`** is not a grab-bag for generic helpers—use module **`lib/`** or **`core/lib`**
 - Public module exports are part of the architecture, not just import ergonomics
 
 ## More Information

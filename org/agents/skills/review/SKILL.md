@@ -48,6 +48,7 @@ Run by default after any non-trivial code change and **before** you tell the use
 - [ ] Keep skill scope narrow; avoid restating broad org conventions when cross-referencing is sufficient.
 - [ ] Run guidance sync scripts after org-level guidance or skill changes.
 - [ ] On repositories with Changesets, when the PR includes **releasable** work (behavior, APIs, orb/scripts, publishable configs), confirm release notes and semver bumps are expressed via a **new or updated** `.changeset/*.md` entry, **not** by editing `package.json` `version` or `CHANGELOG.md` directly, unless a maintainer asked for a hotfix to automation itself (see `org/agents/skills/changesets-hygiene/SKILL.md`). **Skip** this check when the change is **ADRs or agent guidance only** (no changeset expected per that skill).
+- [ ] When reviewing a `.changeset/*.md` entry, confirm the summary follows `org/agents/skills/changeset/SKILL.md`: **category prefix** on the headline, **voice** matched to monorepo type (technical for library packages, product-oriented for deployable artifacts), and semver in frontmatter independent of category.
 
 ## Style and naming
 

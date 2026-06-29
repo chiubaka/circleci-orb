@@ -18,6 +18,7 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Keep domain and application code free from framework/container wiring except at explicit boundaries.
 - When composition grows, prefer named steps or sectioned helpers so wiring remains scannable.
 - Choose feature layers deliberately (`domain` / `application` / `infrastructure`) and align names/options with neighboring code.
+- For pure helpers and decoders inside a feature module, use the **Placement decision procedure** in `org/docs/adr/0016-frontend-responsibility-areas-and-layered-boundaries.md` (module **`lib/`** for cross-layer domain-agnostic helpers; role-named **`domain/`** for selectors/predicates/policies; **`infrastructure/`** for adapter/wire mappers). Do not use generic catch-all names (`helpers.ts`, `values.ts`, `utils/`).
 - When shared infrastructure is concrete and vendor-specific, prefer `infrastructure/<vendor>` over generic names such as `persistence`; do not imply an abstraction that the code does not actually provide.
 - Default to classes for orchestration-heavy or domain-driven behavior; keep class-specific helpers private.
 - Prefer module-level functions for pure transformations and interfaces only when substitutability is real.
@@ -53,7 +54,7 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 
 - When a repository uses **Atlassian Changesets** (a `.changeset/` config and `@changesets/cli` in the workspace), **do not** hand-edit the root or package `version` fields in `package.json` to release user-facing changes, and **do not** hand-edit `CHANGELOG.md` to add release notes for those changes. Release automation applies those updates when maintainers run `changeset version` (or the organization’s release pipeline does).
 - Use **`pnpm changeset` / `changeset add`**, or add a new tracked markdown file under **`.changeset/`** with the correct `patch` / `minor` / `major` frontmatter, so the intended semver bump and changelog line are generated at release time.
-- Follow `org/agents/skills/changesets-hygiene/SKILL.md` when introducing or changing releaseable work.
+- Follow `org/agents/skills/changesets-hygiene/SKILL.md` when introducing or changing releasable work, and `org/agents/skills/changeset/SKILL.md` when authoring `.changeset/*.md` summaries (required category prefix, voice by monorepo type).
 - **Exceptions — no Changeset:** Do **not** add a `.changeset/` entry for **documentation-only** work that does not alter shipped package behavior, including **new or updated ADRs** (`**/docs/adr/**/*.md`, `org/docs/adr/**/*.md`) and **agent or contributor guidance** (for example `AGENTS.md`, `org/agents/AGENTS.org.md`, `REVIEW-CHECKLIST.md`, `org/agents/skills/**/*.md`, `.agents/skills/**`, Cursor rules/skills mirroring those). Ship those edits without a semver bump driven by Changesets unless the repository owner explicitly asks to version a doc-only policy as a patch.
 
 ## Org subtree safety

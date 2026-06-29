@@ -95,7 +95,7 @@ Corresponding manifest:
 
 ### Promotion flow
 
-1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id). For application monorepos using Changesets release PRs, the manifest SHOULD land on the release PR branch when the train is cut (see [ADR 0038](0038-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)).
+1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id). For application monorepos using Changesets release PRs, the manifest SHOULD land on the release PR branch when the train is cut (see [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)).
 2. Create a **staging** promotion tag → triggers staging deployment.
 3. Validate the release in staging.
 4. Create a **prod** promotion tag referencing the **same commit** → triggers production deployment.

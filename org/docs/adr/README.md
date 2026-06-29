@@ -51,6 +51,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0037-domain-temporal-values-as-canonical-iso-strings.md`
 - `0038-release-train-identifiers-and-github-releases.md`
 - `0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md`
+- `0040-standardize-on-playwright-for-web-end-to-end-testing.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

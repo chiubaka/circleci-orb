@@ -48,7 +48,7 @@ Justification: The manifest stays a lightweight **bill of materials** for the tr
 ### Repository scope
 
 - **Application deployment monorepos** that coordinate multi-deployable promotion trains SHOULD adopt `.releases/` manifests (opt-in via automation such as the Chiubaka CircleCI orb `create-release-manifest` parameter).
-- **Library-only monorepos** following [ADR 0024](0024-use-changesets-for-library-monorepos.md) do **not** require `.releases/`; they MAY use [ADR 0037](0037-release-train-identifiers-and-github-releases.md) GitHub Releases without manifests.
+- **Library-only monorepos** following [ADR 0024](0024-use-changesets-for-library-monorepos.md) do **not** require `.releases/`; they MAY use [ADR 0038](0038-release-train-identifiers-and-github-releases.md) GitHub Releases without manifests.
 
 ### Confirmation
 

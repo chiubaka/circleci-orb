@@ -46,9 +46,10 @@ This ADR **supersedes** [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.m
 
 Each **feature module** is a directory tree with:
 
-- **`domain/`** — entities, value objects, invariants, and **pure** operations on them where appropriate. No orchestration of external systems; no imports from `infrastructure/`.
+- **`domain/`** — entities, value objects, invariants, and **pure domain-meaningful** operations on them (selectors, predicates, policies, value-object operations)—not generic technical helpers, vendor-shape decoders, or catch-all grab-bags. Use the **pure-helper placement procedure** in [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md) (**Placement decision procedure**) when placement is unclear. No orchestration of external systems; no imports from `infrastructure/`.
 - **`application/`** — use cases and workflows that **orchestrate** domain constructs and **ports** (interfaces / abstractions implemented elsewhere). Concrete **application services** live here when they compose only domain + these abstractions—not concrete vendor types.
 - **`infrastructure/`** — **implementations** of `application/` contracts (and adapter-specific types). Organize with **one subdirectory per implementation category**. **Vendor** is one axis (e.g. `openAi/`, `drizzle/`); other categories include **non-vendor** buckets such as `stub/`, in-memory fakes, or `dev/`—whatever keeps the tree honest and reviewable.
+- **`lib/`** (optional per feature module) — **dependency-free, framework-free, domain-agnostic** technical helpers used by **more than one** of the module’s own layers that do **not** meet the **`core`** bar. **`lib/` must not** import from `domain/`, `application/`, `infrastructure/`, or `presentation/` (when present). **Any** layer may import from the **`lib/`** barrel. When present, **`lib/index.ts`** is a **required** first-class slice barrel per [ADR 0008](0008-barrel-files-public-api-boundaries.md). Promote helpers to **`core/lib`** only when genuinely shared across modules. See [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md) (**Placement decision procedure**) for when code belongs here vs. `domain/`, `infrastructure/`, or `core/lib`.
 
 **Layer barrels (within each feature module):** `domain/`, `application/`, and `infrastructure/` each have their own **`index.ts`** barrel. Each barrel re-exports **only** that layer’s **public** surface; everything else in that directory tree is **private** to the layer.
 
@@ -141,5 +142,6 @@ For readers familiar with NestJS, **feature modules** here are organized in a **
 - [ADR 0001](0001-hexagonal-architecture-with-ddd-naming.md) — **superseded** by this ADR for layout; retained for history and for the original DDD naming rationale.
 - [ADR 0005](0005-composition-roots-and-wiring-boundaries.md) — composition roots at **edges**; applies to server host apps wiring backend packages to HTTP adapters.
 - [ADR 0006](0006-consistency-and-extension-for-new-features.md) — extend features by **matching idioms** within this structure unless an exception is documented.
-- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrel files as **public API** at package, feature, layer, and optional nested scopes.
+- [ADR 0008](0008-barrel-files-public-api-boundaries.md) — barrel files as **public API** at package, feature, layer, **`lib/`**, and optional nested scopes.
+- [ADR 0016](0016-frontend-responsibility-areas-and-layered-boundaries.md) — frontend responsibility areas; **module `lib/`** placement procedure for pure helpers (also referenced from backend modules when placement is unclear).
 - Repository-local examples: `org/docs/adr/examples/feature-module-layout-example.md` and `org/docs/adr/examples/composition-root-example.md`.
