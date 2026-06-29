@@ -17,6 +17,7 @@ setup() {
     count_set_github_app_credentials \
     build_github_app_jwt \
     mint_github_app_installation_token \
+    parse_installation_token_from_response \
     export_github_token \
     resolve_github_token
 
@@ -33,6 +34,18 @@ teardown() {
     unset BASH_ENV
   fi
   unset _ORIGINAL_BASH_ENV
+}
+
+@test "parse_installation_token_from_response extracts token from GitHub JSON" {
+  run parse_installation_token_from_response '{"token":"ghs_minted_test_token","expires_at":"2099-01-01T00:00:00Z"}'
+  assert_success
+  assert_output "ghs_minted_test_token"
+}
+
+@test "parse_installation_token_from_response fails when token is missing" {
+  run parse_installation_token_from_response '{"expires_at":"2099-01-01T00:00:00Z"}'
+  assert_failure
+  assert_output --partial "did not include an installation token"
 }
 
 @test "resolve_github_token returns provided GITHUB_TOKEN when app credentials are unset" {

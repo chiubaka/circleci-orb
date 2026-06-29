@@ -47,11 +47,23 @@ build_github_app_jwt() {
   payload_b64=$(printf '%s' "$payload" | base64url_encode)
   unsigned="${header_b64}.${payload_b64}"
 
-  key_file=$(mktemp)
-  normalize_app_private_key "$private_key_pem" >"$key_file"
-  signature=$(printf '%s' "$unsigned" | openssl dgst -sha256 -sign "$key_file" -binary | base64url_encode)
-  rm -f "$key_file"
+  signature=$(
+    key_file=$(mktemp)
+    trap 'rm -f "$key_file"' EXIT
+    normalize_app_private_key "$private_key_pem" >"$key_file"
+    printf '%s' "$unsigned" | openssl dgst -sha256 -sign "$key_file" -binary | base64url_encode
+  )
   printf '%s.%s' "$unsigned" "$signature"
+}
+
+parse_installation_token_from_response() {
+  local response=$1
+  if [[ "$response" =~ \"token\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+    return 0
+  fi
+  echo "mintGithubToken: GitHub API response did not include an installation token." >&2
+  return 1
 }
 
 mint_github_app_installation_token() {
@@ -68,7 +80,7 @@ mint_github_app_installation_token() {
       -H "X-GitHub-Api-Version: 2022-11-28" \
       "${github_api_url%/}/app/installations/${installation_id}/access_tokens"
   )
-  token=$(printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
+  token=$(parse_installation_token_from_response "$response") || exit 1
   if [[ -z "$token" ]]; then
     echo "mintGithubToken: GitHub API returned an empty installation token." >&2
     exit 1
