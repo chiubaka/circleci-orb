@@ -3,7 +3,7 @@ description: >
   release/<primary-branch>, push, and open or update one GitHub PR into the default branch via gh.
   If changeset version does not change any package.json (e.g. empty or verification-only changesets),
   exits successfully without opening a PR. Requires GITHUB_TOKEN (contents, pull requests; push to
-  release/*). Install gh first (see job) or use an image that includes gh.
+  release/*) or mint one first with mint-github-token from a client-owned GitHub App. Install gh first (see job) or use an image that includes gh.
 
 parameters:
   app-dir:

@@ -1,0 +1,23 @@
+description: >
+  Mint a GitHub App installation token in CI before release automation. Store
+  GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID in a CircleCI
+  context (client-owned app). For PAT-based auth instead, provide GITHUB_TOKEN in the
+  context and omit the app variables.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.20.1
+
+  workflows:
+    release-pr:
+      jobs:
+        - chiubaka/changesets-release-pr:
+            context:
+              - github-release-app
+            pre-steps:
+              - chiubaka/mint-github-token
+            primary-branch: main
+            filters:
+              branches:
+                only: main
