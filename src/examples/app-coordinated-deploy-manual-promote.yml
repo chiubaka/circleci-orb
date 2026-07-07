@@ -40,9 +40,16 @@ usage:
 
     promote-prod:
       jobs:
+        - promote-prod-approval:
+            type: approval
+            filters:
+              branches:
+                only: main
         - chiubaka/promote-prod-release:
             context: [github]
             primary-branch: main
+            requires:
+              - promote-prod-approval
             filters:
               branches:
                 only: main

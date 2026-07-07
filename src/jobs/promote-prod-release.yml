@@ -25,6 +25,10 @@ parameters:
   release-id:
     type: string
     default: ""
+  target-ref:
+    type: string
+    default: "<< pipeline.git.revision >>"
+    description: Commit to finalize and tag (defaults to pipeline revision).
   resource-class:
     default: medium
     enum:
@@ -48,3 +52,4 @@ steps:
       create-github-release: << parameters.create-github-release >>
       on-existing-tag: << parameters.on-existing-tag >>
       release-id: << parameters.release-id >>
+      target-ref: << parameters.target-ref >>

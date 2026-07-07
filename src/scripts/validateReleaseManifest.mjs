@@ -37,7 +37,7 @@ function parsePinOnlyYaml(text, filePath, allowedTopKeys) {
     const line = raw.replace(/\s+#.*$/, "").trimEnd();
     if (!line.trim() || line.trim().startsWith("#")) continue;
 
-    if (/^\S/.test(line) && !line.startsWith("artifacts:")) {
+    if (/^\S/.test(line)) {
       const match = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/);
       if (!match) fail(`${filePath}:${i + 1}: expected top-level key: value`);
       const key = match[1];
@@ -56,17 +56,11 @@ function parsePinOnlyYaml(text, filePath, allowedTopKeys) {
         if (value) {
           fail(`${filePath}:${i + 1}: artifacts must be a mapping, not inline value`);
         }
+        doc.artifacts ??= {};
       } else {
         inArtifacts = false;
         doc[key] = unquoteYamlScalar(value);
       }
-      continue;
-    }
-
-    if (line.startsWith("artifacts:")) {
-      inArtifacts = true;
-      seenTop.add("artifacts");
-      doc.artifacts ??= {};
       continue;
     }
 

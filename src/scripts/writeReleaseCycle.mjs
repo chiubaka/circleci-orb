@@ -203,13 +203,12 @@ function main() {
   const releasesDir = process.env.RELEASES_DIR ?? ".releases";
   const dateStr = utcCalendarDateStr(process.env.UTC_DATE_OVERRIDE);
   const timestamp = utcIsoTimestamp(process.env.UTC_TIMESTAMP_OVERRIDE);
-  const lsRemote = gitLsRemoteTags();
 
   const plan = resolveCutPlan({
     releasesDir,
     prefix,
     dateStr,
-    lsRemoteText: lsRemote,
+    getLsRemoteText: gitLsRemoteTags,
   });
 
   const artifacts = {};
@@ -223,7 +222,7 @@ function main() {
   fs.mkdirSync(rcDir, { recursive: true });
 
   if (plan.isNewCycle) {
-    const predecessorCycle = resolveLatestProdCycleId(lsRemote);
+    const predecessorCycle = resolveLatestProdCycleId(gitLsRemoteTags());
     fs.writeFileSync(
       path.join(cycleDir, "cycle.yml"),
       renderCycleYml(plan.cycleId, timestamp, predecessorCycle),

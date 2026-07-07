@@ -7,7 +7,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { parseYamlScalar, utcIsoTimestamp } from "./lib/releaseCycle.mjs";
+import {
+  hasPromotedAt,
+  parseYamlScalar,
+  utcIsoTimestamp,
+} from "./lib/releaseCycle.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,18 +42,6 @@ function main() {
   const predecessorCycle = parseYamlScalar("predecessorCycle", text);
   if (!release) fail(`${cycleYml}: missing release field`);
 
-  const promotedAt = utcIsoTimestamp(process.env.UTC_TIMESTAMP_OVERRIDE);
-  const lines = [
-    `release: ${yamlQuote(release)}`,
-    `openedAt: ${yamlQuote(openedAt)}`,
-    `promotedAt: ${yamlQuote(promotedAt)}`,
-  ];
-  if (predecessorCycle) {
-    lines.splice(2, 0, `predecessorCycle: ${yamlQuote(predecessorCycle)}`);
-  }
-  lines.push("");
-  fs.writeFileSync(cycleYml, lines.join("\n"), "utf8");
-
   const rollupScript =
     process.env.ROLLUP_RELEASE_NOTES_SCRIPT ??
     path.join(SCRIPT_DIR, "rollupReleaseNotes.mjs");
@@ -57,8 +49,26 @@ function main() {
     encoding: "utf8",
   });
   if (result.status !== 0) {
+    if (result.error) process.stderr.write(`${result.error.message}\n`);
     process.stderr.write(result.stderr ?? "");
     process.exit(result.status ?? 1);
+  }
+
+  const alreadyPromoted = hasPromotedAt(text);
+  const promotedAt = alreadyPromoted
+    ? parseYamlScalar("promotedAt", text)
+    : utcIsoTimestamp(process.env.UTC_TIMESTAMP_OVERRIDE);
+  if (!alreadyPromoted) {
+    const lines = [
+      `release: ${yamlQuote(release)}`,
+      `openedAt: ${yamlQuote(openedAt)}`,
+      `promotedAt: ${yamlQuote(promotedAt)}`,
+    ];
+    if (predecessorCycle) {
+      lines.splice(2, 0, `predecessorCycle: ${yamlQuote(predecessorCycle)}`);
+    }
+    lines.push("");
+    fs.writeFileSync(cycleYml, lines.join("\n"), "utf8");
   }
 
   process.stdout.write(`CYCLE_YML=${cycleYml}\n`);

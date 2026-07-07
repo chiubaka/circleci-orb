@@ -43,7 +43,7 @@ read_cycle_from_commit() {
     case "$key" in
       CYCLE_ID) cycle_id=$value ;;
     esac
-  done < <(node "$resolver")
+  done < <(RELEASES_DIR="${RELEASES_DIR:-.releases}" node "$resolver")
   if [[ -z "$cycle_id" ]]; then
     return 1
   fi
@@ -75,6 +75,7 @@ run_promote_prod_release_main() {
     target_ref=HEAD
   fi
   target_sha=$(git rev-parse "${target_ref}^{commit}")
+  export TARGET_SHA="$target_sha"
 
   if ! read_cycle_from_commit; then
     echo "runPromoteProdRelease: could not determine cycle id on ${target_ref}." >&2
@@ -90,7 +91,13 @@ run_promote_prod_release_main() {
   if ! finalize_script=$(_resolve_finalize_script); then
     exit 1
   fi
-  mapfile -t _finalize_out < <(node "$finalize_script" "$cycle_dir")
+  _finalize_tmp=$(mktemp)
+  if ! node "$finalize_script" "$cycle_dir" >"$_finalize_tmp"; then
+    rm -f "$_finalize_tmp"
+    exit 1
+  fi
+  mapfile -t _finalize_out <"$_finalize_tmp"
+  rm -f "$_finalize_tmp"
   notes_path="${cycle_dir}/release-notes.md"
 
   git add "${cycle_dir}/cycle.yml" "$notes_path"
@@ -156,14 +163,14 @@ run_promote_prod_release_main() {
     exit 1
   fi
 
-  if gh release view "$CYCLE_ID" --repo "$repo_slug" >/dev/null 2>&1; then
-    echo "runPromoteProdRelease: GitHub Release ${CYCLE_ID} already exists; skipping."
+  if gh release view "$tag" --repo "$repo_slug" >/dev/null 2>&1; then
+    echo "runPromoteProdRelease: GitHub Release ${tag} already exists; skipping."
     exit 0
   fi
 
-  gh release create "$CYCLE_ID" --repo "$repo_slug" --target "$target_sha" \
+  gh release create "$tag" --repo "$repo_slug" --target "$target_sha" \
     --title "$CYCLE_ID" --notes-file "$notes_path"
-  echo "runPromoteProdRelease: created GitHub Release ${CYCLE_ID}."
+  echo "runPromoteProdRelease: created GitHub Release ${tag}."
 }
 
 if [[ "${PROMOTE_PROD_RELEASE_SOURCE_ONLY:-}" != "true" ]]; then

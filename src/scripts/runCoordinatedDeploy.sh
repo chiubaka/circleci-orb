@@ -22,6 +22,7 @@ resolve_highest_rc_index() {
 
 run_coordinated_deploy_main() {
   local app_dir manifest_path deploy_script dry_raw dry_lower releases_dir script_dir rc_index
+  local skip_raw skip_lower pnpm_bin
   script_dir=$(_script_dir)
 
   app_dir=${APP_DIR:-.}

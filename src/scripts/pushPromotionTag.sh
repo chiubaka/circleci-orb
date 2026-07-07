@@ -53,7 +53,7 @@ read_cycle_from_commit() {
       CYCLE_ID) cycle_id=$value ;;
       RC_INDEX) rc_index=$value ;;
     esac
-  done < <(node "$resolver")
+  done < <(RELEASES_DIR="${RELEASES_DIR:-.releases}" node "$resolver")
   if [[ -z "$cycle_id" || -z "$rc_index" ]]; then
     echo "pushPromotionTag: could not resolve cycle id and RC index on commit." >&2
     return 1
@@ -96,6 +96,7 @@ push_promotion_tag_main() {
     target_ref=HEAD
   fi
   target_sha=$(resolve_target_sha "$target_ref")
+  export TARGET_SHA="$target_sha"
 
   if ! read_cycle_from_commit; then
     echo "pushPromotionTag: expected .releases/<cycle-id>/rc<n>/ on merge commit." >&2

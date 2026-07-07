@@ -47,9 +47,16 @@ usage:
 
     promote-prod:
       jobs:
+        - promote-prod-approval:
+            type: approval
+            filters:
+              branches:
+                only: master
         - chiubaka/promote-prod-release:
             context: [github]
             primary-branch: master
+            requires:
+              - promote-prod-approval
             filters:
               branches:
                 only: master

@@ -15,5 +15,7 @@ cp "${script_root}/finalizeReleaseCycle.mjs" "${stage_dir}/"
 cp "${script_root}/rollupReleaseNotes.mjs" "${stage_dir}/"
 cp "${script_root}/validateReleaseCycle.mjs" "${stage_dir}/"
 cp "${script_root}/validateReleaseManifest.mjs" "${stage_dir}/"
+cp "${script_root}/formatChangesetsBatchReleaseNotes.mjs" "${stage_dir}/"
+cp "${script_root}/changesetCategoryPrefixes.mjs" "${stage_dir}/"
 
 printf '%s\n' "${stage_dir}/writeReleaseCycle.mjs"

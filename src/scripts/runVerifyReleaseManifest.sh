@@ -9,8 +9,8 @@ list_cycle_paths() {
     return
   fi
   {
-    git diff --name-only
-    git diff --name-only --cached
+    git diff --relative --name-only
+    git diff --relative --name-only --cached
     git ls-files --others --exclude-standard
   } | grep -E '^\.releases/[^/]+/' | sed -E 's#^(\.releases/[^/]+)/.*#\1#' | LC_ALL=C sort -u || true
 }

@@ -96,3 +96,32 @@ _init_git_with_origin() {
 
   assert_equal "$source_manifest" "$staged_manifest"
 }
+
+@test "formats rc notes from staged CHANGELOG.md updates" {
+  _init_git_with_origin
+  mkdir -p packages/server
+  printf '%s\n' '{"name":"@t/server","version":"1.2.3"}' >packages/server/package.json
+  cat >packages/server/CHANGELOG.md <<'EOF'
+# @t/server
+
+## 1.2.3
+
+### Patch Changes
+
+- Features: add cycle notes formatting
+EOF
+  git add packages/server
+  git commit -m "changelog" >/dev/null 2>&1
+
+  run env UTC_DATE_OVERRIDE=2099.12.31 \
+    UTC_TIMESTAMP_OVERRIDE=2099-12-31T12:00:00Z \
+    DEPLOYABLE_PACKAGES=server=packages/server \
+    RELEASE_NOTES_GROUPING=category \
+    RC_NOTES_CHANGELOG_PATHS=packages/server/CHANGELOG.md \
+    node "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs"
+  assert_success
+  run grep -F "### Features" ".releases/2099.12.31.1/rc1/notes.md"
+  assert_success
+  run grep -F "add cycle notes formatting" ".releases/2099.12.31.1/rc1/notes.md"
+  assert_success
+}

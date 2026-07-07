@@ -4,6 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import {
   maxNFromLsRemoteForDate,
   regexEscapeBasic,
@@ -69,6 +70,7 @@ export function maxCycleNFromReleasesDir(releasesDir, dateStr) {
   const prefix = `${dateStr}.`;
   for (const entry of fs.readdirSync(releasesDir, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.startsWith(prefix)) continue;
+    if (!CYCLE_ID_RE.test(entry.name)) continue;
     const nStr = entry.name.slice(prefix.length);
     const n = Number.parseInt(nStr, 10);
     if (Number.isFinite(n) && n > maxN) maxN = n;
@@ -127,7 +129,12 @@ export function resolveLatestProdCycleId(lsRemoteText) {
 /**
  * @returns {{ cycleId: string, rcIndex: number, isNewCycle: boolean }}
  */
-export function resolveCutPlan({ releasesDir, prefix, dateStr, lsRemoteText }) {
+export function resolveCutPlan({
+  releasesDir,
+  prefix,
+  dateStr,
+  getLsRemoteText,
+}) {
   const open = findOpenCycles(releasesDir);
   if (open.length > 1) {
     throw new Error(
@@ -146,6 +153,7 @@ export function resolveCutPlan({ releasesDir, prefix, dateStr, lsRemoteText }) {
     return { cycleId, rcIndex, isNewCycle: false };
   }
 
+  const lsRemoteText = getLsRemoteText();
   const cycleId = computeNextCycleId(releasesDir, prefix, dateStr, lsRemoteText);
   const cycleDir = path.join(releasesDir, cycleId);
   if (fs.existsSync(cycleDir)) {
@@ -195,6 +203,44 @@ export function resolveCycleOnCommit(releasesDir) {
     if (rcIndex < 1) continue;
     if (!best || compareCycleIds(cycleId, best.cycleId) > 0) {
       best = { cycleId, rcIndex };
+    }
+  }
+  return best;
+}
+
+function gitLsTreeDirNames(sha, treePath) {
+  try {
+    const out = execSync(`git ls-tree -d --name-only ${sha}:${treePath}`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return out
+      .split("\n")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export function resolveCycleOnCommitAtSha(releasesDir, sha) {
+  const cycleNames = gitLsTreeDirNames(sha, releasesDir).filter((name) =>
+    CYCLE_ID_RE.test(name),
+  );
+  if (cycleNames.length === 0) return null;
+
+  let best = null;
+  for (const cycleId of cycleNames) {
+    const rcNames = gitLsTreeDirNames(sha, `${releasesDir}/${cycleId}`).filter(
+      (name) => /^rc[0-9]+$/.test(name),
+    );
+    let maxRc = 0;
+    for (const rcName of rcNames) {
+      maxRc = Math.max(maxRc, Number.parseInt(rcName.slice(2), 10));
+    }
+    if (maxRc < 1) continue;
+    if (!best || compareCycleIds(cycleId, best.cycleId) > 0) {
+      best = { cycleId, rcIndex: maxRc };
     }
   }
   return best;
