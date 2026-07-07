@@ -81,6 +81,28 @@ setup() {
   assert_success
 }
 
+@test "isEmptyChangeset recognizes changeset add --empty format" {
+  run node -e "
+    import { isEmptyChangeset, validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n---\\n';
+    if (!isEmptyChangeset(content)) process.exit(1);
+    const r = validateChangesetSummaryCategory(content);
+    if (!r.ok || !r.empty) process.exit(2);
+  "
+  assert_success
+}
+
+@test "validateChangesetSummaryCategory still rejects non-empty changeset without headline" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('no summary headline')) process.exit(2);
+  "
+  assert_success
+}
+
 @test "classifyChangelogBullet strips changelog-git shortSha prefix" {
   run node -e "
     import {

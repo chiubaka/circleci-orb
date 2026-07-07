@@ -38,6 +38,18 @@ EOF
   assert_success
 }
 
+@test "verifyChangesetCategoryPrefixes passes empty changeset from changeset add --empty" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p .changeset
+  cat >.changeset/empty.md <<'EOF'
+---
+---
+EOF
+
+  run node "$VERIFY" .changeset/empty.md
+  assert_success
+}
+
 @test "verifyChangesetCategoryPrefixes fails on missing prefix" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   mkdir -p .changeset
