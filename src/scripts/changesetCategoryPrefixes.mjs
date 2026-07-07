@@ -178,10 +178,36 @@ export function stripChangelogBulletCategoryPrefix(text) {
 }
 
 /**
+ * YAML between the opening `---` delimiters of a Changesets file (package bump declarations).
+ * @param {string} content
+ * @returns {string | null} Null when frontmatter delimiters are missing.
+ */
+export function extractChangesetFrontmatterYaml(content) {
+  const normalized = String(content).replace(/\r\n/g, "\n");
+  if (!normalized.startsWith("---")) return null;
+  const close = normalized.indexOf("\n---", 3);
+  if (close === -1) return null;
+  return normalized.slice(3, close).trim();
+}
+
+/**
+ * True when a changeset deliberately releases no packages (`changeset add --empty`).
+ * @param {string} content
+ * @returns {boolean}
+ */
+export function isEmptyChangeset(content) {
+  const yaml = extractChangesetFrontmatterYaml(content);
+  return yaml !== null && yaml === "";
+}
+
+/**
  * @param {string} content Full changeset markdown file contents.
- * @returns {{ ok: true, headline: string, bucket: CategoryBucket } | { ok: false, error: string }}
+ * @returns {{ ok: true, empty: true } | { ok: true, headline: string, bucket: CategoryBucket } | { ok: false, error: string }}
  */
 export function validateChangesetSummaryCategory(content) {
+  if (isEmptyChangeset(content)) {
+    return { ok: true, empty: true };
+  }
   const headline = extractChangesetSummaryHeadline(content);
   if (headline === null) {
     return { ok: false, error: "changeset has no summary headline after frontmatter" };

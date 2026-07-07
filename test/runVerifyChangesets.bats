@@ -281,3 +281,39 @@ EOF
   assert_equal "$(mock_get_call_num "${mock}")" 1
   assert_equal "$(mock_get_call_args "${mock}")" "exec changeset status"
 }
+
+@test "require-changeset-category-prefix passes empty changeset from changeset add --empty" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-empty-changeset"
+  mkdir -p "${repo_dir}/.changeset"
+  cd "${repo_dir}"
+  git init -b master >/dev/null
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  cat >.changeset/base.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Feature: base
+EOF
+  git add .changeset/base.md
+  git commit -m "base" >/dev/null
+  git checkout -b feature >/dev/null
+  cat >.changeset/no-release.md <<'EOF'
+---
+---
+EOF
+  git add .changeset/no-release.md
+  git commit -m "add empty changeset" >/dev/null
+
+  mock=$(mock_create)
+
+  PNPM_BINARY="${mock}" \
+  VERIFY_SCRIPT='' \
+  PRIMARY_BRANCH=master \
+  REQUIRE_CHANGESET_CATEGORY_PREFIX=true \
+  run runVerifyChangesets.sh
+
+  assert_success
+  assert_equal "$(mock_get_call_num "${mock}")" 1
+  assert_equal "$(mock_get_call_args "${mock}")" "exec changeset status"
+}
