@@ -29,7 +29,7 @@ setup() {
   run env GITHUB_TOKEN=fake PROMOTION_TAG_PREFIX=staging \
     bash "$PROJECT_ROOT/src/scripts/pushPromotionTag.sh"
   assert_failure
-  assert_output --partial "no manifest"
+  assert_output --partial "rc<n>"
 }
 
 @test "inlined copy reaches manifest check without lib/trainId.sh sibling" {
@@ -49,5 +49,5 @@ setup() {
 
   assert_failure
   refute_output --partial "lib/trainId.sh"
-  assert_output --partial "no manifest"
+  assert_output --partial "rc<n>"
 }

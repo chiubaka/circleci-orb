@@ -1,10 +1,9 @@
 description: >
   Deploy repository state at the promotion tag commit (commit-primary semantics). Parses
-  staging-YYYY.MM.DD.N or prod-YYYY.MM.DD.N from CIRCLE_TAG, validates .releases/<release-id>.yml,
-  then runs pnpm run <deploy-script>. Exports PROMOTION_ENV, RELEASE_ID, RELEASE_MANIFEST_PATH,
-  and ARTIFACTS_JSON for the deploy script. Manifest pins are validated for audit; consuming each
-  artifact tag in deploy logic is optional unless the repo requires it. Distinct from the legacy
-  deploy command (artifact-tag monorepo package deploys).
+  staging-<cycle-id>-rc<n> or prod-<cycle-id> from CIRCLE_TAG, validates
+  .releases/<cycle-id>/rc<n>/manifest.yml, then runs pnpm run <deploy-script>. Exports
+  PROMOTION_ENV, RELEASE_ID, RC_INDEX, RELEASE_MANIFEST_PATH, and ARTIFACTS_JSON for the deploy
+  script. Production deploys use the highest rc*/manifest.yml on the tagged commit.
 
 parameters:
   app-dir:
@@ -24,7 +23,8 @@ parameters:
     type: string
     default: ""
     description: >
-      Override manifest file path. When empty, uses .releases/<RELEASE_ID>.yml after parsing the tag.
+      Override manifest file path. When empty, resolves .releases/<cycle-id>/rc<n>/manifest.yml from
+      the promotion tag.
   skip-manifest-validation:
     type: boolean
     default: false

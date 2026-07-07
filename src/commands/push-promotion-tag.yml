@@ -1,9 +1,9 @@
 description: >
-  After a release merge, push an environment promotion tag <prefix>-YYYY.MM.DD.N at the merge commit
-  when promotion-tag-prefix is non-empty (ADR 0031). Prefix must not include a trailing hyphen
-  (staging and prod are typical values). Requires .releases/<release-id>.yml on the commit (enable
-  create-release-manifest on changesets-release-pr). When prefix is empty, exits successfully without
-  pushing. Client workflows trigger coordinated-deploy on tag filters.
+  After a release merge, push an environment promotion tag at the merge commit when
+  promotion-tag-prefix is non-empty (ADR 0031, ADR 0042). Staging tags use
+  <prefix>-<cycle-id>-rc<n>; production uses prod-<cycle-id> only. Prefix must not include a
+  trailing hyphen. Requires .releases/<cycle-id>/rc<n>/ on the commit (enable create-release-manifest
+  on changesets-release-pr). When prefix is empty, exits successfully without pushing.
 
 parameters:
   app-dir:
@@ -28,6 +28,10 @@ parameters:
 
 steps:
   - run:
+      name: Stage release cycle scripts
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageReleaseCycleWriter.sh) >>
+  - run:
       name: Push promotion tag (ADR 0031)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/pushPromotionTag.sh) >>
@@ -36,3 +40,4 @@ steps:
         ON_EXISTING_TAG: << parameters.on-existing-tag >>
         PROMOTION_TAG_PREFIX: << parameters.promotion-tag-prefix >>
         TARGET_REF: << parameters.target-ref >>
+        RESOLVE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/resolveReleaseCycleOnCommit.mjs

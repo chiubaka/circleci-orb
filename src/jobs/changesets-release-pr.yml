@@ -58,7 +58,7 @@ parameters:
     type: boolean
     default: false
     description: >
-      Opt-in .releases/<YYYY.MM.DD.N>.yml on the release PR (application deployment repos).
+      Opt-in .releases/<cycle-id>/rc<n>/ tree on the release PR (application deployment repos).
   deployable-packages:
     type: string
     default: ""

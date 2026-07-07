@@ -182,13 +182,13 @@ run_changesets_release_pr_main() {
       echo "  Format: key=relative/path,key2=path2 (e.g. server=packages/server,web=apps/web)." >&2
       exit 1
     fi
-    manifest_script=${WRITE_RELEASE_MANIFEST_SCRIPT:-}
+    manifest_script=${WRITE_RELEASE_CYCLE_SCRIPT:-${WRITE_RELEASE_MANIFEST_SCRIPT:-}}
     if [[ -z "$manifest_script" ]]; then
       # shellcheck disable=SC3028
-      manifest_script="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/writeReleaseManifest.mjs"
+      manifest_script="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/writeReleaseCycle.mjs"
     fi
     if [[ ! -f "$manifest_script" ]]; then
-      echo "runChangesetsReleasePr: writeReleaseManifest.mjs not found; set WRITE_RELEASE_MANIFEST_SCRIPT." >&2
+      echo "runChangesetsReleasePr: writeReleaseCycle.mjs not found; set WRITE_RELEASE_CYCLE_SCRIPT." >&2
       exit 1
     fi
     node "$manifest_script"

@@ -1,7 +1,8 @@
 description: >
-  Application monorepo (staging-first): Changesets release PR with .releases/ manifest, gated publish
-  that pushes staging-YYYY.MM.DD.N, and a tag-triggered coordinated-deploy workflow. Library repos
-  should omit create-release-manifest and promotion-tag-prefix (see publish-library-release.yml).
+  Application monorepo (staging-first): Changesets release PR with .releases/<cycle-id>/ tree,
+  gated publish that pushes staging-<cycle-id>-rc<n>, promote-prod-release for production GitHub
+  Releases, and tag-triggered coordinated-deploy workflows. Library repos should omit
+  create-release-manifest and promotion-tag-prefix (see publish-library-release.yml).
 
 usage:
   version: 2.1
@@ -37,8 +38,25 @@ usage:
       jobs:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
+            create-github-release: false
             promotion-tag-prefix: staging
             release-notes-grouping: category
+            filters:
+              branches:
+                only: master
+
+    promote-prod:
+      jobs:
+        - promote-prod-approval:
+            type: approval
+            filters:
+              branches:
+                only: master
+        - chiubaka/promote-prod-release:
+            context: [github]
+            primary-branch: master
+            requires:
+              - promote-prod-approval
             filters:
               branches:
                 only: master
@@ -50,4 +68,13 @@ usage:
             deploy-script: deploy:coordinated
             filters:
               tags:
-                only: /^staging-.*/
+                only: /^staging-.*-rc[0-9]+$/
+
+    deploy-prod:
+      jobs:
+        - chiubaka/coordinated-deploy:
+            context: [deploy-prod]
+            deploy-script: deploy:coordinated
+            filters:
+              tags:
+                only: /^prod-.*/

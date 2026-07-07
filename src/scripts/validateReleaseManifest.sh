@@ -34,7 +34,7 @@ run_validate_release_manifest() {
     key=${line%%=*}
     value=${line#*=}
     case "$key" in
-      RELEASE_MANIFEST_PATH | RELEASE_ID | ARTIFACTS_JSON)
+      RELEASE_MANIFEST_PATH | RELEASE_ID | RC_INDEX | ARTIFACTS_JSON)
         export "${key}=${value}"
         ;;
       *)

@@ -57,4 +57,4 @@ steps:
       workspace-at: << parameters.workspace-at >>
   - verify-release-manifest:
       app-dir: << parameters.app-dir >>
-      verify-mode: << parameters.verify-mode >>
+      mode: << parameters.verify-mode >>

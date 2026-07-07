@@ -1,6 +1,7 @@
 description: >
-  Application monorepo with release manifests but manual promotion tags (no promotion-tag-prefix on
-  gated publish). Push staging-* or prod-* via git/GitHub UI; coordinated-deploy runs on tag pipelines.
+  Application monorepo with release cycles but manual promotion tags (no promotion-tag-prefix on
+  gated publish). Push staging-<cycle-id>-rc<n> or prod-<cycle-id> via git/GitHub UI; use
+  promote-prod-release when ready for production GitHub Releases.
 
 usage:
   version: 2.1
@@ -31,7 +32,24 @@ usage:
       jobs:
         - chiubaka/changesets-gated-publish:
             context: [github-packages-publish]
+            create-github-release: false
             release-notes-grouping: category
+            filters:
+              branches:
+                only: main
+
+    promote-prod:
+      jobs:
+        - promote-prod-approval:
+            type: approval
+            filters:
+              branches:
+                only: main
+        - chiubaka/promote-prod-release:
+            context: [github]
+            primary-branch: main
+            requires:
+              - promote-prod-approval
             filters:
               branches:
                 only: main

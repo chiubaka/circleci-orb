@@ -1,0 +1,53 @@
+description: >
+  Finalize a release cycle for production (ADR 0041): set promotedAt on cycle.yml, write
+  release-notes.md rollup, commit, push prod-<cycle-id>, and create the canonical GitHub Release.
+  Run after staging sign-off on the validated merge commit.
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+  primary-branch:
+    type: string
+    default: "master"
+    description: Branch to push finalized cycle.yml and release-notes.md to.
+  create-github-release:
+    type: boolean
+    default: true
+    description: When true, create GitHub Release titled with the cycle id and release-notes.md body.
+  on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+    description: Idempotency when prod-<cycle-id> already exists at the target SHA.
+  release-id:
+    type: string
+    default: ""
+    description: Optional cycle id override (YYYY.MM.DD.N). When empty, inferred from .releases/ on the commit.
+  target-ref:
+    type: string
+    default: "<< pipeline.git.revision >>"
+    description: Commit to finalize and tag (defaults to pipeline revision).
+
+steps:
+  - install-github-cli
+  - run:
+      name: Stage release cycle scripts
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageReleaseCycleWriter.sh) >>
+  - run:
+      name: Promote production release cycle
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/runPromoteProdRelease.sh) >>
+      environment:
+        APP_DIR: .
+        PRIMARY_BRANCH: << parameters.primary-branch >>
+        CREATE_GITHUB_RELEASE: << parameters.create-github-release >>
+        ON_EXISTING_TAG: << parameters.on-existing-tag >>
+        RELEASE_ID: << parameters.release-id >>
+        TARGET_REF: << parameters.target-ref >>
+        FINALIZE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/finalizeReleaseCycle.mjs
+        RESOLVE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/resolveReleaseCycleOnCommit.mjs
+        ROLLUP_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-release-cycle/rollupReleaseNotes.mjs

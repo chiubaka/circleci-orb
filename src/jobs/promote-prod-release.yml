@@ -1,0 +1,55 @@
+description: >
+  Finalize a deployable application release cycle for production (ADR 0041): promotedAt,
+  release-notes.md rollup, prod-<cycle-id> tag, and canonical GitHub Release.
+
+executor:
+  name: docker-node
+  resource-class: << parameters.resource-class >>
+
+parameters:
+  app-dir:
+    type: string
+    default: "."
+  primary-branch:
+    type: string
+    default: "master"
+  create-github-release:
+    type: boolean
+    default: true
+  on-existing-tag:
+    type: enum
+    enum:
+      - skip
+      - fail
+    default: skip
+  release-id:
+    type: string
+    default: ""
+  target-ref:
+    type: string
+    default: "<< pipeline.git.revision >>"
+    description: Commit to finalize and tag (defaults to pipeline revision).
+  resource-class:
+    default: medium
+    enum:
+      - small
+      - medium
+      - medium+
+      - large
+      - xlarge
+      - 2xlarge
+      - 2xlarge+
+    type: enum
+
+steps:
+  - setup:
+      app-dir: << parameters.app-dir >>
+      checkout: true
+      skip-pnpm-install: true
+  - promote-prod-release:
+      app-dir: << parameters.app-dir >>
+      primary-branch: << parameters.primary-branch >>
+      create-github-release: << parameters.create-github-release >>
+      on-existing-tag: << parameters.on-existing-tag >>
+      release-id: << parameters.release-id >>
+      target-ref: << parameters.target-ref >>

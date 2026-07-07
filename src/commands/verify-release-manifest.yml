@@ -1,6 +1,6 @@
 description: >
-  Validate pin-only .releases/<release-id>.yml manifests (ADR 0038). By default validates manifests
-  changed in the working tree (git diff and untracked). Set verify-mode to all to scan every file
+  Validate pin-only .releases/<cycle-id>/ release cycle trees (ADR 0041, ADR 0042). By default
+  validates only cycle directories touched in the working tree; set mode=all to validate every cycle
   under .releases/. Fails fast with actionable errors on schema violations.
 
 parameters:
@@ -8,23 +8,25 @@ parameters:
     type: string
     default: "."
     description: Monorepo root containing .releases/.
-  verify-mode:
+  mode:
     type: enum
     enum:
       - changed
       - all
     default: changed
-    description: changed validates only touched manifests; all validates every .releases/*.yml.
+    description: changed validates only touched cycles; all validates every .releases/<cycle-id>/.
 
 steps:
   - run:
-      name: Stage release manifest validator
+      name: Stage release cycle scripts
       working_directory: << parameters.app-dir >>
-      command: << include(scripts/stageReleaseManifestValidator.sh) >>
+      command: << include(scripts/stageReleaseCycleWriter.sh) >>
   - run:
-      name: Verify release manifests (ADR 0038)
+      name: Verify release cycle manifests
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runVerifyReleaseManifest.sh) >>
       environment:
-        VERIFY_RELEASE_MANIFEST_MODE: << parameters.verify-mode >>
-        VALIDATE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-validateReleaseManifest.mjs
+        APP_DIR: .
+        VERIFY_RELEASE_MANIFEST_MODE: << parameters.mode >>
+        VALIDATE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/validateReleaseCycle.mjs
+        VALIDATE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-release-cycle/validateReleaseManifest.mjs

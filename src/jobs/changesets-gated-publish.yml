@@ -128,7 +128,8 @@ parameters:
     default: true
     description: >
       When true, after publish runs install-github-cli and github-release-train (GitHub Release + train
-      tag). Requires GITHUB_TOKEN with contents:write. Set false for repos that opt out of GitHub Releases.
+      tag). Library default. Deployable application repos with release cycles SHOULD set false and use
+      promote-prod-release at production promotion instead (ADR 0041).
   train-tag-prefix:
     type: string
     default: "release/"
@@ -166,8 +167,9 @@ parameters:
     type: string
     default: ""
     description: >
-      When non-empty (e.g. staging or prod), push <prefix>-<release-id> at the merge commit after
-      publish. Requires create-release-manifest on changesets-release-pr. Empty = no-op (library default).
+      When non-empty (e.g. staging), push <prefix>-<cycle-id>-rc<n> at the merge commit after
+      publish. Use promote-prod-release for production GitHub Releases (deployable apps). Empty =
+      no-op (library default).
   promotion-on-existing-tag:
     type: enum
     enum:
