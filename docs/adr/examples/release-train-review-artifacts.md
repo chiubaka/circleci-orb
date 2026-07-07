@@ -14,7 +14,7 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Feature PRs on `main` accumulate `.changeset/` files.
 2. `changesets-release-pr` allocates cycle `2026.07.01.1`, creates:
 
-```
+```text
 .releases/2026.07.01.1/
   cycle.yml
   rc1/manifest.yml    # server-v5.2.0, web-v2.4.0
@@ -29,7 +29,7 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Staging QA finds a bug; fix PR adds a `.changeset/` with `Fix: …`.
 2. Follow-up release PR adds **`rc2/`** under the **same** cycle (no new cycle id):
 
-```
+```text
 .releases/2026.07.01.1/
   …
   rc2/manifest.yml    # server-v5.2.1, web-v2.4.0
@@ -50,7 +50,7 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 
 Same directory layout. Only `rc1/` before prod; dev deploys continuously from `main` (out of band):
 
-```
+```text
 .releases/2026.07.01.1/
   cycle.yml
   rc1/manifest.yml
@@ -71,7 +71,7 @@ Prod is live on `2026.07.01.1`. An urgent defect is found; `main` may already ha
 1. Branch from the commit tagged **`prod-2026.07.01.1`**.
 2. Fix PR adds a `.changeset/` entry; version cut allocates **new** cycle `2026.07.07.1`:
 
-```
+```text
 .releases/2026.07.07.1/
   cycle.yml              # openedAt; predecessorCycle: 2026.07.01.1
   rc1/manifest.yml

@@ -83,19 +83,17 @@ Use when the **total diff** against default is much larger than the **org-scoped
 Instead:
 
 1. Still run **`org-subtree-sync`** on `<default-branch>` so default holds the canonical upstream org snapshot.
-2. Bring **only the org sync commit** onto the exporting branch:
+2. **Merge** default into the exporting branch (do **not** cherry-pick the org sync squash commit — squash commits use prefix-less paths and will land org files at the repository root):
 
    ```bash
-   git checkout $DEFAULT
-   ORG_SYNC=$(git log -1 --format=%H)   # the new squash commit from org-subtree-sync
    git checkout $EXPORT
-   git cherry-pick $ORG_SYNC
+   git merge $DEFAULT
    ```
 
-3. Resolve conflicts under `<org-prefix>/` only.
+3. Resolve conflicts under `<org-prefix>/` (and any unrelated repo-wide merge conflicts separately).
 4. Re-run **`org-subtree-status`** on the exporting branch.
 
-If the cherry-pick fails badly or org paths remain diverged, **stop and ask the user** whether to defer export until the branch can rebase, export from the branch as-is with documented divergence, or take another integration path. Do not force a full default-branch rebase without explicit direction.
+If the merge fails badly or org paths remain diverged, **stop and ask the user** whether to defer export until the branch can rebase onto default, export from the branch as-is with documented divergence, or take another integration path. Do not cherry-pick org sync squash commits or force a full default-branch rebase without explicit direction.
 
 ### 4. Confirm ready to export
 
@@ -174,14 +172,15 @@ git checkout <default-branch>
 git subtree pull --prefix=<org-prefix> <org-remote> <org-branch> --squash
 ```
 
-Then propagate to feature branches using the same default vs exception rules in **Prepare for export** (rebase when easy; cherry-pick the org sync commit when not).
+Then propagate to feature branches using the same default vs exception rules in **Prepare for export** (rebase feature onto default when easy; **merge** default into feature when not — never cherry-pick org sync squash commits).
 
 Re-run projection/bootstrap scripts and validation checks.
 
 ## Anti-patterns
 
 - **Export before prepare for export** — duplicates or conflicts with upstream; hard to review.
-- **Rebasing onto default when the branch is not compatible** — pulls unrelated repo-wide work; use the exception path (cherry-pick org sync only).
+- **Rebasing onto default when the branch is not compatible** — pulls unrelated repo-wide work; use the exception path (**merge** default into the feature branch).
+- **Cherry-picking org sync squash commits** — squash commits use prefix-less paths; org content lands at the repository root. Merge default instead.
 - **Syncing org on a feature branch when default path applies** — duplicates sync commits; sync on default, then rebase or cherry-pick.
 - **Subtree push with large unreconciled divergence** — bundles unrelated history and wrong commit subjects.
 - **Leaving stale upstream-only files** — when replacing a file (for example `eslint.config.mjs` → `.ts`), delete the old path in the org PR.

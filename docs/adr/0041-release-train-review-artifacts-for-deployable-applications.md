@@ -54,7 +54,7 @@ Changesets remains the **authoring** system of record. Presentation tooling read
 
 Every release cycle uses a directory ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md))—including single-cut two-environment releases:
 
-```
+```text
 .releases/<cycle-id>/
   cycle.yml
   rc1/
@@ -77,11 +77,11 @@ All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changese
 
 ### Three review artifacts
 
-| # | Review moment | Question answered | Primary artifact |
-|---|---------------|-------------------|------------------|
-| **1** | First cut (`rc1`) | What is new since last prod? | Release PR body; **`.releases/<cycle-id>/rc1/notes.md`** |
-| **2** | Later cut (`rc2+`) | What changed since the previous cut? | **`.releases/<cycle-id>/rc<n>/notes.md`** for the latest cut only |
-| **3** | Production promotion | Full cycle since last prod | **`.releases/<cycle-id>/release-notes.md`** → canonical GitHub Release |
+| #     | Review moment        | Question answered                    | Primary artifact                                                       |
+| ----- | -------------------- | ------------------------------------ | ---------------------------------------------------------------------- |
+| **1** | First cut (`rc1`)    | What is new since last prod?         | Release PR body; **`.releases/<cycle-id>/rc1/notes.md`**               |
+| **2** | Later cut (`rc2+`)   | What changed since the previous cut? | **`.releases/<cycle-id>/rc<n>/notes.md`** for the latest cut only      |
+| **3** | Production promotion | Full cycle since last prod           | **`.releases/<cycle-id>/release-notes.md`** → canonical GitHub Release |
 
 **Artifact 1:** Release PR body remains the primary review surface at cut time; `rc1/notes.md` mirrors it for durability. In topology C (dev + gated prod), review happens at the release PR before prod deploy—there may be no staging promotion.
 
@@ -99,11 +99,11 @@ All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changese
 
 Review artifacts and on-disk layout are **the same** across supported topologies; only **which promotion tags fire** differs. See [ADR 0042 — Deployment topologies](0042-release-cycles-rc-identifiers-and-manifest-directories.md#deployment-topologies).
 
-| Topology | Summary | Artifact 2 usual? |
-|----------|---------|-------------------|
-| **A — Dev + staging + prod** | Dev continuous; staging RC soak; gated prod | Yes, when soak adds rc2+ |
-| **B — Staging + prod** | No deployed dev; same staging RC flow as A | Yes, when soak adds rc2+ |
-| **C — Dev + prod** | Dev continuous; gated prod; often single `rc1` cut | Rare (second pre-prod cut only) |
+| Topology                     | Summary                                            | Artifact 2 usual?               |
+| ---------------------------- | -------------------------------------------------- | ------------------------------- |
+| **A — Dev + staging + prod** | Dev continuous; staging RC soak; gated prod        | Yes, when soak adds rc2+        |
+| **B — Staging + prod**       | No deployed dev; same staging RC flow as A         | Yes, when soak adds rc2+        |
+| **C — Dev + prod**           | Dev continuous; gated prod; often single `rc1` cut | Rare (second pre-prod cut only) |
 
 Topology **C** still uses `rc1/` and `release-notes.md` with heading `## <cycle-id>-rc1`; it does not require staging promotion tags.
 
@@ -118,10 +118,10 @@ Topology **C** still uses `rc1/` and `release-notes.md` with heading `## <cycle-
 
 Production hotfixes are **new release cycles**, not soak iterations ([ADR 0042 — Hotfix releases](0042-release-cycles-rc-identifiers-and-manifest-directories.md#hotfix-releases)). The same on-disk layout and review-artifact model apply:
 
-| Artifact | Hotfix behavior |
-|----------|-----------------|
-| **1** (`rc1/notes.md`) | Hotfix-only batch since last prod (release PR body mirrors this) |
-| **2** | Typically absent (single `rc1` cut) |
+| Artifact                                    | Hotfix behavior                                                                   |
+| ------------------------------------------- | --------------------------------------------------------------------------------- |
+| **1** (`rc1/notes.md`)                      | Hotfix-only batch since last prod (release PR body mirrors this)                  |
+| **2**                                       | Typically absent (single `rc1` cut)                                               |
 | **3** (`release-notes.md` → GitHub Release) | Full hotfix cycle at `prod-<new-cycle-id>`; often one section `## <cycle-id>-rc1` |
 
 Staging promotion for hotfixes is optional per repository policy; canonical GitHub Release timing and `promotedAt` rules are unchanged.
@@ -132,7 +132,7 @@ Cycle `2026.07.01.1` (cycle open date 2026-07-01; rc2 cut on 2026-07-03 stays on
 
 **Directory after rc2:**
 
-```
+```text
 .releases/2026.07.01.1/
   cycle.yml
   rc1/manifest.yml
@@ -186,11 +186,13 @@ artifacts:
 ## 2026.07.01.1-rc1
 
 ### Features
+
 …
 
 ## 2026.07.01.1-rc2
 
 ### Bug Fixes
+
 …
 ```
 
