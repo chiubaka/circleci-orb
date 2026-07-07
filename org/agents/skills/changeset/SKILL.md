@@ -86,10 +86,6 @@ All prefixes are **valid syntax** in every repo. Prefer prefixes that match **wh
 
 App monorepos still use **`Breaking:`** or **`Deprecation:`** when users must change behavior or migration steps are required. Use **`Improvement:`**, **`Fix:`**, or **`Other:`** for non-breaking user-facing changes; keep migration detail in the optional body.
 
-## When not to author a changeset
-
-For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages, orb/scripts, or consumer-facing artifact behavior), **do not** add a `.changeset` file. Use `org/agents/skills/changesets-hygiene/SKILL.md` for the full exception list.
-
 ## Where files live
 
 - Add markdown files under **`.changeset/`** at the repo root (or the configured changeset directory).
