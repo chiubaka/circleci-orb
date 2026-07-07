@@ -33,7 +33,19 @@ Replace `<org-remote>`, `<org-branch>`, and `<org-prefix>` below with your repos
 
 **Squash rule:** always pass **`--squash`** on subtree pull (and on post-export subtree pull in `org-subtree-export`). This is the org standard for consuming repositories — one squash commit per upstream sync keeps client project history readable. Do not omit `--squash` because a repository previously used non-squash subtree commands; standardize on squash going forward.
 
+**Squash commit path model:** `git subtree pull --squash` records changed paths **without** the `<org-prefix>/` prefix (for example `docs/adr/README.md`, `agents/AGENTS.org.md`). Git subtree maps those under `<org-prefix>/` during a **merge**. **Rebase**, **cherry-pick**, and **interactive rebase** replay the patch at the **repository root** instead. Repos with overlapping shapes at root and under the prefix — common examples: `docs/adr/` (repo ADRs) vs `org/docs/adr/` (org ADRs), projected `AGENTS.md` vs `org/agents/AGENTS.org.md` — are especially vulnerable.
+
+**Integration history rule:** after an org sync squash commit exists on the default branch, integrate remote default-branch updates with **merge**, not rebase:
+
+- Use `git pull --no-rebase origin <default-branch>` or `git merge origin/<default-branch>`.
+- Do **not** `git pull --rebase`, `git rebase origin/<default-branch>`, or replay org sync squash commits onto another base — that corrupts paths outside `<org-prefix>/`.
+- When `pull.rebase` is configured globally, pass **`--no-rebase`** explicitly for steps that update the default branch before or after subtree pull.
+
 ## Sync workflow
+
+### 0. Check status (recommended)
+
+Run **`org-subtree-status`** first. Note **modified** paths under `<org-prefix>/` — those are the likely conflict sites during pull. If the verdict is **diverged**, plan to reconcile local forks (export after pull) rather than blindly taking one side.
 
 ### 1. Confirm remotes and check out the default branch
 
@@ -44,7 +56,7 @@ git fetch origin
 
 # Use the repository default branch (adjust if yours differs)
 git checkout master   # or: git checkout main
-git pull origin master
+git pull --no-rebase origin master
 git branch --show-current
 ```
 
@@ -73,6 +85,10 @@ Subtree pulls can conflict when the consuming repository has local org edits tha
 - **Upstream-only changes** — keep upstream unless the local edit is an intentional fork.
 - **Local-only improvements** — preserve and plan to export upstream (see `org-subtree-export`).
 - **Same file, different intent** — reconcile explicitly (do not blindly take one side).
+
+**Expected conflict scope:** only paths under `<org-prefix>/`.
+
+**Stop and diagnose** if conflicts appear **outside** `<org-prefix>/` (for example repo-root `docs/adr/README.md` filled with org ADR index content, or new `agents/` / `docs/adr/00xx-*.md` at the repository root). That pattern means a squash subtree commit was **replayed** (rebase or cherry-pick), not merged. Abort the replay (`git rebase --abort` or `git cherry-pick --abort`), return to the default branch, and integrate with **merge** instead (see **Integration history rule** above). A correct `git subtree pull --squash` does not stage org content at repo-root paths that mirror the prefix.
 
 After resolving:
 
@@ -124,14 +140,16 @@ An empty result (no lines) for "only in upstream" means the file tree under the 
 
 If active work lives on a non-default branch, use the integration rules in **`org-subtree-export`** (Prepare for export):
 
-- **Default:** rebase the feature branch onto the updated default branch.
-- **Exception:** cherry-pick only the org sync squash commit when a full rebase would pull in unrelated repo-wide work the branch is not ready to absorb.
+- **Default:** rebase the feature branch onto the updated default branch (replays **feature** commits only; the org sync squash commit stays in default-branch history).
+- **Exception:** when a full rebase would pull in unrelated repo-wide work the branch is not ready to absorb, **merge** default into the feature branch instead (`git merge <default-branch>`). Do **not** cherry-pick the org sync squash commit — squash commits use prefix-less paths and will land org files at the repository root.
 
 Resolve any conflicts under `<org-prefix>/` using the same rules as step 3.
 
 ## Common mistakes
 
 - **Syncing on a feature branch by default** — prefer the repository default branch; merge or rebase into feature work afterward.
+- **Rebasing default branch after org sync** — `pull.rebase=true` or `git rebase origin/<default-branch>` replays squash commits at repo root; use **`git pull --no-rebase`** or **`git merge`**.
+- **Cherry-picking org sync squash commits** — same path corruption as rebase; merge default into the feature branch or rebase the feature branch onto default.
 - **Editing org/ while behind upstream** — causes painful merge conflicts on export.
 - **Omitting `--squash` on subtree pull** — always squash; non-squash pulls clutter client project history.
 - **Skipping projection scripts** — root `AGENTS.md` and skill links drift from `AGENTS.org.md` source.
