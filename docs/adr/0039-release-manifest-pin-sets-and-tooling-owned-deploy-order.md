@@ -64,11 +64,12 @@ A release manifest defines the **exact set of high-level deployable artifact ver
 ### Repository layout and file naming
 
 - Release manifests MUST be stored under `.releases/` at the repository root.
-- Each manifest file name MUST be `<release-id>.yml`, where `<release-id>` matches the `release` field inside the manifest and the suffix of the corresponding promotion tags (the logical release identifier after the `staging-` or `prod-` prefix; see [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
+- **Deployable application monorepos** MUST use the **directory layout** in [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md): `.releases/<cycle-id>/rc<n>/manifest.yml` for each RC cut, plus `cycle.yml` at the cycle root.
+- The flat path `.releases/<release-id>.yml` is **historical** (superseded for application repos by ADR 0042). Library-only repos without coordinated promotion do not require `.releases/`.
 
-Example path for `release: 2026.04.06.1`:
+Example path for cycle `2026.07.01.1`, RC1:
 
-`.releases/2026.04.06.1.yml`
+`.releases/2026.07.01.1/rc1/manifest.yml`
 
 ### Format
 
@@ -76,6 +77,8 @@ The release manifest MUST be a YAML document with the following structure:
 
 ```yaml
 release: string
+rc: integer          # required in directory layout (ADR 0042); omit in historical flat files
+cutAt: string       # required in directory layout (ADR 0042): ISO-8601 UTC when this RC cut was versioned
 
 artifacts:
   <artifact-name>: <artifact-tag>
@@ -86,10 +89,12 @@ No `deploy` key is defined by this ADR; if present in a file, tooling MUST eithe
 
 ### Example
 
-File: `.releases/2026.04.06.1.yml`
+File: `.releases/2026.07.01.1/rc1/manifest.yml`
 
 ```yaml
-release: 2026.04.06.1
+release: 2026.07.01.1
+rc: 1
+cutAt: 2026-07-01T14:32:00Z
 
 artifacts:
   server: server-v5.1.0
@@ -99,8 +104,11 @@ artifacts:
 
 ### Rules
 
-- Each manifest MUST live at `.releases/<release-id>.yml` at the repository root, with `<release-id>` equal to the `release` field (see **Repository layout and file naming** above).
-- The `release` field MUST match the **logical release identifier** used with promotion tags: the `YYYY.MM.DD.N` portion shared across environments, as defined in [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md). Promotion tags add the `staging-` or `prod-` prefix to that identifier; the manifest `release` value does not include the environment prefix.
+- Each RC manifest MUST live at `.releases/<cycle-id>/rc<n>/manifest.yml` for deployable application repos ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+- The `release` field MUST match the **release cycle id** (`YYYY.MM.DD.N`). Promotion tags use this id with environment prefixes and optional `-rc<n>` on staging ([ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
+- The `rc` field MUST match the `rc<n>` directory name when using the directory layout.
+- `cutAt` MUST be set when the RC manifest is written (at `changeset version` for that cut). ISO-8601 UTC; tooling-owned ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+- Manifest and cycle YAML keys MUST use **`camelCase`** ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
 - The `artifacts` mapping MUST be present. Keys name **high-level deployables** (for example `server`, `web`, `ios`), not low-level steps such as individual database migration commands.
 - All artifact values MUST reference **immutable artifact tags** ([ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
 - CI or other automation performing coordinated deploys MUST treat manifest artifact values as the **audited pin set** for the train. Repos that deploy **pre-built artifacts by immutable tag** MUST deploy **exactly** those manifest values with no “latest” inference. Repos that apply **commit-primary** coordinated deploys (checkout at the promotion tag SHA and rebuild or roll out from that tree) MUST still validate the manifest and expose pins via `ARTIFACTS_JSON` / `RELEASE_MANIFEST_PATH`; consuming each pin inside deploy logic is optional until the repo requires mixed or off-repo artifact deploys.
@@ -147,6 +155,8 @@ This model preserves the **GitOps-style** idea that a small **desired compositio
 
 - [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) — **superseded** by this ADR for manifest format and deploy-order ownership
 - [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — artifact tags vs promotion tags; logical `release` identifier and promotion flow
+- [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) — append-only `.releases/<cycle-id>/rc<n>/notes.md` and prod rollup
+- [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md) — **current** cycle directory layout; supersedes flat `.releases/<id>.yml` for application repos
 - [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — canonical `YYYY.MM.DD.N` train identifier and GitHub Releases alignment
 - [ADR 0020](0020-run-production-database-migrations-as-a-separate-deployment-step.md) — migrations as a distinct production step; ordering relative to traffic inside deploy tooling
 - [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) — lockstep groups for related packages in library monorepos

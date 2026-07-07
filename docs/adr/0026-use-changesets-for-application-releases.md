@@ -109,3 +109,5 @@ This extends the library-side decision to use Changesets with explicit release i
 - See [ADR 0025](0025-versioning-plugins-vs-core.md) for how optional plugins and adapters relate to the core ecosystem surface.
 - See [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) for the unified workflow that keeps application and library release tooling aligned.
 - See [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) and [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) for coordinated multi-artifact deployment orchestration (release manifests and promotion tags). Changesets remain the source of truth for artifact version bumps; manifests pin which immutable artifact tags deploy together.
+- See [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) for staging and production review changelog artifacts on a release cycle.
+- See [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md) for release cycle and RC identifiers, cycle-open date semantics, and manifest directory layout.
