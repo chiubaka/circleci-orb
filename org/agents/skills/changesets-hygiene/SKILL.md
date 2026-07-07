@@ -37,6 +37,7 @@ Those changes are recorded in git and in the docs themselves; they are **not** c
    - the correct `patch` / `minor` / `major` (and package scoping) in the YAML frontmatter, and
    - a summary headline per `org/agents/skills/changeset/SKILL.md` (required category prefix, voice by monorepo type; optional body only when migration or must-know detail is needed).
 4. When the user asks to “bump the version” or “update the changelog” for a changeset-driven repo, interpret that as **create or update a changeset** unless they explicitly want to run `changeset version` (consumer merge to main / release train).
+5. **Do not** hand-edit tooling-owned release cycle artifacts under `.releases/<cycle-id>/`: `cycle.yml` (`openedAt`, `promotedAt`), `rc<n>/notes.md`, or `release-notes.md` (org ADR 0041). Manifest pins in `rc<n>/manifest.yml` are also tooling-owned at version time.
 
 ## Rationale
 

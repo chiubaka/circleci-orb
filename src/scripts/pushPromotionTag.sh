@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Push staging- or prod- promotion tag at merge commit when prefix is set (ADR 0031). No-op when empty.
+# Push staging-<cycle-id>-rc<n> or prod-<cycle-id> promotion tag at merge commit (ADR 0031, ADR 0042).
 set -euo pipefail
 
 remote_peeled_commit_for_tag() {
@@ -22,29 +22,49 @@ resolve_target_sha() {
   git rev-parse "${ref}^{commit}" 2>/dev/null || git rev-parse "$ref"
 }
 
-read_manifest_release_id() {
-  local manifest=$1
-  if [[ ! -f "$manifest" ]]; then
-    echo "pushPromotionTag: expected manifest at ${manifest} when promotion-tag-prefix is set." >&2
-    echo "  Enable create-release-manifest on changesets-release-pr and list deployable-packages." >&2
-    exit 1
+_resolve_cycle_script() {
+  if [[ -n "${RESOLVE_RELEASE_CYCLE_SCRIPT:-}" && -f "${RESOLVE_RELEASE_CYCLE_SCRIPT}" ]]; then
+    printf '%s\n' "$RESOLVE_RELEASE_CYCLE_SCRIPT"
+    return 0
   fi
-  node -e '
-    const fs = require("fs");
-    const p = process.argv[1];
-    const t = fs.readFileSync(p, "utf8");
-    const m = t.match(/^release:\s*["\x27]?([0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+)["\x27]?\s*$/m);
-    if (!m) {
-      process.stderr.write("pushPromotionTag: could not read release field from manifest\n");
-      process.exit(1);
-    }
-    process.stdout.write(m[1]);
-  ' "$manifest"
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/resolveReleaseCycleOnCommit.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "pushPromotionTag: set RESOLVE_RELEASE_CYCLE_SCRIPT or keep resolveReleaseCycleOnCommit.mjs next to this script." >&2
+  return 1
+}
+
+read_cycle_from_commit() {
+  local resolver cycle_id rc_index line key value
+  if ! resolver=$(_resolve_cycle_script); then
+    return 1
+  fi
+  cycle_id=""
+  rc_index=""
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" ]] && continue
+    key=${line%%=*}
+    value=${line#*=}
+    case "$key" in
+      CYCLE_ID) cycle_id=$value ;;
+      RC_INDEX) rc_index=$value ;;
+    esac
+  done < <(node "$resolver")
+  if [[ -z "$cycle_id" || -z "$rc_index" ]]; then
+    echo "pushPromotionTag: could not resolve cycle id and RC index on commit." >&2
+    return 1
+  fi
+  RELEASE_ID=$cycle_id
+  RC_INDEX=$rc_index
 }
 
 push_promotion_tag_main() {
-  local prefix raw_prefix release_id tag target_ref target_sha remote_sha on_existing
-  local repo_slug u r auth_header push_url manifest releases_dir app_dir
+  local prefix raw_prefix release_id rc_index tag target_ref target_sha remote_sha on_existing
+  local repo_slug u r auth_header push_url app_dir
 
   prefix=${PROMOTION_TAG_PREFIX:-}
   if [[ -z "$prefix" ]]; then
@@ -57,17 +77,12 @@ push_promotion_tag_main() {
     echo "pushPromotionTag: promotion-tag-prefix must not include a trailing hyphen (got \"${prefix}\")." >&2
     exit 1
   fi
-  if [[ -z "$raw_prefix" ]]; then
-    echo "pushPromotionTag: promotion-tag-prefix must not be empty." >&2
-    exit 1
-  fi
 
   if [[ -z "${GITHUB_TOKEN:-}" ]]; then
     echo "pushPromotionTag: GITHUB_TOKEN must be set to push promotion tags." >&2
     exit 1
   fi
 
-  releases_dir=${RELEASES_DIR:-.releases}
   app_dir=${APP_DIR:-.}
   cd "$app_dir"
 
@@ -82,26 +97,19 @@ push_promotion_tag_main() {
   fi
   target_sha=$(resolve_target_sha "$target_ref")
 
-  manifest=""
-  shopt -s nullglob
-  local -a manifest_candidates=("${releases_dir}"/*.yml)
-  shopt -u nullglob 2>/dev/null || true
-  if [[ ${#manifest_candidates[@]} -eq 0 ]]; then
-    manifest=""
-  elif [[ ${#manifest_candidates[@]} -eq 1 ]]; then
-    manifest=${manifest_candidates[0]}
+  if ! read_cycle_from_commit; then
+    echo "pushPromotionTag: expected .releases/<cycle-id>/rc<n>/ on merge commit." >&2
+    echo "  Enable create-release-manifest on changesets-release-pr and list deployable-packages." >&2
+    exit 1
+  fi
+  release_id=$RELEASE_ID
+  rc_index=$RC_INDEX
+
+  if [[ "$raw_prefix" == "prod" ]]; then
+    tag="${raw_prefix}-${release_id}"
   else
-    echo "pushPromotionTag: expected one manifest under ${releases_dir}/, found ${#manifest_candidates[@]}." >&2
-    exit 1
+    tag="${raw_prefix}-${release_id}-rc${rc_index}"
   fi
-
-  if [[ -z "$manifest" ]]; then
-    echo "pushPromotionTag: no manifest under ${releases_dir}/ on merge commit." >&2
-    exit 1
-  fi
-
-  release_id=$(read_manifest_release_id "$manifest")
-  tag="${raw_prefix}-${release_id}"
 
   on_existing=${ON_EXISTING_TAG:-skip}
   remote_sha=$(remote_peeled_commit_for_tag "$tag")

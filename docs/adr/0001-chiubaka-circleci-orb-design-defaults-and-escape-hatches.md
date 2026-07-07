@@ -15,7 +15,7 @@ This repository publishes **`chiubaka/circleci-orb`**, which encodes reusable Ci
 - **pnpm + Turbo monorepos** — [ADR 0022](../../org/docs/adr/0022-standardize-monorepos-to-pnpm-turbo.md)
 - **GitHub Packages** for private `@chiubaka/*` packages — [ADR 0034](../../org/docs/adr/0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md)
 - **Changesets** and related versioning ADRs — e.g. [ADR 0024](../../org/docs/adr/0024-use-changesets-for-library-monorepos.md), [0026](../../org/docs/adr/0026-use-changesets-for-application-releases.md), [0027](../../org/docs/adr/0027-use-single-changesets-workflow-in-hybrid-monorepos.md), [0028](../../org/docs/adr/0028-version-only-deployable-artifacts-by-default.md)
-- **Release manifests and promotion tags** — [ADR 0039](../../org/docs/adr/0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) (supersedes [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md)), [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)
+- **Release manifests and promotion tags** — [ADR 0039](../../org/docs/adr/0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) (supersedes [ADR 0030](../../org/docs/adr/0030-coordinated-release-model-release-manifests-and-promotion-tags.md)), [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md), [ADR 0041](../../org/docs/adr/0041-release-train-review-artifacts-for-deployable-applications.md), [ADR 0042](../../org/docs/adr/0042-release-cycles-rc-identifiers-and-manifest-directories.md)
 
 We need durable **repository-level** decisions for:
 
@@ -98,7 +98,7 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 
 - The orb should implement **workflow scaffolding** aligned with org ADRs (e.g. Changesets-driven publish flows; manifest validation and repo-defined deploy hooks for [ADR 0039](../../org/docs/adr/0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) / [ADR 0031](../../org/docs/adr/0031-separation-of-artifact-tags-and-environment-promotion-tags.md)).
 - **Library monorepos (default):** `verify-changesets`, `changesets-release-pr`, and `changesets-gated-publish` with category release notes (`release-notes-grouping: category`, orb default) and prefix verification (`require-changeset-category-prefix: true`, orb default) — no `.releases/` manifests, no promotion tags.
-- **Application deployment monorepos:** additionally `create-release-manifest` + `deployable-packages` on release PR; optional `promotion-tag-prefix` on gated publish; tag-filtered `coordinated-deploy` job (commit-primary) separate from legacy **`deploy`** (artifact-tag monorepo package deploys).
+- **Application deployment monorepos:** additionally `create-release-manifest` + `deployable-packages` on release PR (writes `.releases/<cycle-id>/rc<n>/` per ADR 0042); `promotion-tag-prefix: staging` on gated publish with `create-github-release: false`; `promote-prod-release` for production `release-notes.md` and GitHub Release; tag-filtered `coordinated-deploy` job (commit-primary) separate from legacy **`deploy`** (artifact-tag monorepo package deploys).
 - **Escape hatches** (custom script names, custom jobs, skipping steps) remain **first-class** so repos are not locked into one release topology.
 
 ### 7. Validation and errors
