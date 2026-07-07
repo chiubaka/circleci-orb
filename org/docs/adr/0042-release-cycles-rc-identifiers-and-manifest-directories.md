@@ -64,11 +64,11 @@ The `rc<n>` directory name is a **cut index**, not shorthand for “staging exis
 
 Release **cycles**, directory layout, and review artifacts ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)) are independent of how many named environments exist. What varies is **which environments use continuous deploy from `main`** versus **coordinated promotion** (manifest + tags) per [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md).
 
-| Topology | Environments | Continuous deploy from `main` | Coordinated promotion | Typical staging tags | Typical prod tag |
-|----------|--------------|------------------------------|------------------------|----------------------|------------------|
-| **A — Dev + staging + prod** | dev, staging, prod | dev | staging + prod | `staging-<cycle-id>-rc<n>` | `prod-<cycle-id>` |
-| **B — Staging + prod** | staging, prod (local/dev machine test only) | none | staging + prod | `staging-<cycle-id>-rc<n>` | `prod-<cycle-id>` |
-| **C — Dev + prod** | dev, prod | dev | prod only | none (no staging deploys) | `prod-<cycle-id>` |
+| Topology                     | Environments                                | Continuous deploy from `main` | Coordinated promotion | Typical staging tags       | Typical prod tag  |
+| ---------------------------- | ------------------------------------------- | ----------------------------- | --------------------- | -------------------------- | ----------------- |
+| **A — Dev + staging + prod** | dev, staging, prod                          | dev                           | staging + prod        | `staging-<cycle-id>-rc<n>` | `prod-<cycle-id>` |
+| **B — Staging + prod**       | staging, prod (local/dev machine test only) | none                          | staging + prod        | `staging-<cycle-id>-rc<n>` | `prod-<cycle-id>` |
+| **C — Dev + prod**           | dev, prod                                   | dev                           | prod only             | none (no staging deploys)  | `prod-<cycle-id>` |
 
 **Notes:**
 
@@ -82,10 +82,10 @@ Release **cycles**, directory layout, and review artifacts ([ADR 0041](0041-rele
 
 Promotion tags prepend an environment prefix to a **promotion id** parsed by deploy automation:
 
-| Target | Promotion id pattern | Example |
-|--------|---------------------|---------|
-| Staging (topologies A, B) | `<cycle-id>-rc<n>` | `staging-2026.07.01.1-rc2` |
-| Production (all topologies) | `<cycle-id>` (no RC suffix) | `prod-2026.07.01.1` |
+| Target                      | Promotion id pattern        | Example                    |
+| --------------------------- | --------------------------- | -------------------------- |
+| Staging (topologies A, B)   | `<cycle-id>-rc<n>`          | `staging-2026.07.01.1-rc2` |
+| Production (all topologies) | `<cycle-id>` (no RC suffix) | `prod-2026.07.01.1`        |
 
 **Rules:**
 
@@ -104,7 +104,7 @@ All keys in `cycle.yml`, `rc<n>/manifest.yml`, and tooling-owned fields in this 
 
 **Rationale:** Release manifests are generated and consumed by TypeScript release tooling in application monorepos. `camelCase` aligns with JSON and TypeScript conventions in those repos, avoids rename layers when parsing into types, and matches adjacent config (for example Changesets `config.json`). These files remain human-audited in git; `camelCase` is equally readable in diffs.
 
-```
+```text
 .releases/
   <cycle-id>/                 # e.g. 2026.07.01.1
     cycle.yml                 # cycle metadata (required)
@@ -123,7 +123,7 @@ At **rc1** cut, tooling MUST create `cycle.yml` with:
 
 ```yaml
 release: 2026.07.01.1
-openedAt: 2026-07-01T14:32:00Z   # ISO-8601 UTC; SHOULD match cycle open date semantics
+openedAt: 2026-07-01T14:32:00Z # ISO-8601 UTC; SHOULD match cycle open date semantics
 ```
 
 - `release` MUST equal the cycle id (directory name).
@@ -134,7 +134,7 @@ At **production promotion**, tooling MUST set `promotedAt` on the same commit th
 ```yaml
 release: 2026.07.01.1
 openedAt: 2026-07-01T14:32:00Z
-promotedAt: 2026-07-15T16:00:00Z   # ISO-8601 UTC; production ship time
+promotedAt: 2026-07-15T16:00:00Z # ISO-8601 UTC; production ship time
 ```
 
 - `promotedAt` MUST be present before a cycle is considered **shipped to production**. It is the authoritative **production ship timestamp**; it is **not** encoded in the cycle id ([ADR 0038](0038-release-train-identifiers-and-github-releases.md)).
@@ -166,7 +166,7 @@ artifacts:
 
 A cycle with only one version cut before prod still uses the full directory shape:
 
-```
+```text
 .releases/2026.07.01.1/
   cycle.yml
   rc1/
@@ -191,10 +191,10 @@ A **hotfix** is an urgent fix shipped to production while a prior cycle is alrea
 
 **Distinction from soak patches:**
 
-| Situation | Model |
-|-----------|--------|
+| Situation                                                                        | Model                                                                                                                                             |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Defect found **before** production promotion (staging soak, pre-prod validation) | Same cycle; add `rc<n+1>/` ([ADR 0041 — Soak iteration](0041-release-train-review-artifacts-for-deployable-applications.md#soak-iteration-rules)) |
-| Defect found **in production** after `promotedAt` on the live cycle | **New cycle**; single `rc1/` (typical); `predecessorCycle` SHOULD reference the cycle in prod |
+| Defect found **in production** after `promotedAt` on the live cycle              | **New cycle**; single `rc1/` (typical); `predecessorCycle` SHOULD reference the cycle in prod                                                     |
 
 **Workflow:**
 
