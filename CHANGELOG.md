@@ -1,5 +1,15 @@
 # @chiubaka/circleci-orb
 
+## 0.22.0
+
+### Breaking Changes
+
+- Replace flat `.releases/<id>.yml` manifests with ADR 0042 release cycle directories, per-RC notes, staging `staging-<cycle-id>-rc<n>` promotion tags, and `promote-prod-release` for production GitHub Releases.
+
+### Bug Fixes
+
+- Skip category-prefix validation for empty changesets created with `changeset add --empty`.
+
 ## 0.21.0
 
 ### Features
