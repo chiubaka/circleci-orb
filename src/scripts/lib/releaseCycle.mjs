@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   maxNFromLsRemoteForDate,
   regexEscapeBasic,
@@ -210,10 +210,14 @@ export function resolveCycleOnCommit(releasesDir) {
 
 function gitLsTreeDirNames(sha, treePath) {
   try {
-    const out = execSync(`git ls-tree -d --name-only ${sha}:${treePath}`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const out = execFileSync(
+      "git",
+      ["ls-tree", "-d", "--name-only", `${sha}:${treePath}`],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     return out
       .split("\n")
       .map((entry) => entry.trim())
