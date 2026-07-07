@@ -67,42 +67,48 @@ Exact names are chosen per repository; the invariant is that **artifact tags den
 
 ### Promotion tags
 
-Promotion tags trigger deployments to specific environments:
+Promotion tags trigger deployments to specific environments. The tag body after the environment prefix is a **promotion id** ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)):
 
-- `staging-YYYY.MM.DD.N`
-- `prod-YYYY.MM.DD.N`
+- **Staging (three-environment):** `staging-<cycle-id>-rc<n>` (for example `staging-2026.07.01.1-rc2`)
+- **Production:** `prod-<cycle-id>` (for example `prod-2026.07.01.1`; no RC suffix)
+- **Two-environment (single cut):** `prod-<cycle-id>` or `staging-<cycle-id>-rc1` when staging is used
 
-### Logical release identifier
+### Release cycle identifier (`YYYY.MM.DD.N`)
 
-The substring `YYYY.MM.DD.N` (for example, `2026.04.06.1`) is the **logical release id**. It MUST match the `release` field in the release manifest and the manifest filename `.releases/<release-id>.yml` ([ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)). Promotion tags prepend `staging-` or `prod-` to that same identifier so staging and production promotions remain auditable and distinct while referring to one coordinated release definition.
+The substring `YYYY.MM.DD.N` (for example `2026.07.01.1`) is the **release cycle id** (historically “logical release id”). It names a coordinated release **cycle** from first RC cut through production promotion.
 
-### Increment (`N`) rules
+- The **calendar portion** is the **cycle open date** (UTC date of the first `rc1` cut), not the production ship date ([ADR 0038](0038-release-train-identifiers-and-github-releases.md), [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+- **`N`** counts **release cycles opened on that UTC calendar day**, not RC iterations within a cycle.
+- Manifest layout and RC directories are defined in [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md); pin-only manifest fields remain in [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md).
 
-- `N` MUST start at **1** for each new calendar date.
-- `N` increments by 1 for each subsequent promotion on the same date.
-- The first promotion of a given date MUST use `.1`, not `.0`.
+### Increment (`N`) rules (cycle id)
 
-Example:
+- `N` MUST start at **1** for each new UTC calendar date (cycle open date).
+- `N` increments by 1 for each **new release cycle** opened on that date (after a prior cycle `…N` has started on the same day).
+- The first cycle on a given date MUST use `.1`, not `.0`.
+- **RC iterations** within a cycle use `-rc<n>` on staging tags (`rc1`, `rc2`, …), not a bumped cycle `N`.
 
-- `staging-2026.04.06.1`
-- `staging-2026.04.06.2`
-- `prod-2026.04.06.1`
+Example (three-environment, one cycle with two RCs):
 
-Corresponding manifest:
+- `staging-2026.07.01.1-rc1` → deploy `.releases/2026.07.01.1/rc1/manifest.yml`
+- `staging-2026.07.01.1-rc2` → deploy `.releases/2026.07.01.1/rc2/manifest.yml` (soak patch; same cycle id)
+- `prod-2026.07.01.1` → deploy final validated RC on the tagged commit
 
-- Path: `.releases/2026.04.06.1.yml`
-- Contents include `release: 2026.04.06.1` (same logical id as in the tags above, without the environment prefix)
+Example (two-environment, single cut):
+
+- `prod-2026.07.01.1` → deploy highest `rc*/manifest.yml` on the tagged commit (`.releases/2026.07.01.1/rc2/manifest.yml` when rc2 is the final cut)
 
 ### Promotion flow
 
-1. Create or update the release manifest at `.releases/<release-id>.yml` (with `release` set to the logical release id). For application monorepos using Changesets release PRs, the manifest SHOULD land on the release PR branch when the train is cut (see [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md)).
-2. Create a **staging** promotion tag → triggers staging deployment.
-3. Validate the release in staging.
-4. Create a **prod** promotion tag referencing the **same commit** → triggers production deployment.
+1. Allocate a **release cycle** and create `.releases/<cycle-id>/` with `rc1/` manifest on the first version cut ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+2. Create a **staging** promotion tag with `-rc<n>` when staging is a coordinated target (topologies A, B) → triggers staging deployment.
+3. Validate in staging; if soak fixes require a new version cut, add `rc<n+1>/` under the **same** cycle id and re-promote staging with the new `-rc` suffix.
+4. Create a **prod** promotion tag with the **cycle id only** (no `-rc` suffix) on the final validated commit → triggers production deployment.
+5. **Production hotfix:** allocate a **new** cycle from the current `prod-*` commit; do not add RC directories to a cycle that already has `promotedAt` ([ADR 0042 — Hotfix releases](0042-release-cycles-rc-identifiers-and-manifest-directories.md#hotfix-releases)).
 
 **Automation:** Repos MAY configure CI to push a promotion tag on release merge when an environment prefix is set (for example `staging` or `prod` on gated publish). The tag MUST reference the merge commit that contains the manifest. **Staging deploy workflows MUST NOT** push `prod-*` tags; production promotion after staging validation remains **manual** unless the repo explicitly opts into `prod` on merge.
 
-**Dev / default branch:** Continuous deploys from the default branch are **out of band** from promotion trains and MUST NOT use `prod-*` promotion tags or artifact tags as production triggers.
+**Dev / default branch:** Continuous deploys from the default branch are **out of band** from promotion trains and MUST NOT use `prod-*` promotion tags or artifact tags as production triggers. Topology **C** uses this for dev while prod remains gated.
 
 ### Invariants
 
@@ -159,6 +165,8 @@ Application versioning and changelog intent remain driven by Changesets where ap
 ## Related ADRs
 
 - [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — canonical release train identifier and GitHub Releases alignment
+- [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) — staging/prod review changelog artifacts and train notes file
+- [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md) — release cycles, RC suffix on staging tags, manifest directory layout
 - [ADR 0026](0026-use-changesets-for-application-releases.md) — application versioning and user-facing release intent
 - [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) — which artifacts are versioned
 - [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — release manifest format (pin sets) and coordination rules; superseded [ADR 0030](0030-coordinated-release-model-release-manifests-and-promotion-tags.md) for historical phased manifests

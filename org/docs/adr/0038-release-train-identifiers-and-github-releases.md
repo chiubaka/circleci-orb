@@ -37,7 +37,9 @@ This ADR records which **train identifier** we standardize on and how **GitHub R
 
 Chosen option: **Standardize on `YYYY.MM.DD.N` as the canonical release train identifier** for coordinated releases and related automation. **GitHub Releases**, when published for a monorepo batch, **SHOULD** use this same train identifier as the **GitHub release tag and title prefix** (for example `2026.04.06.1` or `v2026.04.06.1` if a `v` prefix is required by tooling—either form is acceptable if used consistently within a repository).
 
-**Release notes** for that GitHub Release **SHOULD** be assembled from the **Changesets-generated changelogs** and summaries for packages and deployable artifacts included in that publish batch ([ADR 0024](0024-use-changesets-for-library-monorepos.md), [ADR 0026](0026-use-changesets-for-application-releases.md), [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md)). The train identifier names the **batch**; per-package semver remains the compatibility surface for consumers. **Implementation note (Chiubaka orb):** default automation renders those notes as a **structured batch summary**—grouped **Breaking Changes / Security / Features / Improvements / Bug Fixes / Deprecations / Other Changes** sections (from changeset category prefix tokens), nested bullets per package, and a **Published versions** list—rather than a flat per-package excerpt block. Set `release-notes-grouping: bump-type` to retain **Major / Minor / Patch** sections (legacy escape hatch).
+**Calendar date semantics:** The `YYYY.MM.DD` portion is the **release cycle open date**—the UTC calendar date when the **first RC** of that cycle is cut—not the production ship date, last staging validation date, or last soak cut date. Production ship time MUST be recorded via GitHub Release metadata, deployment audit logs, or optional manifest fields (see [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)). Soak iterations that occur on later calendar days remain part of the **same** cycle id.
+
+**Release notes** for that GitHub Release **SHOULD** be assembled from the **Changesets-generated changelogs** and summaries for packages and deployable artifacts included in that publish batch ([ADR 0024](0024-use-changesets-for-library-monorepos.md), [ADR 0026](0026-use-changesets-for-application-releases.md), [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md)). The train identifier names the **batch**; per-package semver remains the compatibility surface for consumers. **Implementation note (Chiubaka orb):** default automation renders those notes as a **structured batch summary**—grouped **Breaking Changes / Security / Features / Improvements / Bug Fixes / Deprecations / Other Changes** sections (from changeset category prefix tokens), nested bullets per package, and a **Published versions** list—rather than a flat per-package excerpt block. Set `release-notes-grouping: bump-type` to retain **Major / Minor / Patch** sections (legacy escape hatch). Deployable application repos with staging RCs use the rollup defined in [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) and [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md).
 
 **Category presentation (org standard):** When release automation uses category grouping (Chiubaka orb default), changeset summaries **SHOULD** begin with a category prefix token (`Breaking:`, `Security:`, `Feature:`, `Improvement:`, `Fix:`, `Deprecation:`, `Other:`, or accepted variants). Semver bump level in the changeset frontmatter remains the versioning contract; category is a **presentation** axis only. Summaries **without** a recognized prefix **SHOULD** fail CI verification (`require-changeset-category-prefix`, orb default). Use **`Other:`** explicitly for the Other Changes section—do not rely on silent fallback for untagged entries.
 
@@ -67,7 +69,7 @@ Train identity matches manifest `release` values and promotion-tag stems; increm
 - Good, because it **aligns orchestration, auditing, and GitHub tagging** when teams adopt GitHub Releases.
 - Good, because it **avoids misleading** “repo-level semver” when packages version independently.
 - Good, because it **reuses** an established pattern already specified for coordinated releases.
-- Neutral, because “when” is visible in the id; **supplementary** context still comes from GitHub metadata and changelogs.
+- Neutral, because “when” is visible in the id as **cycle open date** ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)); **production ship date** comes from GitHub metadata and optional manifest fields.
 - Bad, because it does not communicate **aggregate semver intent** for the whole batch.
 
 ### Umbrella semver at the repository root
@@ -87,6 +89,8 @@ Train identity matches manifest `release` values and promotion-tag stems; increm
 
 **Repositories without coordinated manifests:** Some monorepos may still publish a **GitHub Release** per batch without adopting `.releases/` manifests. They **should still** use `YYYY.MM.DD.N` for train-aligned tags when they want a single umbrella label, and **should** follow the same `N` increment convention per date for consistency.
 
+**Deployable application repos with promotion manifests:** For repos that soak releases in staging before production, canonical GitHub Release **timing** and **notes body** for the train are defined in [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) (deferred publication at `prod-*`; full train notes file). Train identifier shape and tagging conventions in this ADR still apply.
+
 ## Related ADRs
 
 - [ADR 0024](0024-use-changesets-for-library-monorepos.md) — Changesets for libraries; batched release intent
@@ -94,3 +98,5 @@ Train identity matches manifest `release` values and promotion-tag stems; increm
 - [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) — single Changesets workflow per repository
 - [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — release manifests (pin sets); logical `release` field
 - [ADR 0031](0031-separation-of-artifact-tags-and-environment-promotion-tags.md) — promotion tags; logical release identifier and `N` rules
+- [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) — review artifacts and prod-time publication for deployable apps
+- [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md) — release cycles, RC ids, directory layout; hotfix releases
