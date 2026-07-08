@@ -37,6 +37,10 @@ parameters:
 steps:
   - steps: << parameters.pre-deploy-steps >>
   - run:
+      name: Stage release cycle scripts
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageReleaseCycleWriter.sh) >>
+  - run:
       name: Coordinated deploy (promotion tag)
       working_directory: << parameters.app-dir >>
       command: << include(scripts/runCoordinatedDeploy.sh) >>
@@ -46,3 +50,4 @@ steps:
         DRY_RUN: << parameters.dry-run >>
         MANIFEST_PATH: << parameters.manifest-path >>
         SKIP_MANIFEST_VALIDATION: << parameters.skip-manifest-validation >>
+        VALIDATE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-release-cycle/validateReleaseManifest.mjs
