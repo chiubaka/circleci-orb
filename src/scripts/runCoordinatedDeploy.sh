@@ -2,8 +2,84 @@
 # Coordinated deploy at promotion tag commit (commit-primary; manifest pins for audit — ADR 0042).
 set -euo pipefail
 
-_script_dir() {
-  cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd
+parse_promotion_tag_main() {
+  local tag raw env rest rc_index=""
+  raw=${CIRCLE_TAG:-${TAG:-}}
+  if [[ -z "$raw" ]]; then
+    echo "parsePromotionTag: CIRCLE_TAG or TAG must be set." >&2
+    exit 1
+  fi
+  tag=${raw#v}
+
+  if [[ "$tag" =~ ^staging-([0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+)-rc([0-9]+)$ ]]; then
+    env=staging
+    rest="${BASH_REMATCH[1]}"
+    rc_index="${BASH_REMATCH[2]}"
+  elif [[ "$tag" =~ ^prod-([0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+)$ ]]; then
+    env=prod
+    rest="${BASH_REMATCH[1]}"
+  else
+    echo "parsePromotionTag: tag must match staging-<cycle-id>-rc<n> or prod-<cycle-id> (got: ${tag})." >&2
+    echo "  See ADR 0031 and ADR 0042 for promotion tag conventions." >&2
+    exit 1
+  fi
+
+  export PROMOTION_ENV="$env"
+  export RELEASE_ID="$rest"
+  export RC_INDEX="$rc_index"
+  printf 'PROMOTION_ENV=%s\n' "$PROMOTION_ENV"
+  printf 'RELEASE_ID=%s\n' "$RELEASE_ID"
+  if [[ -n "$rc_index" ]]; then
+    printf 'RC_INDEX=%s\n' "$RC_INDEX"
+  fi
+}
+
+_resolve_manifest_validator_script() {
+  if [[ -n "${VALIDATE_RELEASE_MANIFEST_SCRIPT:-}" && -f "${VALIDATE_RELEASE_MANIFEST_SCRIPT}" ]]; then
+    printf '%s\n' "$VALIDATE_RELEASE_MANIFEST_SCRIPT"
+    return 0
+  fi
+  local sibling
+  # shellcheck disable=SC3028
+  sibling="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/validateReleaseManifest.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runCoordinatedDeploy: set VALIDATE_RELEASE_MANIFEST_SCRIPT or keep validateReleaseManifest.mjs next to this script." >&2
+  return 1
+}
+
+run_validate_release_manifest() {
+  local validator manifest_path validator_output line key value
+  if ! validator=$(_resolve_manifest_validator_script); then
+    return 1
+  fi
+  manifest_path=${1:-${RELEASE_MANIFEST_PATH:-}}
+  if [[ -z "$manifest_path" ]]; then
+    echo "runCoordinatedDeploy: manifest path argument or RELEASE_MANIFEST_PATH required." >&2
+    return 1
+  fi
+  # Capture output and check node's exit status explicitly; process substitution would
+  # swallow validator failures and let an invalid manifest report success.
+  if ! validator_output=$(node "$validator" "$manifest_path"); then
+    echo "runCoordinatedDeploy: manifest validation failed for ${manifest_path}." >&2
+    return 1
+  fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" ]] && continue
+    key=${line%%=*}
+    value=${line#*=}
+    case "$key" in
+      RELEASE_MANIFEST_PATH | RELEASE_ID | RC_INDEX | ARTIFACTS_JSON)
+        export "${key}=${value}"
+        ;;
+      *)
+        echo "runCoordinatedDeploy: unexpected validator output (expected KEY=VALUE)." >&2
+        return 1
+        ;;
+    esac
+  done <<<"$validator_output"
 }
 
 resolve_highest_rc_index() {
@@ -21,17 +97,12 @@ resolve_highest_rc_index() {
 }
 
 run_coordinated_deploy_main() {
-  local app_dir manifest_path deploy_script dry_raw dry_lower releases_dir script_dir rc_index
+  local app_dir manifest_path deploy_script dry_raw dry_lower releases_dir rc_index
   local skip_raw skip_lower pnpm_bin
-  script_dir=$(_script_dir)
 
   app_dir=${APP_DIR:-.}
   cd "$app_dir"
 
-  # shellcheck disable=SC2034
-  PARSE_PROMOTION_TAG_SOURCE_ONLY=true
-  # shellcheck disable=SC1091
-  source "${script_dir}/parsePromotionTag.sh"
   parse_promotion_tag_main
 
   releases_dir=${RELEASES_DIR:-.releases}
@@ -58,20 +129,17 @@ run_coordinated_deploy_main() {
       echo "runCoordinatedDeploy: manifest not found at ${manifest_path}." >&2
       exit 1
     fi
-    # shellcheck disable=SC2034
-    VALIDATE_RELEASE_MANIFEST_SOURCE_ONLY=true
-    # shellcheck disable=SC1091
-    source "${script_dir}/validateReleaseManifest.sh"
     run_validate_release_manifest "$manifest_path"
     export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
   else
+    # Validation is skipped: best-effort populate manifest exports when a manifest is present,
+    # but never abort the deploy on a validation failure (honoring SKIP_MANIFEST_VALIDATION).
     if [[ -n "$manifest_path" && -f "$manifest_path" ]]; then
-      # shellcheck disable=SC2034
-      VALIDATE_RELEASE_MANIFEST_SOURCE_ONLY=true
-      # shellcheck disable=SC1091
-      source "${script_dir}/validateReleaseManifest.sh"
-      run_validate_release_manifest "$manifest_path"
-      export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
+      if run_validate_release_manifest "$manifest_path"; then
+        export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
+      else
+        echo "runCoordinatedDeploy: manifest validation skipped; ${manifest_path} did not validate, continuing." >&2
+      fi
     fi
   fi
 
