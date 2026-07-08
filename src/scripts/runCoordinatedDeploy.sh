@@ -132,9 +132,14 @@ run_coordinated_deploy_main() {
     run_validate_release_manifest "$manifest_path"
     export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
   else
+    # Validation is skipped: best-effort populate manifest exports when a manifest is present,
+    # but never abort the deploy on a validation failure (honoring SKIP_MANIFEST_VALIDATION).
     if [[ -n "$manifest_path" && -f "$manifest_path" ]]; then
-      run_validate_release_manifest "$manifest_path"
-      export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
+      if run_validate_release_manifest "$manifest_path"; then
+        export RELEASE_MANIFEST_PATH RELEASE_ID RC_INDEX ARTIFACTS_JSON
+      else
+        echo "runCoordinatedDeploy: manifest validation skipped; ${manifest_path} did not validate, continuing." >&2
+      fi
     fi
   fi
 
