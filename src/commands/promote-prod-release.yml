@@ -30,6 +30,16 @@ parameters:
     type: string
     default: "<< pipeline.git.revision >>"
     description: Commit to finalize and tag (defaults to pipeline revision).
+  tag-target:
+    type: enum
+    enum:
+      - finalize
+      - validated
+    default: finalize
+    description: >
+      Which commit prod-<cycle-id> and the GitHub Release target. finalize (default) tags
+      the finalize commit on primary-branch. validated tags the pre-finalize target-ref
+      commit so deploy pins (e.g. sha-${CIRCLE_SHA1}) match the soaked RC build.
 
 steps:
   - install-github-cli
@@ -48,6 +58,7 @@ steps:
         ON_EXISTING_TAG: << parameters.on-existing-tag >>
         RELEASE_ID: << parameters.release-id >>
         TARGET_REF: << parameters.target-ref >>
+        TAG_TARGET: << parameters.tag-target >>
         FINALIZE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/finalizeReleaseCycle.mjs
         RESOLVE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/resolveReleaseCycleOnCommit.mjs
         ROLLUP_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-release-cycle/rollupReleaseNotes.mjs
