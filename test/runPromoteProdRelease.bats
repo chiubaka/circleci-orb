@@ -45,14 +45,9 @@ EOF
   printf '%s' "$bindir"
 }
 
-@test "default finalize mode tags prod release at finalize commit" {
-  local clone bindir gh_call_log validated_sha finalize_sha tag_sha args
-  clone=$(_promote_prod_init_clone)
-  bindir=$(_write_gh_stub)
-  gh_call_log=$(mktemp)
-  validated_sha=$(git -C "$clone" rev-parse HEAD)
-  cd "$clone" || exit 1
-
+_run_promote_prod_release() {
+  local bindir=$1 gh_call_log=$2
+  shift 2
   run env GITHUB_TOKEN=fake \
     GITHUB_REPO_SLUG=example/test \
     PRIMARY_BRANCH=master \
@@ -62,7 +57,19 @@ EOF
     ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
     GH_CALL_LOG="$gh_call_log" \
     PATH="${bindir}:$PATH" \
+    "$@" \
     bash "$PROJECT_ROOT/src/scripts/runPromoteProdRelease.sh"
+}
+
+@test "default finalize mode tags prod release at finalize commit" {
+  local clone bindir gh_call_log validated_sha finalize_sha tag_sha args
+  clone=$(_promote_prod_init_clone)
+  bindir=$(_write_gh_stub)
+  gh_call_log=$(mktemp)
+  validated_sha=$(git -C "$clone" rev-parse HEAD)
+  cd "$clone" || exit 1
+
+  _run_promote_prod_release "$bindir" "$gh_call_log"
 
   assert_success
   finalize_sha=$(git rev-parse HEAD)
@@ -86,17 +93,7 @@ EOF
   validated_sha=$(git -C "$clone" rev-parse HEAD)
   cd "$clone" || exit 1
 
-  run env GITHUB_TOKEN=fake \
-    GITHUB_REPO_SLUG=example/test \
-    PRIMARY_BRANCH=master \
-    TAG_TARGET=validated \
-    UTC_TIMESTAMP_OVERRIDE=2026-05-08T16:00:00Z \
-    FINALIZE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/finalizeReleaseCycle.mjs" \
-    RESOLVE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/resolveReleaseCycleOnCommit.mjs" \
-    ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
-    GH_CALL_LOG="$gh_call_log" \
-    PATH="${bindir}:$PATH" \
-    bash "$PROJECT_ROOT/src/scripts/runPromoteProdRelease.sh"
+  _run_promote_prod_release "$bindir" "$gh_call_log" TAG_TARGET=validated
 
   assert_success
   finalize_sha=$(git rev-parse HEAD)
@@ -124,17 +121,7 @@ EOF
   validated_sha=$(git -C "$clone" rev-parse HEAD)
   cd "$clone" || exit 1
 
-  run env GITHUB_TOKEN=fake \
-    GITHUB_REPO_SLUG=example/test \
-    PRIMARY_BRANCH=master \
-    TAG_TARGET=validated \
-    UTC_TIMESTAMP_OVERRIDE=2026-05-08T16:00:00Z \
-    FINALIZE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/finalizeReleaseCycle.mjs" \
-    RESOLVE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/resolveReleaseCycleOnCommit.mjs" \
-    ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
-    GH_CALL_LOG="$gh_call_log" \
-    PATH="${bindir}:$PATH" \
-    bash "$PROJECT_ROOT/src/scripts/runPromoteProdRelease.sh"
+  _run_promote_prod_release "$bindir" "$gh_call_log" TAG_TARGET=validated
 
   assert_success
 
@@ -156,18 +143,7 @@ EOF
   gh_call_log=$(mktemp)
   cd "$clone" || exit 1
 
-  run env GITHUB_TOKEN=fake \
-    GITHUB_REPO_SLUG=example/test \
-    PRIMARY_BRANCH=master \
-    RELEASE_ID=2026.05.08.1 \
-    TAG_TARGET=unknown \
-    UTC_TIMESTAMP_OVERRIDE=2026-05-08T16:00:00Z \
-    FINALIZE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/finalizeReleaseCycle.mjs" \
-    RESOLVE_RELEASE_CYCLE_SCRIPT="$PROJECT_ROOT/src/scripts/resolveReleaseCycleOnCommit.mjs" \
-    ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
-    GH_CALL_LOG="$gh_call_log" \
-    PATH="${bindir}:$PATH" \
-    bash "$PROJECT_ROOT/src/scripts/runPromoteProdRelease.sh"
+  _run_promote_prod_release "$bindir" "$gh_call_log" RELEASE_ID=2026.05.08.1 TAG_TARGET=unknown
 
   assert_failure
   assert_output --partial "TAG_TARGET must be finalize or validated"
