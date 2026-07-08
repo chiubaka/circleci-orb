@@ -17,19 +17,24 @@ sys.stdout.write(t[i : end + 1])
 " "$marker" "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh"
 }
 
+_assert_embedded_matches_source() {
+  local marker=$1 source_rel=$2 embedded
+  embedded="$(_extract_embedded "$marker")"
+  assert_equal "$(cat "$PROJECT_ROOT/src/scripts/${source_rel}")" "$embedded"
+}
+
 @test "embedded release cycle scripts match source modules" {
-  local embedded
-  embedded="$(_extract_embedded CHIUBAKA_ORB_LIB_RELEASE_CYCLE_V1_EOF)"
-  assert_equal "$(cat "$PROJECT_ROOT/src/scripts/lib/releaseCycle.mjs")" "$embedded"
-
-  embedded="$(_extract_embedded CHIUBAKA_ORB_LIB_TRAIN_ID_MJS_V1_EOF)"
-  assert_equal "$(cat "$PROJECT_ROOT/src/scripts/lib/trainId.mjs")" "$embedded"
-
-  embedded="$(_extract_embedded CHIUBAKA_ORB_WRITE_RELEASE_CYCLE_V1_EOF)"
-  assert_equal "$(cat "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs")" "$embedded"
-
-  embedded="$(_extract_embedded CHIUBAKA_ORB_VALIDATE_RELEASE_MANIFEST_V1_EOF)"
-  assert_equal "$(cat "$PROJECT_ROOT/src/scripts/validateReleaseManifest.mjs")" "$embedded"
+  # Assert every module the stage writer embeds so drift in any packaged file is caught.
+  _assert_embedded_matches_source CHIUBAKA_ORB_LIB_RELEASE_CYCLE_V1_EOF lib/releaseCycle.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_LIB_TRAIN_ID_MJS_V1_EOF lib/trainId.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_WRITE_RELEASE_CYCLE_V1_EOF writeReleaseCycle.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_RESOLVE_RELEASE_CYCLE_ON_COMMIT_V1_EOF resolveReleaseCycleOnCommit.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_FINALIZE_RELEASE_CYCLE_V1_EOF finalizeReleaseCycle.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_ROLLUP_RELEASE_NOTES_V1_EOF rollupReleaseNotes.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_VALIDATE_RELEASE_CYCLE_V1_EOF validateReleaseCycle.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_VALIDATE_RELEASE_MANIFEST_V1_EOF validateReleaseManifest.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_V1_EOF formatChangesetsBatchReleaseNotes.mjs
+  _assert_embedded_matches_source CHIUBAKA_ORB_CHANGESET_CATEGORY_PREFIXES_V1_EOF changesetCategoryPrefixes.mjs
 }
 
 @test "stage script works when inlined like CircleCI orb include" {

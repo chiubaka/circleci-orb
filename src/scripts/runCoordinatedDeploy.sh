@@ -51,13 +51,19 @@ _resolve_manifest_validator_script() {
 }
 
 run_validate_release_manifest() {
-  local validator manifest_path line key value
+  local validator manifest_path validator_output line key value
   if ! validator=$(_resolve_manifest_validator_script); then
     return 1
   fi
   manifest_path=${1:-${RELEASE_MANIFEST_PATH:-}}
   if [[ -z "$manifest_path" ]]; then
     echo "runCoordinatedDeploy: manifest path argument or RELEASE_MANIFEST_PATH required." >&2
+    return 1
+  fi
+  # Capture output and check node's exit status explicitly; process substitution would
+  # swallow validator failures and let an invalid manifest report success.
+  if ! validator_output=$(node "$validator" "$manifest_path"); then
+    echo "runCoordinatedDeploy: manifest validation failed for ${manifest_path}." >&2
     return 1
   fi
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -73,7 +79,7 @@ run_validate_release_manifest() {
         return 1
         ;;
     esac
-  done < <(node "$validator" "$manifest_path")
+  done <<<"$validator_output"
 }
 
 resolve_highest_rc_index() {
