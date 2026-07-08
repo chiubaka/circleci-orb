@@ -29,6 +29,15 @@ parameters:
     type: string
     default: "<< pipeline.git.revision >>"
     description: Commit to finalize and tag (defaults to pipeline revision).
+  tag-target:
+    type: enum
+    enum:
+      - finalize
+      - validated
+    default: finalize
+    description: >
+      Which commit prod-<cycle-id> and the GitHub Release target. finalize tags the
+      finalize commit; validated tags the pre-finalize target-ref commit (ADR 0031).
   resource-class:
     default: medium
     enum:
@@ -53,3 +62,4 @@ steps:
       on-existing-tag: << parameters.on-existing-tag >>
       release-id: << parameters.release-id >>
       target-ref: << parameters.target-ref >>
+      tag-target: << parameters.tag-target >>

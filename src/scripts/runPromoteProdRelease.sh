@@ -50,9 +50,24 @@ read_cycle_from_commit() {
   CYCLE_ID=$cycle_id
 }
 
+_resolve_tag_sha() {
+  local tag_target validated_sha finalize_sha
+  tag_target=$(printf '%s' "${TAG_TARGET:-finalize}" | tr '[:upper:]' '[:lower:]')
+  validated_sha=$1
+  finalize_sha=$2
+  case "$tag_target" in
+    finalize) printf '%s\n' "$finalize_sha" ;;
+    validated) printf '%s\n' "$validated_sha" ;;
+    *)
+      echo "runPromoteProdRelease: TAG_TARGET must be finalize or validated (got ${TAG_TARGET})." >&2
+      return 1
+      ;;
+  esac
+}
+
 run_promote_prod_release_main() {
   local app_dir releases_dir cycle_dir finalize_script notes_path primary auth_header push_url repo_slug u r
-  local target_ref target_sha tag remote_sha on_existing
+  local target_ref validated_sha finalize_sha tag_sha tag remote_sha on_existing
 
   app_dir=${APP_DIR:-.}
   releases_dir=${RELEASES_DIR:-.releases}
@@ -74,8 +89,9 @@ run_promote_prod_release_main() {
   if [[ -z "$target_ref" ]]; then
     target_ref=HEAD
   fi
-  target_sha=$(git rev-parse "${target_ref}^{commit}")
-  export TARGET_SHA="$target_sha"
+  validated_sha=$(git rev-parse "${target_ref}^{commit}")
+  finalize_sha=$validated_sha
+  export TARGET_SHA="$validated_sha"
 
   if ! read_cycle_from_commit; then
     echo "runPromoteProdRelease: could not determine cycle id on ${target_ref}." >&2
@@ -105,7 +121,11 @@ run_promote_prod_release_main() {
     echo "runPromoteProdRelease: cycle already finalized on ${target_ref}; continuing."
   else
     git commit --no-verify -m "chore(release): finalize ${CYCLE_ID} for production"
-    target_sha=$(git rev-parse HEAD)
+    finalize_sha=$(git rev-parse HEAD)
+  fi
+
+  if ! tag_sha=$(_resolve_tag_sha "$validated_sha" "$finalize_sha"); then
+    exit 1
   fi
 
   repo_slug=${GITHUB_REPO_SLUG:-}
@@ -133,22 +153,22 @@ run_promote_prod_release_main() {
     remote_sha=$(git ls-remote origin "refs/tags/${tag}" | awk '{print $1}' | head -1 || true)
   fi
   if [[ -n "$remote_sha" ]]; then
-    if [[ "$remote_sha" == "$target_sha" ]]; then
+    if [[ "$remote_sha" == "$tag_sha" ]]; then
       if [[ "$on_existing" == "skip" ]]; then
-        echo "runPromoteProdRelease: tag ${tag} already exists at ${target_sha}; skipping tag push."
+        echo "runPromoteProdRelease: tag ${tag} already exists at ${tag_sha}; skipping tag push."
       else
         echo "runPromoteProdRelease: tag ${tag} already exists at target (on-existing-tag=fail)." >&2
         exit 1
       fi
     else
-      echo "runPromoteProdRelease: tag ${tag} exists on origin at ${remote_sha}, not ${target_sha}." >&2
+      echo "runPromoteProdRelease: tag ${tag} exists on origin at ${remote_sha}, not ${tag_sha}." >&2
       exit 1
     fi
   else
-    git -c tag.gpgSign=false tag -fa "$tag" -m "promotion: ${tag}" "$target_sha"
+    git -c tag.gpgSign=false tag -fa "$tag" -m "promotion: ${tag}" "$tag_sha"
     git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
       push "$push_url" "refs/tags/${tag}"
-    echo "runPromoteProdRelease: pushed ${tag} at ${target_sha}."
+    echo "runPromoteProdRelease: pushed ${tag} at ${tag_sha}."
   fi
 
   create_raw=${CREATE_GITHUB_RELEASE:-true}
@@ -168,7 +188,7 @@ run_promote_prod_release_main() {
     exit 0
   fi
 
-  gh release create "$tag" --repo "$repo_slug" --target "$target_sha" \
+  gh release create "$tag" --repo "$repo_slug" --target "$tag_sha" \
     --title "$CYCLE_ID" --notes-file "$notes_path"
   echo "runPromoteProdRelease: created GitHub Release ${tag}."
 }
