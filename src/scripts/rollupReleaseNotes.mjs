@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Roll up per-RC notes into cycle release-notes.md (ADR 0041 artifact 3).
+ * Roll up per-RC release-notes.md into cycle release-notes.md (ADR 0041).
  * Usage: node rollupReleaseNotes.mjs <cycle-dir> [outfile]
  */
 import fs from "node:fs";
@@ -24,7 +24,7 @@ function main() {
 
   const rcNotes = listRcNotesPaths(path.dirname(absCycleDir), cycleId);
   if (rcNotes.length === 0) {
-    fail(`no rc*/notes.md files found under ${absCycleDir}`);
+    fail(`no rc*/release-notes.md files found under ${absCycleDir}`);
   }
 
   const sections = [];

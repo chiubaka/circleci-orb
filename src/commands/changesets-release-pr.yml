@@ -48,6 +48,15 @@ parameters:
       category (default) groups release-PR notes under Breaking Changes / Security / Features /
       Improvements / Bug Fixes / Deprecations / Other Changes using summary prefix tokens.
       bump-type groups under Major / Minor / Patch (legacy escape hatch).
+  release-notes-nesting:
+    type: enum
+    enum:
+      - package-then-category
+      - category-then-package
+    default: package-then-category
+    description: >
+      package-then-category (default) nests #### category headings under ### package.
+      category-then-package keeps legacy ### category then package bullets.
 
 steps:
   - run:
@@ -77,3 +86,5 @@ steps:
         DEPLOYABLE_PACKAGES: << parameters.deployable-packages >>
         MANIFEST_TRAIN_TAG_PREFIX: << parameters.manifest-train-tag-prefix >>
         RELEASE_NOTES_GROUPING: << parameters.release-notes-grouping >>
+        RELEASE_NOTES_NESTING: << parameters.release-notes-nesting >>
+        ROLLUP_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-release-cycle/rollupReleaseNotes.mjs

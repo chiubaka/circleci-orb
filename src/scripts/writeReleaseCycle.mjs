@@ -10,7 +10,9 @@
  *   RELEASES_DIR — default .releases
  *   RC_NOTES_CHANGELOG_PATHS — optional comma-separated CHANGELOG paths for rc notes
  *   FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT — formatter module path
+ *   ROLLUP_RELEASE_NOTES_SCRIPT — rollup module path
  *   RELEASE_NOTES_GROUPING — category | bump-type
+ *   RELEASE_NOTES_NESTING — package-then-category | category-then-package
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -159,12 +161,27 @@ function writeRcNotes(outPath, changelogPaths) {
         ...process.env,
         RELEASE_NOTES_GROUPING:
           process.env.RELEASE_NOTES_GROUPING ?? "category",
+        RELEASE_NOTES_NESTING:
+          process.env.RELEASE_NOTES_NESTING ?? "package-then-category",
       },
     },
   );
   if (result.status !== 0) {
     const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
     fail(`failed to format rc notes: ${detail}`);
+  }
+}
+
+function refreshCycleReleaseNotes(cycleDir) {
+  const rollupScript =
+    process.env.ROLLUP_RELEASE_NOTES_SCRIPT ??
+    path.join(SCRIPT_DIR, "rollupReleaseNotes.mjs");
+  const result = spawnSync(process.execPath, [rollupScript, cycleDir], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
+    fail(`failed to roll up cycle release-notes.md: ${detail}`);
   }
 }
 
@@ -242,13 +259,17 @@ function main() {
         .map((entry) => entry.trim())
         .filter(Boolean)
     : discoverChangelogPaths();
-  const notesPath = path.join(rcDir, "notes.md");
+  const notesPath = path.join(rcDir, "release-notes.md");
   writeRcNotes(notesPath, changelogPaths);
+  refreshCycleReleaseNotes(cycleDir);
 
   process.stdout.write(`${manifestPath}\n`);
   process.stdout.write(`RELEASE_ID=${plan.cycleId}\n`);
   process.stdout.write(`RC_INDEX=${plan.rcIndex}\n`);
   process.stdout.write(`RC_NOTES_PATH=${notesPath}\n`);
+  process.stdout.write(
+    `RELEASE_NOTES_PATH=${path.join(cycleDir, "release-notes.md")}\n`,
+  );
 }
 
 main();

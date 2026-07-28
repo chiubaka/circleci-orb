@@ -262,10 +262,13 @@ cat >"$out" <<'CHIUBAKA_ORB_FORMATTER_V1_EOF'
 /**
  * Build grouped release notes from Changesets-style CHANGELOG.md files.
  *
- * Default (bump-type): group under ### Major|Minor|Patch Changes; uncategorized bullets -> Patch.
- * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Breaking Changes / Security /
- * Features / Improvements / Bug Fixes / Deprecations / Other Changes; bullets without a recognized
- * prefix fail formatting.
+ * Grouping (RELEASE_NOTES_GROUPING):
+ *   category (orb default via callers) — Breaking / Security / Features / …
+ *   bump-type — Major / Minor / Patch (legacy escape hatch)
+ *
+ * Nesting (RELEASE_NOTES_NESTING, default package-then-category):
+ *   package-then-category — ### package, then #### category, then bullets
+ *   category-then-package — ### category, then package bullets (legacy)
  *
  * Invoked as: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]
  *
@@ -277,6 +280,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const GROUPING = (process.env.RELEASE_NOTES_GROUPING || "bump-type").toLowerCase();
+const NESTING = (
+  process.env.RELEASE_NOTES_NESTING || "package-then-category"
+).toLowerCase();
 
 async function loadCategoryPrefixes() {
   const override = process.env.CHANGESET_CATEGORY_PREFIXES_SCRIPT;
@@ -458,18 +464,22 @@ function parseVersionBody(bodyLines, config) {
   return buckets;
 }
 
+function stripBulletPrefix(firstLine, prefixes) {
+  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
+  const m = String(firstLine).match(/^[-*]\s?(.*)$/);
+  let rest0 = m ? m[1] : String(firstLine).replace(/^[-*]\s?/, "");
+  if (GROUPING === "category") {
+    rest0 = stripFn(rest0);
+  }
+  return rest0;
+}
+
+/** Bullets nested under a package list item (category-then-package layout). */
 function emitNestedUnderPackage(blocks, prefixes) {
   const out = [];
-  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
   for (const block of blocks) {
     if (!block || block.length === 0) continue;
-    const first = block[0];
-    const m = String(first).match(/^[-*]\s?(.*)$/);
-    let rest0 = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-    if (GROUPING === "category") {
-      rest0 = stripFn(rest0);
-    }
-    out.push(`  - ${rest0}`);
+    out.push(`  - ${stripBulletPrefix(block[0], prefixes)}`);
     for (let k = 1; k < block.length; k += 1) {
       const ln = block[k];
       if (ln === "") {
@@ -482,12 +492,80 @@ function emitNestedUnderPackage(blocks, prefixes) {
   return out;
 }
 
+/** Top-level bullets under a category heading (package-then-category layout). */
+function emitTopLevelBullets(blocks, prefixes) {
+  const out = [];
+  for (const block of blocks) {
+    if (!block || block.length === 0) continue;
+    out.push(`- ${stripBulletPrefix(block[0], prefixes)}`);
+    for (let k = 1; k < block.length; k += 1) {
+      const ln = block[k];
+      if (ln === "") {
+        out.push("");
+        continue;
+      }
+      out.push(`  ${ln}`);
+    }
+  }
+  return out;
+}
+
+function demoteHeading(title) {
+  return String(title).replace(/^###\s/, "#### ");
+}
+
+function emitCategoryThenPackage(packages, config, prefixes) {
+  const lines = [];
+  const byName = (a, b) => a.name.localeCompare(b.name, "en");
+  for (const cat of config.order) {
+    const withBlocks = packages
+      .map((p) => ({ name: p.name, blocks: p.buckets[cat] }))
+      .filter((p) => p.blocks.length > 0)
+      .sort(byName);
+    if (withBlocks.length === 0) continue;
+    lines.push(config.titles[cat], "");
+    for (const { name, blocks } of withBlocks) {
+      lines.push(`- **${name}**`);
+      lines.push(...emitNestedUnderPackage(blocks, prefixes));
+      lines.push("");
+    }
+  }
+  return lines;
+}
+
+function emitPackageThenCategory(packages, config, prefixes) {
+  const lines = [];
+  const sorted = [...packages].sort((a, b) => a.name.localeCompare(b.name, "en"));
+  for (const pkg of sorted) {
+    const cats = config.order.filter((cat) => pkg.buckets[cat]?.length > 0);
+    if (cats.length === 0) continue;
+    lines.push(`### ${pkg.name}`, "");
+    for (const cat of cats) {
+      lines.push(demoteHeading(config.titles[cat]), "");
+      lines.push(...emitTopLevelBullets(pkg.buckets[cat], prefixes));
+      lines.push("");
+    }
+  }
+  return lines;
+}
+
 async function main() {
   const outFile = process.argv[2];
   const changelogPaths = process.argv.slice(3).filter(Boolean);
   if (!outFile || changelogPaths.length === 0) {
     console.error(
       "usage: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]",
+    );
+    process.exit(2);
+  }
+
+  if (
+    NESTING !== "package-then-category" &&
+    NESTING !== "category-then-package"
+  ) {
+    console.error(
+      `formatChangesetsBatchReleaseNotes: invalid RELEASE_NOTES_NESTING "${NESTING}" ` +
+        `(expected package-then-category or category-then-package)`,
     );
     process.exit(2);
   }
@@ -511,22 +589,10 @@ async function main() {
     if (meta.published) published.add(meta.published);
   }
 
-  const lines = [];
-  const byName = (a, b) => a.name.localeCompare(b.name, "en");
-
-  for (const cat of config.order) {
-    const withBlocks = packages
-      .map((p) => ({ name: p.name, blocks: p.buckets[cat] }))
-      .filter((p) => p.blocks.length > 0)
-      .sort(byName);
-    if (withBlocks.length === 0) continue;
-    lines.push(config.titles[cat], "");
-    for (const { name, blocks } of withBlocks) {
-      lines.push(`- **${name}**`);
-      lines.push(...emitNestedUnderPackage(blocks, prefixes));
-      lines.push("");
-    }
-  }
+  const lines =
+    NESTING === "category-then-package"
+      ? emitCategoryThenPackage(packages, config, prefixes)
+      : emitPackageThenCategory(packages, config, prefixes);
 
   const pubSorted = [...published].sort((a, b) => a.localeCompare(b, "en"));
   if (pubSorted.length > 0) {

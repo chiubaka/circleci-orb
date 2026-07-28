@@ -110,10 +110,10 @@ All keys in `cycle.yml`, `rc<n>/manifest.yml`, and tooling-owned fields in this 
     cycle.yml                 # cycle metadata (required)
     rc1/
       manifest.yml            # pin set for this RC cut
-      notes.md                # reviewer notes for this cut only (tooling-owned)
+      release-notes.md                # reviewer notes for this cut only (tooling-owned)
     rc2/                      # present when a soak patch cut exists
       manifest.yml
-      notes.md
+      release-notes.md
     release-notes.md          # rollup for prod / artifact 3 (tooling-owned)
 ```
 
@@ -160,7 +160,7 @@ artifacts:
 
 **Deploy resolution:** coordinated deploy for promotion tag `staging-2026.07.01.1-rc2` reads `.releases/2026.07.01.1/rc2/manifest.yml`. For `prod-2026.07.01.1`, automation MUST use the **highest-numbered `rc*/manifest.yml` present on the tagged commit** (the validated final RC).
 
-**`release-notes.md`:** tooling-generated rollup of all `rc*/notes.md` in order; canonical GitHub Release body at prod ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Each rollup section MUST be headed with the full RC promotion id (`<cycle-id>-rc<n>`, for example `## 2026.07.01.1-rc1`), matching staging promotion tag stems. Per-RC `rc<n>/notes.md` files contain only that cut’s formatted batch (no section heading required in the leaf file). For a single-cut cycle, the rollup MAY contain one section (`<cycle-id>-rc1`) identical in body to `rc1/notes.md`.
+**`release-notes.md`:** tooling-generated rollup of all `rc*/release-notes.md` in order; refreshed on every RC cut and used as the canonical GitHub Release body at prod ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Each rollup section MUST be headed with the full RC promotion id (`<cycle-id>-rc<n>`, for example `## 2026.07.01.1-rc1`), matching staging promotion tag stems. Per-RC `rc<n>/release-notes.md` files contain only that cut’s formatted batch (no section heading required in the leaf file). For a single-cut cycle, the rollup MAY contain one section (`<cycle-id>-rc1`) identical in body to `rc1/release-notes.md`.
 
 ### Single-cut cycles (topology C and simple paths)
 
@@ -171,7 +171,7 @@ A cycle with only one version cut before prod still uses the full directory shap
   cycle.yml
   rc1/
     manifest.yml
-    notes.md
+    release-notes.md
   release-notes.md
 ```
 

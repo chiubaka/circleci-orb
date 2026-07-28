@@ -163,6 +163,13 @@ parameters:
       Passed to github-release-train. category (default) uses Breaking Changes / Security / Features /
       Improvements / Bug Fixes / Deprecations / Other Changes. bump-type uses Major / Minor / Patch
       (legacy escape hatch).
+  release-notes-nesting:
+    type: enum
+    enum:
+      - package-then-category
+      - category-then-package
+    default: package-then-category
+    description: Passed to github-release-train (package-then-category default).
   promotion-tag-prefix:
     type: string
     default: ""
@@ -231,6 +238,7 @@ steps:
             title-template: << parameters.release-train-title-template >>
             on-existing-tag: << parameters.release-train-on-existing-tag >>
             release-notes-grouping: << parameters.release-notes-grouping >>
+            release-notes-nesting: << parameters.release-notes-nesting >>
   - push-promotion-tag:
       app-dir: << parameters.app-dir >>
       promotion-tag-prefix: << parameters.promotion-tag-prefix >>

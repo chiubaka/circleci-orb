@@ -40,7 +40,10 @@ _init_git_with_origin() {
   assert_output --partial ".releases/2099.12.31.1/rc1/manifest.yml"
   assert [ -f ".releases/2099.12.31.1/cycle.yml" ]
   assert [ -f ".releases/2099.12.31.1/rc1/manifest.yml" ]
-  assert [ -f ".releases/2099.12.31.1/rc1/notes.md" ]
+  assert [ -f ".releases/2099.12.31.1/rc1/release-notes.md" ]
+  assert [ -f ".releases/2099.12.31.1/release-notes.md" ]
+  run grep -F "## 2099.12.31.1-rc1" ".releases/2099.12.31.1/release-notes.md"
+  assert_success
   run grep -F "release: 2099.12.31.1" ".releases/2099.12.31.1/cycle.yml"
   assert_success
   run grep -F "rc: 1" ".releases/2099.12.31.1/rc1/manifest.yml"
@@ -120,8 +123,8 @@ EOF
     RC_NOTES_CHANGELOG_PATHS=packages/server/CHANGELOG.md \
     node "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs"
   assert_success
-  run grep -F "### Features" ".releases/2099.12.31.1/rc1/notes.md"
+  run grep -F "#### Features" ".releases/2099.12.31.1/rc1/release-notes.md"
   assert_success
-  run grep -F "add cycle notes formatting" ".releases/2099.12.31.1/rc1/notes.md"
+  run grep -F "add cycle notes formatting" ".releases/2099.12.31.1/rc1/release-notes.md"
   assert_success
 }

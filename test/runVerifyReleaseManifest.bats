@@ -115,7 +115,7 @@ _simulate_circleci_script() {
     "${repo_dir}/.releases/2026.05.08.1/rc1/manifest.yml"
   printf 'release: 2026.05.08.1\nopenedAt: 2026-05-08T14:32:00Z\n' \
     >"${repo_dir}/.releases/2026.05.08.1/cycle.yml"
-  printf 'notes\n' >"${repo_dir}/.releases/2026.05.08.1/rc1/notes.md"
+  printf 'notes\n' >"${repo_dir}/.releases/2026.05.08.1/rc1/release-notes.md"
 
   cd "${repo_dir}"
   git init -b master >/dev/null

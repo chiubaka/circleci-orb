@@ -41,7 +41,7 @@ setup() {
   assert_success
 
   mkdir -p "$work/2026.05.08.1/rc2"
-  cp "$work/2026.05.08.1/rc1/notes.md" "$work/2026.05.08.1/rc2/notes.md"
+  cp "$work/2026.05.08.1/rc1/release-notes.md" "$work/2026.05.08.1/rc2/release-notes.md"
   run node "$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" "$work/2026.05.08.1"
   assert_success
   run grep -F "## 2026.05.08.1-rc2" "$work/2026.05.08.1/release-notes.md"

@@ -84,6 +84,13 @@ parameters:
       Passed to changesets-release-pr. category (default) groups release-PR notes under Breaking
       Changes / Security / Features / Improvements / Bug Fixes / Deprecations / Other Changes.
       bump-type keeps Major / Minor / Patch (legacy escape hatch).
+  release-notes-nesting:
+    type: enum
+    enum:
+      - package-then-category
+      - category-then-package
+    default: package-then-category
+    description: Passed to changesets-release-pr (package-then-category default).
   registry-access:
     type: enum
     enum:
@@ -161,3 +168,4 @@ steps:
       deployable-packages: << parameters.deployable-packages >>
       manifest-train-tag-prefix: << parameters.manifest-train-tag-prefix >>
       release-notes-grouping: << parameters.release-notes-grouping >>
+      release-notes-nesting: << parameters.release-notes-nesting >>

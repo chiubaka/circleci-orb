@@ -73,7 +73,7 @@ function main() {
     if (!fs.existsSync(manifest)) {
       fail(`${abs}: missing ${path.relative(abs, manifest)}`);
     }
-    const notes = path.join(rcDir, "notes.md");
+    const notes = path.join(rcDir, "release-notes.md");
     if (!fs.existsSync(notes)) {
       fail(`${abs}: missing ${path.relative(abs, notes)}`);
     }

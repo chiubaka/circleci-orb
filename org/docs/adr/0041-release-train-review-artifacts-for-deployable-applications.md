@@ -35,7 +35,7 @@ Release **cycle** identity, RC naming, calendar date semantics, and manifest dir
 
 ## Decision Outcome
 
-Chosen option: **Per-RC notes snapshots under `.releases/<cycle-id>/rc<n>/notes.md`, cycle-level `release-notes.md` rollup at prod, deferred canonical publication for deployable applications.**
+Chosen option: **Per-RC and cycle-level `release-notes.md` files under `.releases/<cycle-id>/`, with the cycle rollup refreshed on every cut and published at production; deferred canonical GitHub Release for deployable applications.**
 
 ### Scope
 
@@ -59,19 +59,19 @@ Every release cycle uses a directory ([ADR 0042](0042-release-cycles-rc-identifi
   cycle.yml
   rc1/
     manifest.yml
-    notes.md          # artifact 1 (and only RC notes for simple 2-env cuts)
+    release-notes.md          # artifact 1 (and only RC notes for simple 2-env cuts)
   rc2/                # when soak requires another cut
     manifest.yml
-    notes.md          # artifact 2 for this cut
-  release-notes.md    # artifact 3 rollup (tooling-owned)
+    release-notes.md          # artifact 2 for this cut
+    release-notes.md    # cycle rollup (tooling-owned; refreshed on every RC cut)
 ```
 
 **On each `changeset version` cut**, release automation MUST:
 
 1. Format the **newly written top version block** from each affected deployable `CHANGELOG.md` (same batch formatter as release-PR bodies).
-2. Write **`rc<n>/notes.md`** for that cut only (overwrite on re-run of the same RC is forbidden; each RC directory is created once).
+2. Write **`rc<n>/release-notes.md`** for that cut only (overwrite on re-run of the same RC is forbidden; each RC directory is created once).
 3. Update **`rc<n>/manifest.yml`** pins and **`cutAt`** (ISO-8601 UTC) for that cut.
-4. Leave **`release-notes.md`** to be generated or refreshed at prod promotion (rollup of all `rc*/notes.md` in order). Section headings in the rollup MUST use the full **RC promotion id** (`<cycle-id>-rc<n>`, for example `2026.07.01.1-rc1`), not bare `rc1` / `rc2`.
+4. Refresh the cycle-level **`release-notes.md`** as a rollup of all `rc*/release-notes.md` in order. Section headings in the rollup MUST use the full **RC promotion id** (`<cycle-id>-rc<n>`, for example `2026.07.01.1-rc1`), not bare `rc1` / `rc2`. Production finalization regenerates the same rollup after any stable-version ceremony.
 
 All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changesets-hygiene/SKILL.md](../../agents/skills/changesets-hygiene/SKILL.md)).
 
@@ -79,15 +79,15 @@ All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changese
 
 | #     | Review moment        | Question answered                    | Primary artifact                                                       |
 | ----- | -------------------- | ------------------------------------ | ---------------------------------------------------------------------- |
-| **1** | First cut (`rc1`)    | What is new since last prod?         | Release PR body; **`.releases/<cycle-id>/rc1/notes.md`**               |
-| **2** | Later cut (`rc2+`)   | What changed since the previous cut? | **`.releases/<cycle-id>/rc<n>/notes.md`** for the latest cut only      |
+| **1** | First cut (`rc1`)    | What is new since last prod?         | Release PR body; **`.releases/<cycle-id>/rc1/release-notes.md`**               |
+| **2** | Later cut (`rc2+`)   | What changed since the previous cut? | **`.releases/<cycle-id>/rc<n>/release-notes.md`** for the latest cut only      |
 | **3** | Production promotion | Full cycle since last prod           | **`.releases/<cycle-id>/release-notes.md`** → canonical GitHub Release |
 
-**Artifact 1:** Release PR body remains the primary review surface at cut time; `rc1/notes.md` mirrors it for durability. In topology C (dev + gated prod), review happens at the release PR before prod deploy—there may be no staging promotion.
+**Artifact 1:** Release PR body remains the primary review surface at cut time; `rc1/release-notes.md` mirrors it for durability. In topology C (dev + gated prod), review happens at the release PR before prod deploy—there may be no staging promotion.
 
-**Artifact 2:** Applies when a cycle has more than one cut—typically staging soak (topologies A, B). Each cut gets its own `rc<n>/notes.md`. Optional CI SHOULD surface the latest RC notes when deploying `staging-<cycle-id>-rc<n>`.
+**Artifact 2:** Applies when a cycle has more than one cut—typically staging soak (topologies A, B). Each cut gets its own `rc<n>/release-notes.md`. Optional CI SHOULD surface the latest RC notes when deploying `staging-<cycle-id>-rc<n>`.
 
-**Artifact 3:** `release-notes.md` concatenates (or regenerates from) all `rc*/notes.md` in order, with each section headed by the full RC promotion id (`<cycle-id>-rc<n>`). Published at **`prod-<cycle-id>`** as the GitHub Release body. The GitHub Release title uses the cycle id only (no `-rc` suffix) ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+**Artifact 3:** Cycle-level `release-notes.md` concatenates (or regenerates from) all `rc*/release-notes.md` in order, with each section headed by the full RC promotion id (`<cycle-id>-rc<n>`). It is **refreshed on every RC cut** so reviewers can read the full cycle story during soak. Published at **`prod-<cycle-id>`** as the GitHub Release body. The GitHub Release title uses the cycle id only (no `-rc` suffix) ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
 
 ### Publication timing
 
@@ -120,7 +120,7 @@ Production hotfixes are **new release cycles**, not soak iterations ([ADR 0042 �
 
 | Artifact                                    | Hotfix behavior                                                                   |
 | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| **1** (`rc1/notes.md`)                      | Hotfix-only batch since last prod (release PR body mirrors this)                  |
+| **1** (`rc1/release-notes.md`)                      | Hotfix-only batch since last prod (release PR body mirrors this)                  |
 | **2**                                       | Typically absent (single `rc1` cut)                                               |
 | **3** (`release-notes.md` → GitHub Release) | Full hotfix cycle at `prod-<new-cycle-id>`; often one section `## <cycle-id>-rc1` |
 
@@ -136,9 +136,9 @@ Cycle `2026.07.01.1` (cycle open date 2026-07-01; rc2 cut on 2026-07-03 stays on
 .releases/2026.07.01.1/
   cycle.yml
   rc1/manifest.yml
-  rc1/notes.md
+  rc1/release-notes.md
   rc2/manifest.yml
-  rc2/notes.md
+  rc2/release-notes.md
   release-notes.md
 ```
 
@@ -173,16 +173,17 @@ artifacts:
 
 At production finalization, tooling refreshes this highest RC manifest to **stable** pins (for example `server-v5.2.1`, `web-v2.4.0`) before `prod-2026.07.01.1`.
 
-**`rc2/notes.md`** (artifact 2 — this cut only):
+**`rc2/release-notes.md`** (artifact 2 — this cut only):
 
 ```markdown
-### Bug Fixes
+### @chiubaka/server
 
-- **@chiubaka/server**
-  - Fix null handling when export queue is empty
+#### Bug Fixes
+
+- Fix null handling when export queue is empty
 ```
 
-**`release-notes.md`** (artifact 3 — excerpt):
+**`release-notes.md`** (artifact 3 — excerpt; present after rc2 cut):
 
 ```markdown
 ## 2026.07.01.1-rc1
@@ -215,7 +216,7 @@ See [examples/release-train-review-artifacts.md](examples/release-train-review-a
 - Every application release cycle has `.releases/<cycle-id>/` with at least `rc1/`.
 - Each `rc<n>/manifest.yml` includes **`cutAt`**; `cycle.yml` includes **`promotedAt`** after prod ship.
 - Canonical GitHub Releases for deployable apps are created at **`prod-<cycle-id>`** with body from **`release-notes.md`**; `cycle.yml` on that commit MUST include **`promotedAt`**.
-- Hotfix cycles use the same artifact paths; `rc1/notes.md` documents the hotfix-only batch since last prod.
+- Hotfix cycles use the same artifact paths; `rc1/release-notes.md` documents the hotfix-only batch since last prod.
 - Library repos without manifests are unaffected.
 
 ## Related ADRs
