@@ -1,6 +1,8 @@
 description: >
-  Finalize a release cycle for production (ADR 0041): set promotedAt on cycle.yml, write
-  release-notes.md rollup, commit, push prod-<cycle-id>, and create the canonical GitHub Release.
+  Finalize a release cycle for production (ADR 0041 / ADR 0043): exit Changesets
+  prerelease and cut stable semver when applicable, refresh highest RC manifest pins,
+  set promotedAt on cycle.yml, write release-notes.md rollup, commit, push
+  prod-<cycle-id>, and create the canonical GitHub Release.
   Run after staging sign-off on the validated merge commit.
 
 parameters:
@@ -38,11 +40,34 @@ parameters:
     default: finalize
     description: >
       Which commit prod-<cycle-id> and the GitHub Release target. finalize (default) tags
-      the finalize commit on primary-branch. validated tags the pre-finalize target-ref
-      commit so deploy pins (e.g. sha-${CIRCLE_SHA1}) match the soaked RC build.
+      the finalize commit on primary-branch (required after ADR 0043 stable cut). validated
+      tags the pre-finalize target-ref and is only valid when no prerelease exit ran (hotfix/legacy).
+  deployable-packages:
+    type: string
+    default: ""
+    description: >
+      Comma-separated key=path pairs for deployables. Required when the cycle is in Changesets
+      prerelease mode so production finalization can refresh stable manifest pins (ADR 0043).
+  stable-publish-script:
+    type: string
+    default: ""
+    description: >
+      Optional package.json script name run after the stable version cut (pnpm run <name>) to
+      publish/tag stable artifacts. When empty, operators must publish stable tags out of band.
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: category
+    description: Changelog category rewrite grouping after the stable version cut.
 
 steps:
   - install-github-cli
+  - run:
+      name: Stage Chiubaka release notes formatter
+      working_directory: << parameters.app-dir >>
+      command: << include(scripts/stageFormatChangesetsBatchReleaseNotes.sh) >>
   - run:
       name: Stage release cycle scripts
       working_directory: << parameters.app-dir >>
@@ -59,6 +84,12 @@ steps:
         RELEASE_ID: << parameters.release-id >>
         TARGET_REF: << parameters.target-ref >>
         TAG_TARGET: << parameters.tag-target >>
+        DEPLOYABLE_PACKAGES: << parameters.deployable-packages >>
+        STABLE_PUBLISH_SCRIPT: << parameters.stable-publish-script >>
+        RELEASE_NOTES_GROUPING: << parameters.release-notes-grouping >>
         FINALIZE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/finalizeReleaseCycle.mjs
         RESOLVE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/resolveReleaseCycleOnCommit.mjs
         ROLLUP_RELEASE_NOTES_SCRIPT: /tmp/chiubaka-release-cycle/rollupReleaseNotes.mjs
+        REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT: /tmp/chiubaka-release-cycle/refreshHighestRcManifestPins.mjs
+        REWRITE_CHANGELOG_CATEGORIES_SCRIPT: /tmp/chiubaka-rewriteChangelogCategories.mjs
+        CHANGESET_CATEGORY_PREFIXES_SCRIPT: /tmp/chiubaka-changesetCategoryPrefixes.mjs

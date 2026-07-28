@@ -59,6 +59,11 @@ parameters:
     default: false
     description: >
       Opt-in .releases/<cycle-id>/rc<n>/ tree on the release PR (application deployment repos).
+  release-is-hotfix:
+    type: boolean
+    default: false
+    description: >
+      When true with create-release-manifest, skip Changesets prerelease (ADR 0043 hotfix path).
   deployable-packages:
     type: string
     default: ""
@@ -151,6 +156,7 @@ steps:
       app-dir: << parameters.app-dir >>
       primary-branch: << parameters.primary-branch >>
       create-release-manifest: << parameters.create-release-manifest >>
+      release-is-hotfix: << parameters.release-is-hotfix >>
       deployable-packages: << parameters.deployable-packages >>
       manifest-train-tag-prefix: << parameters.manifest-train-tag-prefix >>
       release-notes-grouping: << parameters.release-notes-grouping >>

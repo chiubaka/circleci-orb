@@ -54,6 +54,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0040-standardize-on-playwright-for-web-end-to-end-testing.md`
 - `0041-release-train-review-artifacts-for-deployable-applications.md`
 - `0042-release-cycles-rc-identifiers-and-manifest-directories.md`
+- `0043-prerelease-until-production-for-application-release-cycles.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 
