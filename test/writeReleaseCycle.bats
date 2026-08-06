@@ -40,7 +40,10 @@ _init_git_with_origin() {
   assert_output --partial ".releases/2099.12.31.1/rc1/manifest.yml"
   assert [ -f ".releases/2099.12.31.1/cycle.yml" ]
   assert [ -f ".releases/2099.12.31.1/rc1/manifest.yml" ]
-  assert [ -f ".releases/2099.12.31.1/rc1/notes.md" ]
+  assert [ -f ".releases/2099.12.31.1/rc1/release-notes.md" ]
+  assert [ -f ".releases/2099.12.31.1/release-notes.md" ]
+  run grep -F "## 2099.12.31.1-rc1" ".releases/2099.12.31.1/release-notes.md"
+  assert_success
   run grep -F "release: 2099.12.31.1" ".releases/2099.12.31.1/cycle.yml"
   assert_success
   run grep -F "rc: 1" ".releases/2099.12.31.1/rc1/manifest.yml"
@@ -120,8 +123,52 @@ EOF
     RC_NOTES_CHANGELOG_PATHS=packages/server/CHANGELOG.md \
     node "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs"
   assert_success
-  run grep -F "### Features" ".releases/2099.12.31.1/rc1/notes.md"
+  run grep -F "#### Features" ".releases/2099.12.31.1/rc1/release-notes.md"
   assert_success
-  run grep -F "add cycle notes formatting" ".releases/2099.12.31.1/rc1/notes.md"
+  run grep -F "add cycle notes formatting" ".releases/2099.12.31.1/rc1/release-notes.md"
   assert_success
+}
+
+@test "removes incomplete rc when cycle rollup fails" {
+  _init_git_with_origin
+  mkdir -p packages/server
+  printf '%s\n' '{"name":"@t/server","version":"1.2.3"}' >packages/server/package.json
+  cat >bad-rollup.mjs <<'EOF'
+#!/usr/bin/env node
+process.stderr.write("intentional rollup failure\n");
+process.exit(1);
+EOF
+
+  run env UTC_DATE_OVERRIDE=2099.12.31 \
+    UTC_TIMESTAMP_OVERRIDE=2099-12-31T12:00:00Z \
+    DEPLOYABLE_PACKAGES=server=packages/server \
+    ROLLUP_RELEASE_NOTES_SCRIPT="$PWD/bad-rollup.mjs" \
+    node "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs"
+  assert_failure
+  assert_output --partial "failed to roll up cycle release-notes.md"
+  assert [ ! -d ".releases/2099.12.31.1" ]
+}
+
+@test "removes incomplete soak rc when cycle rollup fails" {
+  _init_git_with_origin
+  mkdir -p packages/server .releases
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" .releases/
+  printf '%s\n' '{"name":"@t/server","version":"1.2.4"}' >packages/server/package.json
+  git add -A
+  git commit -m "seed open cycle" >/dev/null 2>&1
+  cat >bad-rollup.mjs <<'EOF'
+#!/usr/bin/env node
+process.stderr.write("intentional rollup failure\n");
+process.exit(1);
+EOF
+
+  run env UTC_DATE_OVERRIDE=2099.12.31 \
+    UTC_TIMESTAMP_OVERRIDE=2099-12-31T15:00:00Z \
+    DEPLOYABLE_PACKAGES=server=packages/server \
+    ROLLUP_RELEASE_NOTES_SCRIPT="$PWD/bad-rollup.mjs" \
+    node "$PROJECT_ROOT/src/scripts/writeReleaseCycle.mjs"
+  assert_failure
+  assert [ -d ".releases/2026.05.08.1/rc1" ]
+  assert [ -f ".releases/2026.05.08.1/cycle.yml" ]
+  assert [ ! -d ".releases/2026.05.08.1/rc2" ]
 }

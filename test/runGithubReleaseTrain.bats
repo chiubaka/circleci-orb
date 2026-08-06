@@ -276,9 +276,9 @@ EOF
   [[ -f "$nf" ]] || false
   run grep -F "ship it" "$nf"
   assert_success
-  run grep -F "### Minor Changes" "$nf"
+  run grep -F "#### Minor Changes" "$nf"
   assert_success
-  run grep -F "**@t/a**" "$nf"
+  run grep -F "### @t/a" "$nf"
   assert_success
   run grep -F "## Published versions" "$nf"
   assert_success
@@ -333,15 +333,15 @@ EOF
   args=$(mock_get_call_args "$gh_mock" 1)
   nf=$(printf '%s' "$args" | awk '{for(i=1;i<=NF;i++) if($i=="--notes-file"){print $(i+1); exit}}')
   [[ -f "$nf" ]] || false
-  run grep -F "### Minor Changes" "$nf"
+  run grep -F "#### Minor Changes" "$nf"
   assert_success
-  run grep -F "**@t/a**" "$nf"
+  run grep -F "### @t/a" "$nf"
   assert_success
   run grep -F "minor line for a" "$nf"
   assert_success
-  run grep -F "### Patch Changes" "$nf"
+  run grep -F "#### Patch Changes" "$nf"
   assert_success
-  run grep -F "**@t/b**" "$nf"
+  run grep -F "### @t/b" "$nf"
   assert_success
   run grep -F "patch line for b" "$nf"
   assert_success

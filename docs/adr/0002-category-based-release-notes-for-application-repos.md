@@ -45,7 +45,7 @@ When category mode is enabled:
 
 2. All Changesets repos enable `require-changeset-category-prefix: true` on `verify-changesets` (orb default) so PRs fail when a summary headline omits a prefix.
 3. After `changeset version`, `rewriteChangelogCategories.mjs` rewrites the top version block in each changed `CHANGELOG.md` from bump-type headings to category headings and strips the prefix from bullet text.
-4. `formatChangesetsBatchReleaseNotes.mjs` groups batch notes under the seven sections in fixed order. Untagged changelog bullets fail formatting in category mode.
+4. `formatChangesetsBatchReleaseNotes.mjs` groups batch notes with **package-then-category** nesting by default (`release-notes-nesting: package-then-category`): each package gets a `###` heading, then `####` category headings, then bullets. Set `release-notes-nesting: category-then-package` for the legacy category-first layout. Untagged changelog bullets fail formatting in category mode.
 
 **Justification:** Aligns stakeholder-facing surfaces with per-package changelogs across library and application monorepos without forking Changesets’ release-plan writer. Canonical prefix tokens live in `src/scripts/changesetCategoryPrefixes.mjs`; authoring voice rules live in org `changeset/SKILL.md`.
 

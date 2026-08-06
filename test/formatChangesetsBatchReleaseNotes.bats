@@ -29,13 +29,13 @@ EOF
   run env RELEASE_NOTES_GROUPING=bump-type node "$FORMATTER" "$out" pkg-a/CHANGELOG.md pkg-b/CHANGELOG.md
   assert_success
 
-  run grep -F "### Minor Changes" "$out"
+  run grep -F "#### Minor Changes" "$out"
   assert_success
-  run grep -F "### Patch Changes" "$out"
+  run grep -F "#### Patch Changes" "$out"
   assert_success
-  run grep -F "**@t/pkg-a**" "$out"
+  run grep -F "### @t/pkg-a" "$out"
   assert_success
-  run grep -F "**@t/pkg-b**" "$out"
+  run grep -F "### @t/pkg-b" "$out"
   assert_success
   run grep -F "## Published versions" "$out"
   assert_success
@@ -55,7 +55,7 @@ EOF
 
   out=$(mktemp)
   node "$FORMATTER" "$out" pkg/CHANGELOG.md
-  run grep -F "### Patch Changes" "$out"
+  run grep -F "#### Patch Changes" "$out"
   assert_success
   run grep -F "uncategorized bullet" "$out"
   assert_success
@@ -76,11 +76,11 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" directus/CHANGELOG.md
   assert_success
 
-  run grep -F "### Features" "$out"
+  run grep -F "#### Features" "$out"
   assert_success
-  run grep -F "### Improvements" "$out"
+  run grep -F "#### Improvements" "$out"
   assert_success
-  run grep -F "### Bug Fixes" "$out"
+  run grep -F "#### Bug Fixes" "$out"
   assert_success
   run grep -F "Add a location-input interface" "$out"
   assert_success
@@ -90,7 +90,7 @@ EOF
   assert_success
   run grep -F "Correct deadline parsing" "$out"
   assert_success
-  run grep -F "**@t/directus**" "$out"
+  run grep -F "### @t/directus" "$out"
   assert_success
   rm -f "$out"
 }
@@ -106,9 +106,9 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
   assert_success
 
-  run grep -F "### Features" "$out"
+  run grep -F "#### Features" "$out"
   assert_success
-  run grep -F "### Bug Fixes" "$out"
+  run grep -F "#### Bug Fixes" "$out"
   assert_success
   run grep -F "ship new dashboard" "$out"
   assert_success
@@ -145,9 +145,9 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
   assert_success
 
-  run grep -F "### Features" "$out"
+  run grep -F "#### Features" "$out"
   assert_success
-  run grep -F "### Bug Fixes" "$out"
+  run grep -F "#### Bug Fixes" "$out"
   assert_success
   run grep -F "include-pr-metadata" "$out"
   assert_success
@@ -169,7 +169,7 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" directus/CHANGELOG.md
   assert_success
 
-  run grep -F "### Features" "$out"
+  run grep -F "#### Features" "$out"
   assert_success
   run grep -F "Show application deadlines" "$out"
   assert_success
@@ -187,7 +187,7 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
   assert_success
 
-  run grep -F "### Other Changes" "$out"
+  run grep -F "#### Other Changes" "$out"
   assert_success
   run grep -F "internal dependency maintenance" "$out"
   assert_success
@@ -217,12 +217,12 @@ EOF
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
   assert_success
-  [[ $(grep -n "### Breaking Changes" "$out" | cut -d: -f1) -lt $(grep -n "### Security" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Security" "$out" | cut -d: -f1) -lt $(grep -n "### Features" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Features" "$out" | cut -d: -f1) -lt $(grep -n "### Improvements" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Improvements" "$out" | cut -d: -f1) -lt $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) -lt $(grep -n "### Deprecations" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Deprecations" "$out" | cut -d: -f1) -lt $(grep -n "### Other Changes" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Breaking Changes" "$out" | cut -d: -f1) -lt $(grep -n "#### Security" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Security" "$out" | cut -d: -f1) -lt $(grep -n "#### Features" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Features" "$out" | cut -d: -f1) -lt $(grep -n "#### Improvements" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Improvements" "$out" | cut -d: -f1) -lt $(grep -n "#### Bug Fixes" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Bug Fixes" "$out" | cut -d: -f1) -lt $(grep -n "#### Deprecations" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Deprecations" "$out" | cut -d: -f1) -lt $(grep -n "#### Other Changes" "$out" | cut -d: -f1) ]]
   rm -f "$out"
 }
 
@@ -237,11 +237,11 @@ EOF
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" lib/CHANGELOG.md
   assert_success
 
-  run grep -F "### Breaking Changes" "$out"
+  run grep -F "#### Breaking Changes" "$out"
   assert_success
-  run grep -F "### Security" "$out"
+  run grep -F "#### Security" "$out"
   assert_success
-  run grep -F "### Deprecations" "$out"
+  run grep -F "#### Deprecations" "$out"
   assert_success
   run grep -F "drop legacy export" "$out"
   assert_success
@@ -267,9 +267,9 @@ EOF
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
   assert_success
-  [[ $(grep -n "### Features" "$out" | cut -d: -f1) -lt $(grep -n "### Improvements" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Improvements" "$out" | cut -d: -f1) -lt $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) ]]
-  [[ $(grep -n "### Bug Fixes" "$out" | cut -d: -f1) -lt $(grep -n "### Other Changes" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Features" "$out" | cut -d: -f1) -lt $(grep -n "#### Improvements" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Improvements" "$out" | cut -d: -f1) -lt $(grep -n "#### Bug Fixes" "$out" | cut -d: -f1) ]]
+  [[ $(grep -n "#### Bug Fixes" "$out" | cut -d: -f1) -lt $(grep -n "#### Other Changes" "$out" | cut -d: -f1) ]]
   rm -f "$out"
 }
 
@@ -287,4 +287,41 @@ EOF
   env RELEASE_NOTES_GROUPING=bump-type node "$FORMATTER" "$out2" pkg/CHANGELOG.md
   assert_equal "$(cat "$out2")" "$expected"
   rm -f "$out" "$out2"
+}
+
+@test "category-then-package nesting keeps legacy category-first layout" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog directus 1.0.0 "### Features
+- Feature: one
+### Bug Fixes
+- Fix: two"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category RELEASE_NOTES_NESTING=category-then-package \
+    node "$FORMATTER" "$out" directus/CHANGELOG.md
+  assert_success
+  run grep -F "### Features" "$out"
+  assert_success
+  run grep -F "**@t/directus**" "$out"
+  assert_success
+  run grep -F "### @t/directus" "$out"
+  assert_failure
+  rm -f "$out"
+}
+
+@test "package-then-category is the default nesting" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog directus 1.0.0 "### Features
+- Feature: one"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" directus/CHANGELOG.md
+  assert_success
+  run grep -F "### @t/directus" "$out"
+  assert_success
+  run grep -F "#### Features" "$out"
+  assert_success
+  rm -f "$out"
 }

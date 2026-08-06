@@ -181,7 +181,7 @@ export function listRcNotesPaths(releasesDir, cycleId) {
     .filter((entry) => entry.isDirectory() && /^rc[0-9]+$/.test(entry.name))
     .map((entry) => ({
       index: Number.parseInt(entry.name.slice(2), 10),
-      notesPath: path.join(cyclePath, entry.name, "notes.md"),
+      notesPath: path.join(cyclePath, entry.name, "release-notes.md"),
     }))
     .filter((entry) => fs.existsSync(entry.notesPath))
     .sort((a, b) => a.index - b.index);
@@ -260,6 +260,7 @@ export function resolveCycleOnCommitAtSha(releasesDir, sha) {
 }
 
 export { CYCLE_ID_RE, utcCalendarDateStr };
+
 CHIUBAKA_ORB_LIB_RELEASE_CYCLE_V1_EOF
 cat >"${stage_dir}/lib/trainId.mjs" <<'CHIUBAKA_ORB_LIB_TRAIN_ID_MJS_V1_EOF'
 #!/usr/bin/env node
@@ -414,7 +415,9 @@ cat >"${stage_dir}/writeReleaseCycle.mjs" <<'CHIUBAKA_ORB_WRITE_RELEASE_CYCLE_V1
  *   RELEASES_DIR — default .releases
  *   RC_NOTES_CHANGELOG_PATHS — optional comma-separated CHANGELOG paths for rc notes
  *   FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT — formatter module path
+ *   ROLLUP_RELEASE_NOTES_SCRIPT — rollup module path
  *   RELEASE_NOTES_GROUPING — category | bump-type
+ *   RELEASE_NOTES_NESTING — package-then-category | category-then-package
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -430,8 +433,15 @@ import {
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 function fail(msg) {
-  process.stderr.write(`writeReleaseCycle: ${msg}\n`);
-  process.exit(1);
+  const error = new Error(msg);
+  error.name = "WriteReleaseCycleError";
+  throw error;
+}
+
+function removePathIfExists(target) {
+  if (fs.existsSync(target)) {
+    fs.rmSync(target, { recursive: true, force: true });
+  }
 }
 
 function parseDeployablePackages(raw) {
@@ -563,12 +573,27 @@ function writeRcNotes(outPath, changelogPaths) {
         ...process.env,
         RELEASE_NOTES_GROUPING:
           process.env.RELEASE_NOTES_GROUPING ?? "category",
+        RELEASE_NOTES_NESTING:
+          process.env.RELEASE_NOTES_NESTING ?? "package-then-category",
       },
     },
   );
   if (result.status !== 0) {
     const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
     fail(`failed to format rc notes: ${detail}`);
+  }
+}
+
+function refreshCycleReleaseNotes(cycleDir) {
+  const rollupScript =
+    process.env.ROLLUP_RELEASE_NOTES_SCRIPT ??
+    path.join(SCRIPT_DIR, "rollupReleaseNotes.mjs");
+  const result = spawnSync(process.execPath, [rollupScript, cycleDir], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
+    fail(`failed to roll up cycle release-notes.md: ${detail}`);
   }
 }
 
@@ -623,39 +648,62 @@ function main() {
 
   const cycleDir = path.join(releasesDir, plan.cycleId);
   const rcDir = path.join(cycleDir, `rc${plan.rcIndex}`);
-  fs.mkdirSync(rcDir, { recursive: true });
+  const createdNewCycle = plan.isNewCycle && !fs.existsSync(cycleDir);
+  let rcArtifactsCommitted = false;
 
-  if (plan.isNewCycle) {
-    const predecessorCycle = resolveLatestProdCycleId(gitLsRemoteTags());
+  try {
+    fs.mkdirSync(rcDir, { recursive: true });
+
+    if (plan.isNewCycle) {
+      const predecessorCycle = resolveLatestProdCycleId(gitLsRemoteTags());
+      fs.writeFileSync(
+        path.join(cycleDir, "cycle.yml"),
+        renderCycleYml(plan.cycleId, timestamp, predecessorCycle),
+        "utf8",
+      );
+    }
+
+    const manifestPath = path.join(rcDir, "manifest.yml");
     fs.writeFileSync(
-      path.join(cycleDir, "cycle.yml"),
-      renderCycleYml(plan.cycleId, timestamp, predecessorCycle),
+      manifestPath,
+      renderRcManifest(plan.cycleId, plan.rcIndex, timestamp, artifacts),
       "utf8",
     );
+
+    const changelogPaths = process.env.RC_NOTES_CHANGELOG_PATHS
+      ? process.env.RC_NOTES_CHANGELOG_PATHS.split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      : discoverChangelogPaths();
+    const notesPath = path.join(rcDir, "release-notes.md");
+    writeRcNotes(notesPath, changelogPaths);
+    refreshCycleReleaseNotes(cycleDir);
+    rcArtifactsCommitted = true;
+
+    process.stdout.write(`${manifestPath}\n`);
+    process.stdout.write(`RELEASE_ID=${plan.cycleId}\n`);
+    process.stdout.write(`RC_INDEX=${plan.rcIndex}\n`);
+    process.stdout.write(`RC_NOTES_PATH=${notesPath}\n`);
+    process.stdout.write(
+      `RELEASE_NOTES_PATH=${path.join(cycleDir, "release-notes.md")}\n`,
+    );
+  } finally {
+    if (!rcArtifactsCommitted) {
+      removePathIfExists(rcDir);
+      if (createdNewCycle) {
+        removePathIfExists(cycleDir);
+      }
+    }
   }
-
-  const manifestPath = path.join(rcDir, "manifest.yml");
-  fs.writeFileSync(
-    manifestPath,
-    renderRcManifest(plan.cycleId, plan.rcIndex, timestamp, artifacts),
-    "utf8",
-  );
-
-  const changelogPaths = process.env.RC_NOTES_CHANGELOG_PATHS
-    ? process.env.RC_NOTES_CHANGELOG_PATHS.split(",")
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-    : discoverChangelogPaths();
-  const notesPath = path.join(rcDir, "notes.md");
-  writeRcNotes(notesPath, changelogPaths);
-
-  process.stdout.write(`${manifestPath}\n`);
-  process.stdout.write(`RELEASE_ID=${plan.cycleId}\n`);
-  process.stdout.write(`RC_INDEX=${plan.rcIndex}\n`);
-  process.stdout.write(`RC_NOTES_PATH=${notesPath}\n`);
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  process.stderr.write(`writeReleaseCycle: ${error.message}\n`);
+  process.exit(1);
+}
+
 CHIUBAKA_ORB_WRITE_RELEASE_CYCLE_V1_EOF
 cat >"${stage_dir}/resolveReleaseCycleOnCommit.mjs" <<'CHIUBAKA_ORB_RESOLVE_RELEASE_CYCLE_ON_COMMIT_V1_EOF'
 #!/usr/bin/env node
@@ -770,7 +818,7 @@ CHIUBAKA_ORB_FINALIZE_RELEASE_CYCLE_V1_EOF
 cat >"${stage_dir}/rollupReleaseNotes.mjs" <<'CHIUBAKA_ORB_ROLLUP_RELEASE_NOTES_V1_EOF'
 #!/usr/bin/env node
 /**
- * Roll up per-RC notes into cycle release-notes.md (ADR 0041 artifact 3).
+ * Roll up per-RC release-notes.md into cycle release-notes.md (ADR 0041).
  * Usage: node rollupReleaseNotes.mjs <cycle-dir> [outfile]
  */
 import fs from "node:fs";
@@ -794,7 +842,7 @@ function main() {
 
   const rcNotes = listRcNotesPaths(path.dirname(absCycleDir), cycleId);
   if (rcNotes.length === 0) {
-    fail(`no rc*/notes.md files found under ${absCycleDir}`);
+    fail(`no rc*/release-notes.md files found under ${absCycleDir}`);
   }
 
   const sections = [];
@@ -809,6 +857,7 @@ function main() {
 }
 
 main();
+
 CHIUBAKA_ORB_ROLLUP_RELEASE_NOTES_V1_EOF
 cat >"${stage_dir}/validateReleaseCycle.mjs" <<'CHIUBAKA_ORB_VALIDATE_RELEASE_CYCLE_V1_EOF'
 #!/usr/bin/env node
@@ -822,7 +871,6 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   CYCLE_ID_RE,
-  hasPromotedAt,
   maxRcIndexInCycle,
   parseYamlScalar,
 } from "./lib/releaseCycle.mjs";
@@ -859,7 +907,6 @@ function validateCycleYml(cycleDir, cycleId) {
   if (!openedAt?.trim()) {
     fail(`${cycleYml}: missing required field "openedAt"`);
   }
-  return { promoted: hasPromotedAt(text) };
 }
 
 function main() {
@@ -873,7 +920,7 @@ function main() {
     fail(`${abs}: cycle directory name must match YYYY.MM.DD.N`);
   }
 
-  const { promoted } = validateCycleYml(abs, cycleId);
+  validateCycleYml(abs, cycleId);
   const maxRc = maxRcIndexInCycle(path.dirname(abs), cycleId);
   if (maxRc < 1) {
     fail(`${abs}: expected at least rc1/ with manifest.yml`);
@@ -886,7 +933,7 @@ function main() {
     if (!fs.existsSync(manifest)) {
       fail(`${abs}: missing ${path.relative(abs, manifest)}`);
     }
-    const notes = path.join(rcDir, "notes.md");
+    const notes = path.join(rcDir, "release-notes.md");
     if (!fs.existsSync(notes)) {
       fail(`${abs}: missing ${path.relative(abs, notes)}`);
     }
@@ -899,11 +946,9 @@ function main() {
     }
   }
 
-  if (promoted) {
-    const releaseNotes = path.join(abs, "release-notes.md");
-    if (!fs.existsSync(releaseNotes)) {
-      fail(`${abs}: promoted cycle must include release-notes.md`);
-    }
+  const releaseNotes = path.join(abs, "release-notes.md");
+  if (!fs.existsSync(releaseNotes)) {
+    fail(`${abs}: missing release-notes.md`);
   }
 
   process.stdout.write(`RELEASE_CYCLE_PATH=${abs}\n`);
@@ -912,6 +957,7 @@ function main() {
 }
 
 main();
+
 CHIUBAKA_ORB_VALIDATE_RELEASE_CYCLE_V1_EOF
 cat >"${stage_dir}/validateReleaseManifest.mjs" <<'CHIUBAKA_ORB_VALIDATE_RELEASE_MANIFEST_V1_EOF'
 #!/usr/bin/env node
@@ -1107,10 +1153,13 @@ cat >"${stage_dir}/formatChangesetsBatchReleaseNotes.mjs" <<'CHIUBAKA_ORB_FORMAT
 /**
  * Build grouped release notes from Changesets-style CHANGELOG.md files.
  *
- * Default (bump-type): group under ### Major|Minor|Patch Changes; uncategorized bullets -> Patch.
- * Category mode (RELEASE_NOTES_GROUPING=category): group under ### Breaking Changes / Security /
- * Features / Improvements / Bug Fixes / Deprecations / Other Changes; bullets without a recognized
- * prefix fail formatting.
+ * Grouping (RELEASE_NOTES_GROUPING):
+ *   category (orb default via callers) — Breaking / Security / Features / …
+ *   bump-type — Major / Minor / Patch (legacy escape hatch)
+ *
+ * Nesting (RELEASE_NOTES_NESTING, default package-then-category):
+ *   package-then-category — ### package, then #### category, then bullets
+ *   category-then-package — ### category, then package bullets (legacy)
  *
  * Invoked as: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]
  *
@@ -1122,6 +1171,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const GROUPING = (process.env.RELEASE_NOTES_GROUPING || "bump-type").toLowerCase();
+const NESTING = (
+  process.env.RELEASE_NOTES_NESTING || "package-then-category"
+).toLowerCase();
 
 async function loadCategoryPrefixes() {
   const override = process.env.CHANGESET_CATEGORY_PREFIXES_SCRIPT;
@@ -1303,18 +1355,22 @@ function parseVersionBody(bodyLines, config) {
   return buckets;
 }
 
+function stripBulletPrefix(firstLine, prefixes) {
+  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
+  const m = String(firstLine).match(/^[-*]\s?(.*)$/);
+  let rest0 = m ? m[1] : String(firstLine).replace(/^[-*]\s?/, "");
+  if (GROUPING === "category") {
+    rest0 = stripFn(rest0);
+  }
+  return rest0;
+}
+
+/** Bullets nested under a package list item (category-then-package layout). */
 function emitNestedUnderPackage(blocks, prefixes) {
   const out = [];
-  const stripFn = prefixes?.stripChangelogBulletCategoryPrefix ?? ((t) => t);
   for (const block of blocks) {
     if (!block || block.length === 0) continue;
-    const first = block[0];
-    const m = String(first).match(/^[-*]\s?(.*)$/);
-    let rest0 = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-    if (GROUPING === "category") {
-      rest0 = stripFn(rest0);
-    }
-    out.push(`  - ${rest0}`);
+    out.push(`  - ${stripBulletPrefix(block[0], prefixes)}`);
     for (let k = 1; k < block.length; k += 1) {
       const ln = block[k];
       if (ln === "") {
@@ -1327,12 +1383,80 @@ function emitNestedUnderPackage(blocks, prefixes) {
   return out;
 }
 
+/** Top-level bullets under a category heading (package-then-category layout). */
+function emitTopLevelBullets(blocks, prefixes) {
+  const out = [];
+  for (const block of blocks) {
+    if (!block || block.length === 0) continue;
+    out.push(`- ${stripBulletPrefix(block[0], prefixes)}`);
+    for (let k = 1; k < block.length; k += 1) {
+      const ln = block[k];
+      if (ln === "") {
+        out.push("");
+        continue;
+      }
+      out.push(`  ${ln}`);
+    }
+  }
+  return out;
+}
+
+function demoteHeading(title) {
+  return String(title).replace(/^###\s/, "#### ");
+}
+
+function emitCategoryThenPackage(packages, config, prefixes) {
+  const lines = [];
+  const byName = (a, b) => a.name.localeCompare(b.name, "en");
+  for (const cat of config.order) {
+    const withBlocks = packages
+      .map((p) => ({ name: p.name, blocks: p.buckets[cat] }))
+      .filter((p) => p.blocks.length > 0)
+      .sort(byName);
+    if (withBlocks.length === 0) continue;
+    lines.push(config.titles[cat], "");
+    for (const { name, blocks } of withBlocks) {
+      lines.push(`- **${name}**`);
+      lines.push(...emitNestedUnderPackage(blocks, prefixes));
+      lines.push("");
+    }
+  }
+  return lines;
+}
+
+function emitPackageThenCategory(packages, config, prefixes) {
+  const lines = [];
+  const sorted = [...packages].sort((a, b) => a.name.localeCompare(b.name, "en"));
+  for (const pkg of sorted) {
+    const cats = config.order.filter((cat) => pkg.buckets[cat]?.length > 0);
+    if (cats.length === 0) continue;
+    lines.push(`### ${pkg.name}`, "");
+    for (const cat of cats) {
+      lines.push(demoteHeading(config.titles[cat]), "");
+      lines.push(...emitTopLevelBullets(pkg.buckets[cat], prefixes));
+      lines.push("");
+    }
+  }
+  return lines;
+}
+
 async function main() {
   const outFile = process.argv[2];
   const changelogPaths = process.argv.slice(3).filter(Boolean);
   if (!outFile || changelogPaths.length === 0) {
     console.error(
       "usage: node formatChangesetsBatchReleaseNotes.mjs <outfile> <changelog.md> [...]",
+    );
+    process.exit(2);
+  }
+
+  if (
+    NESTING !== "package-then-category" &&
+    NESTING !== "category-then-package"
+  ) {
+    console.error(
+      `formatChangesetsBatchReleaseNotes: invalid RELEASE_NOTES_NESTING "${NESTING}" ` +
+        `(expected package-then-category or category-then-package)`,
     );
     process.exit(2);
   }
@@ -1356,22 +1480,10 @@ async function main() {
     if (meta.published) published.add(meta.published);
   }
 
-  const lines = [];
-  const byName = (a, b) => a.name.localeCompare(b.name, "en");
-
-  for (const cat of config.order) {
-    const withBlocks = packages
-      .map((p) => ({ name: p.name, blocks: p.buckets[cat] }))
-      .filter((p) => p.blocks.length > 0)
-      .sort(byName);
-    if (withBlocks.length === 0) continue;
-    lines.push(config.titles[cat], "");
-    for (const { name, blocks } of withBlocks) {
-      lines.push(`- **${name}**`);
-      lines.push(...emitNestedUnderPackage(blocks, prefixes));
-      lines.push("");
-    }
-  }
+  const lines =
+    NESTING === "category-then-package"
+      ? emitCategoryThenPackage(packages, config, prefixes)
+      : emitPackageThenCategory(packages, config, prefixes);
 
   const pubSorted = [...published].sort((a, b) => a.localeCompare(b, "en"));
   if (pubSorted.length > 0) {
@@ -1390,6 +1502,7 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
+
 CHIUBAKA_ORB_FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_V1_EOF
 cat >"${stage_dir}/changesetCategoryPrefixes.mjs" <<'CHIUBAKA_ORB_CHANGESET_CATEGORY_PREFIXES_V1_EOF'
 /**

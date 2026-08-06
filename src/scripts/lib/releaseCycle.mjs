@@ -172,7 +172,7 @@ export function listRcNotesPaths(releasesDir, cycleId) {
     .filter((entry) => entry.isDirectory() && /^rc[0-9]+$/.test(entry.name))
     .map((entry) => ({
       index: Number.parseInt(entry.name.slice(2), 10),
-      notesPath: path.join(cyclePath, entry.name, "notes.md"),
+      notesPath: path.join(cyclePath, entry.name, "release-notes.md"),
     }))
     .filter((entry) => fs.existsSync(entry.notesPath))
     .sort((a, b) => a.index - b.index);

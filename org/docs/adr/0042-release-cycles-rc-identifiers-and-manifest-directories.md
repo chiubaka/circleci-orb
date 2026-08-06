@@ -110,10 +110,10 @@ All keys in `cycle.yml`, `rc<n>/manifest.yml`, and tooling-owned fields in this 
     cycle.yml                 # cycle metadata (required)
     rc1/
       manifest.yml            # pin set for this RC cut
-      notes.md                # reviewer notes for this cut only (tooling-owned)
+      release-notes.md                # reviewer notes for this cut only (tooling-owned)
     rc2/                      # present when a soak patch cut exists
       manifest.yml
-      notes.md
+      release-notes.md
     release-notes.md          # rollup for prod / artifact 3 (tooling-owned)
 ```
 
@@ -160,7 +160,7 @@ artifacts:
 
 **Deploy resolution:** coordinated deploy for promotion tag `staging-2026.07.01.1-rc2` reads `.releases/2026.07.01.1/rc2/manifest.yml`. For `prod-2026.07.01.1`, automation MUST use the **highest-numbered `rc*/manifest.yml` present on the tagged commit** (the validated final RC).
 
-**`release-notes.md`:** tooling-generated rollup of all `rc*/notes.md` in order; canonical GitHub Release body at prod ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Each rollup section MUST be headed with the full RC promotion id (`<cycle-id>-rc<n>`, for example `## 2026.07.01.1-rc1`), matching staging promotion tag stems. Per-RC `rc<n>/notes.md` files contain only that cut’s formatted batch (no section heading required in the leaf file). For a single-cut cycle, the rollup MAY contain one section (`<cycle-id>-rc1`) identical in body to `rc1/notes.md`.
+**`release-notes.md`:** tooling-generated rollup of all `rc*/release-notes.md` in order; refreshed on every RC cut and used as the canonical GitHub Release body at prod ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Each rollup section MUST be headed with the full RC promotion id (`<cycle-id>-rc<n>`, for example `## 2026.07.01.1-rc1`), matching staging promotion tag stems. Per-RC `rc<n>/release-notes.md` files contain only that cut’s formatted batch (no section heading required in the leaf file). For a single-cut cycle, the rollup MAY contain one section (`<cycle-id>-rc1`) identical in body to `rc1/release-notes.md`.
 
 ### Single-cut cycles (topology C and simple paths)
 
@@ -171,7 +171,7 @@ A cycle with only one version cut before prod still uses the full directory shap
   cycle.yml
   rc1/
     manifest.yml
-    notes.md
+    release-notes.md
   release-notes.md
 ```
 
@@ -200,10 +200,10 @@ A **hotfix** is an urgent fix shipped to production while a prior cycle is alrea
 
 1. Branch from the production promotion commit (or equivalent documented prod baseline)—not from arbitrary `main` tip when `main` contains unreleased work.
 2. Fix PR(s) include `.changeset/` entries as usual ([ADR 0026](0026-use-changesets-for-application-releases.md)).
-3. Version cut allocates a **new** `YYYY.MM.DD.N` (UTC **today**; same `N` per-day rules) and creates `.releases/<cycle-id>/cycle.yml` with `openedAt`, plus `rc1/` (`manifest.yml`, `notes.md`).
+3. Version cut allocates a **new** `YYYY.MM.DD.N` (UTC **today**; same `N` per-day rules) and creates `.releases/<cycle-id>/cycle.yml` with `openedAt`, plus `rc1/` (`manifest.yml`, `release-notes.md`) and the cycle-level `release-notes.md` rollup.
 4. **`predecessorCycle` SHOULD** be set on `cycle.yml` to the cycle id currently in production (audit lineage only; prod promotion still uses `prod-<new-cycle-id>`).
 5. **Staging (optional):** repositories MAY skip staging or run a single abbreviated `staging-<cycle-id>-rc1` promotion (topology C–style fast path). Production remains gated via `prod-<cycle-id>`.
-6. Push **`prod-<new-cycle-id>`** on the validated commit; tooling sets **`promotedAt`** and writes **`release-notes.md`** ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)).
+6. Push **`prod-<new-cycle-id>`** on the validated commit; tooling sets **`promotedAt`** and refreshes **`release-notes.md`** ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)).
 7. **Merge-back to `main` is REQUIRED** after production promotion, with Changesets discipline, so the next regular release does not omit the fix or double-bump versions.
 
 **Concurrent cycles:** An in-flight regular release on `main` (open release PR with its own `.releases/<other-cycle-id>/`) does **not** block a hotfix. Hotfix and regular cycles are independent ids and directories. A hotfix branch MUST NOT reuse or extend another cycle’s directory.
