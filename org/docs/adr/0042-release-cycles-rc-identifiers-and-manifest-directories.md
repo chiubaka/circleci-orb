@@ -200,10 +200,10 @@ A **hotfix** is an urgent fix shipped to production while a prior cycle is alrea
 
 1. Branch from the production promotion commit (or equivalent documented prod baseline)—not from arbitrary `main` tip when `main` contains unreleased work.
 2. Fix PR(s) include `.changeset/` entries as usual ([ADR 0026](0026-use-changesets-for-application-releases.md)).
-3. Version cut allocates a **new** `YYYY.MM.DD.N` (UTC **today**; same `N` per-day rules) and creates `.releases/<cycle-id>/cycle.yml` with `openedAt`, plus `rc1/` (`manifest.yml`, `notes.md`).
+3. Version cut allocates a **new** `YYYY.MM.DD.N` (UTC **today**; same `N` per-day rules) and creates `.releases/<cycle-id>/cycle.yml` with `openedAt`, plus `rc1/` (`manifest.yml`, `release-notes.md`) and the cycle-level `release-notes.md` rollup.
 4. **`predecessorCycle` SHOULD** be set on `cycle.yml` to the cycle id currently in production (audit lineage only; prod promotion still uses `prod-<new-cycle-id>`).
 5. **Staging (optional):** repositories MAY skip staging or run a single abbreviated `staging-<cycle-id>-rc1` promotion (topology C–style fast path). Production remains gated via `prod-<cycle-id>`.
-6. Push **`prod-<new-cycle-id>`** on the validated commit; tooling sets **`promotedAt`** and writes **`release-notes.md`** ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)).
+6. Push **`prod-<new-cycle-id>`** on the validated commit; tooling sets **`promotedAt`** and refreshes **`release-notes.md`** ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)).
 7. **Merge-back to `main` is REQUIRED** after production promotion, with Changesets discipline, so the next regular release does not omit the fix or double-bump versions.
 
 **Concurrent cycles:** An in-flight regular release on `main` (open release PR with its own `.releases/<other-cycle-id>/`) does **not** block a hotfix. Hotfix and regular cycles are independent ids and directories. A hotfix branch MUST NOT reuse or extend another cycle’s directory.

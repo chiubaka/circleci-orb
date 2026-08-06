@@ -28,8 +28,15 @@ import {
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 function fail(msg) {
-  process.stderr.write(`writeReleaseCycle: ${msg}\n`);
-  process.exit(1);
+  const error = new Error(msg);
+  error.name = "WriteReleaseCycleError";
+  throw error;
+}
+
+function removePathIfExists(target) {
+  if (fs.existsSync(target)) {
+    fs.rmSync(target, { recursive: true, force: true });
+  }
 }
 
 function parseDeployablePackages(raw) {
@@ -236,40 +243,58 @@ function main() {
 
   const cycleDir = path.join(releasesDir, plan.cycleId);
   const rcDir = path.join(cycleDir, `rc${plan.rcIndex}`);
-  fs.mkdirSync(rcDir, { recursive: true });
+  const createdNewCycle = plan.isNewCycle && !fs.existsSync(cycleDir);
+  let rcArtifactsCommitted = false;
 
-  if (plan.isNewCycle) {
-    const predecessorCycle = resolveLatestProdCycleId(gitLsRemoteTags());
+  try {
+    fs.mkdirSync(rcDir, { recursive: true });
+
+    if (plan.isNewCycle) {
+      const predecessorCycle = resolveLatestProdCycleId(gitLsRemoteTags());
+      fs.writeFileSync(
+        path.join(cycleDir, "cycle.yml"),
+        renderCycleYml(plan.cycleId, timestamp, predecessorCycle),
+        "utf8",
+      );
+    }
+
+    const manifestPath = path.join(rcDir, "manifest.yml");
     fs.writeFileSync(
-      path.join(cycleDir, "cycle.yml"),
-      renderCycleYml(plan.cycleId, timestamp, predecessorCycle),
+      manifestPath,
+      renderRcManifest(plan.cycleId, plan.rcIndex, timestamp, artifacts),
       "utf8",
     );
+
+    const changelogPaths = process.env.RC_NOTES_CHANGELOG_PATHS
+      ? process.env.RC_NOTES_CHANGELOG_PATHS.split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      : discoverChangelogPaths();
+    const notesPath = path.join(rcDir, "release-notes.md");
+    writeRcNotes(notesPath, changelogPaths);
+    refreshCycleReleaseNotes(cycleDir);
+    rcArtifactsCommitted = true;
+
+    process.stdout.write(`${manifestPath}\n`);
+    process.stdout.write(`RELEASE_ID=${plan.cycleId}\n`);
+    process.stdout.write(`RC_INDEX=${plan.rcIndex}\n`);
+    process.stdout.write(`RC_NOTES_PATH=${notesPath}\n`);
+    process.stdout.write(
+      `RELEASE_NOTES_PATH=${path.join(cycleDir, "release-notes.md")}\n`,
+    );
+  } finally {
+    if (!rcArtifactsCommitted) {
+      removePathIfExists(rcDir);
+      if (createdNewCycle) {
+        removePathIfExists(cycleDir);
+      }
+    }
   }
-
-  const manifestPath = path.join(rcDir, "manifest.yml");
-  fs.writeFileSync(
-    manifestPath,
-    renderRcManifest(plan.cycleId, plan.rcIndex, timestamp, artifacts),
-    "utf8",
-  );
-
-  const changelogPaths = process.env.RC_NOTES_CHANGELOG_PATHS
-    ? process.env.RC_NOTES_CHANGELOG_PATHS.split(",")
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-    : discoverChangelogPaths();
-  const notesPath = path.join(rcDir, "release-notes.md");
-  writeRcNotes(notesPath, changelogPaths);
-  refreshCycleReleaseNotes(cycleDir);
-
-  process.stdout.write(`${manifestPath}\n`);
-  process.stdout.write(`RELEASE_ID=${plan.cycleId}\n`);
-  process.stdout.write(`RC_INDEX=${plan.rcIndex}\n`);
-  process.stdout.write(`RC_NOTES_PATH=${notesPath}\n`);
-  process.stdout.write(
-    `RELEASE_NOTES_PATH=${path.join(cycleDir, "release-notes.md")}\n`,
-  );
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  process.stderr.write(`writeReleaseCycle: ${error.message}\n`);
+  process.exit(1);
+}

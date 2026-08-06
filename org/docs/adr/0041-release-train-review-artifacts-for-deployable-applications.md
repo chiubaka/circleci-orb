@@ -63,7 +63,7 @@ Every release cycle uses a directory ([ADR 0042](0042-release-cycles-rc-identifi
   rc2/                # when soak requires another cut
     manifest.yml
     release-notes.md          # artifact 2 for this cut
-    release-notes.md    # cycle rollup (tooling-owned; refreshed on every RC cut)
+  release-notes.md      # cycle rollup (tooling-owned; refreshed on every RC cut)
 ```
 
 **On each `changeset version` cut**, release automation MUST:

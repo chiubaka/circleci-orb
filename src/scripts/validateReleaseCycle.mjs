@@ -9,7 +9,6 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   CYCLE_ID_RE,
-  hasPromotedAt,
   maxRcIndexInCycle,
   parseYamlScalar,
 } from "./lib/releaseCycle.mjs";
@@ -46,7 +45,6 @@ function validateCycleYml(cycleDir, cycleId) {
   if (!openedAt?.trim()) {
     fail(`${cycleYml}: missing required field "openedAt"`);
   }
-  return { promoted: hasPromotedAt(text) };
 }
 
 function main() {
@@ -60,7 +58,7 @@ function main() {
     fail(`${abs}: cycle directory name must match YYYY.MM.DD.N`);
   }
 
-  const { promoted } = validateCycleYml(abs, cycleId);
+  validateCycleYml(abs, cycleId);
   const maxRc = maxRcIndexInCycle(path.dirname(abs), cycleId);
   if (maxRc < 1) {
     fail(`${abs}: expected at least rc1/ with manifest.yml`);
@@ -86,11 +84,9 @@ function main() {
     }
   }
 
-  if (promoted) {
-    const releaseNotes = path.join(abs, "release-notes.md");
-    if (!fs.existsSync(releaseNotes)) {
-      fail(`${abs}: promoted cycle must include release-notes.md`);
-    }
+  const releaseNotes = path.join(abs, "release-notes.md");
+  if (!fs.existsSync(releaseNotes)) {
+    fail(`${abs}: missing release-notes.md`);
   }
 
   process.stdout.write(`RELEASE_CYCLE_PATH=${abs}\n`);

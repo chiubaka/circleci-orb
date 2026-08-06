@@ -29,6 +29,18 @@ setup() {
   assert_output --partial "RC_COUNT=1"
 }
 
+@test "rejects unpromoted cycle missing cycle release-notes.md" {
+  work="${BATS_TEST_TMPDIR}/missing-cycle-notes"
+  mkdir -p "$work"
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" "$work/"
+  rm -f "$work/2026.05.08.1/release-notes.md"
+
+  run node "$PROJECT_ROOT/src/scripts/validateReleaseCycle.mjs" \
+    "$work/2026.05.08.1"
+  assert_failure
+  assert_output --partial "missing release-notes.md"
+}
+
 @test "rollup writes release-notes.md with rc headings" {
   work="${BATS_TEST_TMPDIR}/rollup-cycle"
   mkdir -p "$work"
