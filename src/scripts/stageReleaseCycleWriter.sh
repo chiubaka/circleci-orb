@@ -1656,6 +1656,7 @@ cat >"${stage_dir}/refreshHighestRcManifestPins.mjs" <<'CHIUBAKA_ORB_REFRESH_HIG
 import fs from "node:fs";
 import path from "node:path";
 import {
+  parseYamlScalar,
   resolveCycleOnCommit,
   resolveHighestRcIndex,
 } from "./lib/releaseCycle.mjs";
@@ -1726,18 +1727,48 @@ function yamlQuote(value) {
   return JSON.stringify(value);
 }
 
-function parseYamlScalar(key, text) {
-  const re = new RegExp(`^${key}:\\s*(.+)$`, "m");
-  const m = text.match(re);
-  if (!m) return undefined;
-  let value = m[1].trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    value = value.slice(1, -1);
+/** Collect artifact keys under the `artifacts:` mapping in a pin-only manifest. */
+function parseArtifactKeys(text) {
+  const keys = [];
+  let inArtifacts = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^[^\s#]/.test(line)) {
+      const top = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+      if (top) {
+        inArtifacts = top[1] === "artifacts";
+        continue;
+      }
+      inArtifacts = false;
+      continue;
+    }
+    if (!inArtifacts) continue;
+    const match = line.match(/^\s{2,}([a-zA-Z0-9_-]+):\s*(.+)$/);
+    if (match) keys.push(match[1]);
   }
-  return value;
+  return keys;
+}
+
+function assertArtifactKeySetMatches(manifestPath, existingText, deployableKeys) {
+  const existingKeys = parseArtifactKeys(existingText);
+  if (existingKeys.length === 0) {
+    fail(`${manifestPath}: artifacts mapping must be present and non-empty`);
+  }
+  const existingSet = new Set(existingKeys);
+  const deployableSet = new Set(deployableKeys);
+  const missing = [...existingSet].filter((k) => !deployableSet.has(k)).sort();
+  const extra = [...deployableSet].filter((k) => !existingSet.has(k)).sort();
+  if (missing.length > 0 || extra.length > 0) {
+    const parts = [];
+    if (missing.length > 0) {
+      parts.push(`missing from DEPLOYABLE_PACKAGES: ${missing.join(", ")}`);
+    }
+    if (extra.length > 0) {
+      parts.push(`extra in DEPLOYABLE_PACKAGES: ${extra.join(", ")}`);
+    }
+    fail(
+      `${manifestPath}: artifact key set must match DEPLOYABLE_PACKAGES (${parts.join("; ")})`,
+    );
+  }
 }
 
 function main() {
@@ -1749,7 +1780,7 @@ function main() {
   if (cycleId) {
     rcIndex = resolveHighestRcIndex(releasesDir, cycleId);
     if (rcIndex < 1) {
-      fail(`no rc*/ directories under ${releasesDir}/${cycleId}`);
+      fail(`no rc*/directories under ${releasesDir}/${cycleId}`);
     }
   } else {
     const resolved = resolveCycleOnCommit(releasesDir);
@@ -1771,6 +1802,12 @@ function main() {
   }
 
   const existing = fs.readFileSync(manifestPath, "utf8");
+  assertArtifactKeySetMatches(
+    manifestPath,
+    existing,
+    deployables.map((d) => d.key),
+  );
+
   const release = parseYamlScalar("release", existing) ?? cycleId;
   const rc = parseYamlScalar("rc", existing) ?? String(rcIndex);
   const cutAt = parseYamlScalar("cutAt", existing);
@@ -1805,6 +1842,5 @@ function main() {
 }
 
 main();
-
 CHIUBAKA_ORB_REFRESH_HIGHEST_RC_MANIFEST_PINS_V1_EOF
 printf '%s\n' "${stage_dir}/writeReleaseCycle.mjs"

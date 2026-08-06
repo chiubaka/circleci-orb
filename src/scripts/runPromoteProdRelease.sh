@@ -98,6 +98,14 @@ exit_prerelease_and_cut_stable() {
     return 0
   fi
 
+  if [[ -z "${DEPLOYABLE_PACKAGES:-}" ]]; then
+    echo "runPromoteProdRelease: DEPLOYABLE_PACKAGES is required to refresh stable manifest pins after pre-exit." >&2
+    return 1
+  fi
+  if ! refresh_script=$(_resolve_refresh_pins_script); then
+    return 1
+  fi
+
   if [[ "$pre_mode" == "pre" ]]; then
     echo "runPromoteProdRelease: exiting Changesets prerelease mode for production stable cut."
     "$pnpm_bin" exec changeset pre exit
@@ -111,13 +119,6 @@ exit_prerelease_and_cut_stable() {
   "$pnpm_bin" exec changeset version
   rewrite_changelogs_for_category_grouping
 
-  if [[ -z "${DEPLOYABLE_PACKAGES:-}" ]]; then
-    echo "runPromoteProdRelease: DEPLOYABLE_PACKAGES is required to refresh stable manifest pins after pre-exit." >&2
-    return 1
-  fi
-  if ! refresh_script=$(_resolve_refresh_pins_script); then
-    return 1
-  fi
   RELEASE_ID="${CYCLE_ID}" node "$refresh_script"
   DID_STABLE_CUT=true
 
@@ -220,9 +221,9 @@ run_promote_prod_release_main() {
     exit 1
   fi
 
-  if ! exit_prerelease_and_cut_stable; then
-    exit 1
-  fi
+  # Call as a standalone command so set -e applies inside the function body.
+  # (Bash disables errexit for commands in `if` conditions.)
+  exit_prerelease_and_cut_stable
 
   if ! finalize_script=$(_resolve_finalize_script); then
     exit 1

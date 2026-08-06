@@ -15,12 +15,12 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Feature PRs on `main` accumulate `.changeset/` files.
 2. `changesets-release-pr` enters prerelease mode (`changeset pre enter rc`), versions packages (for example `server@5.2.0-rc.0`, `web@2.4.0-rc.0`), allocates cycle `2026.07.01.1`, creates:
 
-```text
-.releases/2026.07.01.1/
-  cycle.yml
-  rc1/manifest.yml    # server-v5.2.0-rc.0, web-v2.4.0-rc.0
-  rc1/notes.md
-```
+   ```text
+   .releases/2026.07.01.1/
+     cycle.yml
+     rc1/manifest.yml    # server-v5.2.0-rc.0, web-v2.4.0-rc.0
+     rc1/notes.md
+   ```
 
 3. Release PR body shows the rc1 batch (**artifact 1**).
 4. Merge → gated publish (prerelease artifact tags) → `staging-2026.07.01.1-rc1` → staging deploy.
@@ -30,12 +30,12 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Staging QA finds a bug; fix PR adds a `.changeset/` with `Fix: …`.
 2. Follow-up release PR stays in prerelease mode and adds **`rc2/`** under the **same** cycle (no new cycle id):
 
-```text
-.releases/2026.07.01.1/
-  …
-  rc2/manifest.yml    # server-v5.2.1-rc.1, web-v2.4.0-rc.0
-  rc2/notes.md        # artifact 2 — this cut only
-```
+   ```text
+   .releases/2026.07.01.1/
+     …
+     rc2/manifest.yml    # server-v5.2.1-rc.1, web-v2.4.0-rc.0
+     rc2/notes.md        # artifact 2 — this cut only
+   ```
 
 3. Patch release PR body shows only the fix.
 4. Merge → `staging-2026.07.01.1-rc2` → staging deploy.
@@ -72,13 +72,13 @@ Prod is live on `2026.07.01.1`. An urgent defect is found; `main` may already ha
 1. Branch from the commit tagged **`prod-2026.07.01.1`**.
 2. Fix PR adds a `.changeset/` entry; version cut allocates **new** cycle `2026.07.07.1` with **hotfix** automation (skips prerelease; versions to stable at cut):
 
-```text
-.releases/2026.07.07.1/
-  cycle.yml              # openedAt; predecessorCycle: 2026.07.01.1
-  rc1/manifest.yml       # stable pins (e.g. server-v5.2.2)
-  rc1/notes.md           # artifact 1 — hotfix only
-  release-notes.md       # artifact 3 — written at prod promotion
-```
+   ```text
+   .releases/2026.07.07.1/
+     cycle.yml              # openedAt; predecessorCycle: 2026.07.01.1
+     rc1/manifest.yml       # stable pins (e.g. server-v5.2.2)
+     rc1/notes.md           # artifact 1 — hotfix only
+     release-notes.md       # artifact 3 — written at prod promotion
+   ```
 
 3. Expedited path: merge → gated publish → optional `staging-2026.07.07.1-rc1` → **`prod-2026.07.07.1`** (no pre-exit version step).
 4. GitHub Release **`2026.07.07.1`** with `release-notes.md` body; `cycle.yml` gains **`promotedAt`**.
