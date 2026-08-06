@@ -103,9 +103,9 @@ EOF
 
   body=$(mktemp)
   build_pr_body_file "$body"
-  run grep -F "### Minor Changes" "$body"
+  run grep -F "### @t/pkg" "$body"
   assert_success
-  run grep -F "**@t/pkg**" "$body"
+  run grep -F "#### Minor Changes" "$body"
   assert_success
   run grep -F "new entry" "$body"
   assert_success
@@ -135,9 +135,9 @@ EOF
 
   body=$(mktemp)
   build_pr_body_file "$body"
-  run grep -F "### Patch Changes" "$body"
+  run grep -F "### @t/root" "$body"
   assert_success
-  run grep -F "**@t/root**" "$body"
+  run grep -F "#### Patch Changes" "$body"
   assert_success
   run grep -F "include untracked changelog excerpt" "$body"
   assert_success
