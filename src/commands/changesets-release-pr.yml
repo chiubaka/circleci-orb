@@ -19,7 +19,14 @@ parameters:
     default: false
     description: >
       When true, after changeset version writes .releases/<cycle-id>/rc<n>/ with manifest and notes
-      (application deployment repos only). Requires deployable-packages.
+      (application deployment repos only). Requires deployable-packages. Normal cycles enter
+      Changesets prerelease mode (ADR 0043) unless release-is-hotfix is true.
+  release-is-hotfix:
+    type: boolean
+    default: false
+    description: >
+      When true with create-release-manifest, skip Changesets prerelease enter and version to
+      stable at cut time (ADR 0043 hotfix path). Must not be used while an open cycle is in pre mode.
   deployable-packages:
     type: string
     default: ""
@@ -66,6 +73,7 @@ steps:
         APP_DIR: .
         PRIMARY_BRANCH: << parameters.primary-branch >>
         CREATE_RELEASE_MANIFEST: << parameters.create-release-manifest >>
+        RELEASE_IS_HOTFIX: << parameters.release-is-hotfix >>
         DEPLOYABLE_PACKAGES: << parameters.deployable-packages >>
         MANIFEST_TRAIN_TAG_PREFIX: << parameters.manifest-train-tag-prefix >>
         RELEASE_NOTES_GROUPING: << parameters.release-notes-grouping >>

@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
-# Finalize a release cycle for production: promotedAt, release-notes rollup, commit, prod tag, GitHub Release.
+# Finalize a release cycle for production: optional pre-exit + stable version (ADR 0043),
+# promotedAt, release-notes rollup, commit, prod tag, GitHub Release.
 set -euo pipefail
 
 _script_dir() {
@@ -20,6 +21,113 @@ _resolve_finalize_script() {
   fi
   echo "runPromoteProdRelease: set FINALIZE_RELEASE_CYCLE_SCRIPT or keep finalizeReleaseCycle.mjs next to this script." >&2
   return 1
+}
+
+_resolve_refresh_pins_script() {
+  if [[ -n "${REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT:-}" && -f "${REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT}" ]]; then
+    printf '%s\n' "$REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT"
+    return 0
+  fi
+  local sibling
+  sibling="$(_script_dir)/refreshHighestRcManifestPins.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  echo "runPromoteProdRelease: set REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT or keep refreshHighestRcManifestPins.mjs next to this script." >&2
+  return 1
+}
+
+_read_pre_mode() {
+  if [[ ! -f .changeset/pre.json ]]; then
+    printf ''
+    return 0
+  fi
+  node -e 'const fs=require("fs");try{const j=JSON.parse(fs.readFileSync(".changeset/pre.json","utf8"));process.stdout.write(String(j.mode||""));}catch{process.stdout.write("");}'
+}
+
+list_changed_changelog_paths() {
+  {
+    git diff --name-only
+    git ls-files --others --exclude-standard
+  } | { grep -E '(^|/)CHANGELOG\.md$' || :; } | LC_ALL=C sort -u
+}
+
+_resolve_rewriter_script() {
+  if [[ -n "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT:-}" && -f "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT}" ]]; then
+    printf '%s\n' "$REWRITE_CHANGELOG_CATEGORIES_SCRIPT"
+    return 0
+  fi
+  local sibling
+  sibling="$(_script_dir)/rewriteChangelogCategories.mjs"
+  if [[ -f "$sibling" ]]; then
+    printf '%s\n' "$sibling"
+    return 0
+  fi
+  return 1
+}
+
+rewrite_changelogs_for_category_grouping() {
+  local grouping_lower rewriter
+  grouping_lower=$(printf '%s' "${RELEASE_NOTES_GROUPING:-category}" | tr '[:upper:]' '[:lower:]')
+  if [[ "$grouping_lower" != "category" ]]; then
+    return 0
+  fi
+  if ! rewriter=$(_resolve_rewriter_script); then
+    echo "runPromoteProdRelease: category grouping requires REWRITE_CHANGELOG_CATEGORIES_SCRIPT." >&2
+    return 1
+  fi
+  local -a cpaths=()
+  mapfile -t cpaths < <(list_changed_changelog_paths | grep -v '^$' || true)
+  if [[ ${#cpaths[@]} -eq 0 ]]; then
+    return 0
+  fi
+  node "$rewriter" "${cpaths[@]}"
+}
+
+# ADR 0043: exit Changesets prerelease and cut stable semver before production pins.
+# Sets DID_STABLE_CUT=true when a pre-exit version cut runs.
+exit_prerelease_and_cut_stable() {
+  local pnpm_bin pre_mode refresh_script
+  pnpm_bin=${PNPM_BINARY:-pnpm}
+  DID_STABLE_CUT=false
+  pre_mode=$(_read_pre_mode)
+
+  if [[ -z "$pre_mode" ]]; then
+    echo "runPromoteProdRelease: not in Changesets prerelease mode; skipping pre-exit version cut (hotfix or legacy cycle)."
+    return 0
+  fi
+
+  if [[ -z "${DEPLOYABLE_PACKAGES:-}" ]]; then
+    echo "runPromoteProdRelease: DEPLOYABLE_PACKAGES is required to refresh stable manifest pins after pre-exit." >&2
+    return 1
+  fi
+  if ! refresh_script=$(_resolve_refresh_pins_script); then
+    return 1
+  fi
+
+  if [[ "$pre_mode" == "pre" ]]; then
+    echo "runPromoteProdRelease: exiting Changesets prerelease mode for production stable cut."
+    "$pnpm_bin" exec changeset pre exit
+  elif [[ "$pre_mode" == "exit" ]]; then
+    echo "runPromoteProdRelease: Changesets pre.json already in exit mode; running version to stable."
+  else
+    echo "runPromoteProdRelease: unexpected .changeset/pre.json mode '${pre_mode}'." >&2
+    return 1
+  fi
+
+  "$pnpm_bin" exec changeset version
+  rewrite_changelogs_for_category_grouping
+
+  RELEASE_ID="${CYCLE_ID}" node "$refresh_script"
+  DID_STABLE_CUT=true
+
+  if [[ -n "${STABLE_PUBLISH_SCRIPT:-}" ]]; then
+    echo "runPromoteProdRelease: running stable publish script: ${STABLE_PUBLISH_SCRIPT}"
+    "$pnpm_bin" run "$STABLE_PUBLISH_SCRIPT"
+  else
+    echo "runPromoteProdRelease: STABLE_PUBLISH_SCRIPT unset; ensure stable artifact tags are published for refreshed manifest pins."
+  fi
 }
 
 read_cycle_from_commit() {
@@ -51,13 +159,20 @@ read_cycle_from_commit() {
 }
 
 _resolve_tag_sha() {
-  local tag_target validated_sha finalize_sha
+  local tag_target validated_sha finalize_sha did_stable
   tag_target=$(printf '%s' "${TAG_TARGET:-finalize}" | tr '[:upper:]' '[:lower:]')
   validated_sha=$1
   finalize_sha=$2
+  did_stable=${DID_STABLE_CUT:-false}
   case "$tag_target" in
     finalize) printf '%s\n' "$finalize_sha" ;;
-    validated) printf '%s\n' "$validated_sha" ;;
+    validated)
+      if [[ "$did_stable" == "true" ]]; then
+        echo "runPromoteProdRelease: TAG_TARGET=validated is incompatible after ADR 0043 stable cut (pins live on the finalize commit). Use finalize." >&2
+        return 1
+      fi
+      printf '%s\n' "$validated_sha"
+      ;;
     *)
       echo "runPromoteProdRelease: TAG_TARGET must be finalize or validated (got ${TAG_TARGET})." >&2
       return 1
@@ -93,6 +208,8 @@ run_promote_prod_release_main() {
   finalize_sha=$validated_sha
   export TARGET_SHA="$validated_sha"
 
+  git checkout --detach "$validated_sha" >/dev/null 2>&1 || git checkout "$validated_sha"
+
   if ! read_cycle_from_commit; then
     echo "runPromoteProdRelease: could not determine cycle id on ${target_ref}." >&2
     exit 1
@@ -103,6 +220,10 @@ run_promote_prod_release_main() {
     echo "runPromoteProdRelease: missing cycle directory ${cycle_dir}." >&2
     exit 1
   fi
+
+  # Call as a standalone command so set -e applies inside the function body.
+  # (Bash disables errexit for commands in `if` conditions.)
+  exit_prerelease_and_cut_stable
 
   if ! finalize_script=$(_resolve_finalize_script); then
     exit 1
@@ -116,7 +237,7 @@ run_promote_prod_release_main() {
   rm -f "$_finalize_tmp"
   notes_path="${cycle_dir}/release-notes.md"
 
-  git add "${cycle_dir}/cycle.yml" "$notes_path"
+  git add -A
   if git diff --cached --quiet; then
     echo "runPromoteProdRelease: cycle already finalized on ${target_ref}; continuing."
   else

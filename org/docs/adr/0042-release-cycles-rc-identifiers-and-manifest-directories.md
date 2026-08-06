@@ -52,7 +52,7 @@ A **release cycle** is one coordinated product release from first version cut th
 
 ### Release candidate (RC)
 
-An **RC** is one `changeset version` cut within a cycle—one pin set and one reviewer-facing notes snapshot.
+An **RC** is one `changeset version` cut within a cycle—one pin set and one reviewer-facing notes snapshot. For **normal** (non-hotfix) application cycles, that cut uses Changesets **prerelease** semver until production finalization strips prerelease suffixes ([ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)). Hotfix cycles MAY version directly to stable.
 
 - **RC index:** `rc1`, `rc2`, `rc3`, … assigned sequentially within the cycle (`rc1` always exists—the first **version cut**, whether or not a staging environment deploys that cut).
 - **RC promotion id (staging promotions):** `<cycle-id>-rc<n>` (for example `2026.07.01.1-rc2`). Used when **staging** is a coordinated promotion target.
@@ -185,7 +185,7 @@ Promotion: `prod-2026.07.01.1`. Topology B may use `staging-2026.07.01.1-rc1` be
 
 ### Hotfix releases
 
-A **hotfix** is an urgent fix shipped to production while a prior cycle is already live (`promotedAt` set on that cycle). Hotfixes use the **same** release-cycle machinery as regular releases—no separate id suffix, no bypass of Changesets, manifests, or promotion tags.
+A **hotfix** is an urgent fix shipped to production while a prior cycle is already live (`promotedAt` set on that cycle). Hotfixes use the **same** release-cycle machinery as regular releases—no separate id suffix, no bypass of Changesets, manifests, or promotion tags. Hotfix cycles **MAY skip Changesets prerelease mode** and version directly to stable at cut time ([ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)); that skip is an explicit automation signal, not inferred solely from `predecessorCycle`.
 
 **Definition:** A hotfix is a **new release cycle** cut from the **current production promotion commit** (the commit tagged `prod-<prior-cycle-id>`), not a new RC under the prior cycle. Once a cycle has `promotedAt`, it is **closed**; production defects MUST NOT be addressed by adding `rc<n+1>/` to a shipped cycle.
 
@@ -267,3 +267,4 @@ A **hotfix** is an urgent fix shipped to production while a prior cycle is alrea
 - [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — calendar train identifiers; cycle-open semantics
 - [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — pin-only manifest fields; directory layout deferred to this ADR
 - [ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md) — reviewer-facing notes artifacts per RC and prod rollup
+- [ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md) — prerelease semver until production finalization; hotfix skip

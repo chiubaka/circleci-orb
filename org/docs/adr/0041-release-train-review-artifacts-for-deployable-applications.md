@@ -42,13 +42,13 @@ Chosen option: **Per-RC notes snapshots under `.releases/<cycle-id>/rc<n>/notes.
 - **In scope:** application deployment monorepos using `.releases/<cycle-id>/` directories ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
 - **Out of scope / unchanged:** library-only monorepos without manifests publish GitHub Releases at gated publish merge per [ADR 0038](0038-release-train-identifiers-and-github-releases.md).
 
-### Authoring and transformation (unchanged)
+### Authoring and transformation
 
 1. Releasable changes include `.changeset/` entries with category-prefixed summaries.
-2. `changeset version` consumes pending changesets, bumps deployable semvers, writes per-package `CHANGELOG.md`.
-3. Category rewrite and batch formatting run immediately after version (existing orb behavior).
+2. For **normal** application cycles, automation enters Changesets **prerelease** mode at the first cut and runs `changeset version` to prerelease semver; **stable** semver is cut at production finalization ([ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)). Hotfix cycles MAY skip prerelease and version to stable at cut time.
+3. Category rewrite and batch formatting run immediately after each version step (existing orb behavior).
 
-Changesets remains the **authoring** system of record. Presentation tooling reads `CHANGELOG.md` **at version time** for each RC cut.
+Changesets remains the **authoring** system of record. Presentation tooling reads `CHANGELOG.md` **at version time** for each RC cut (and again at pre-exit when production finalization produces stable version sections).
 
 ### On-disk artifacts (per cycle)
 
@@ -110,9 +110,9 @@ Topology **C** still uses `rc1/` and `release-notes.md` with heading `## <cycle-
 ### Soak iteration rules
 
 1. Fixes merge with new `.changeset/` entries.
-2. Patch **release PR** adds **`rc<n+1>/`** under the **same cycle id** ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)); do not allocate a new cycle id.
-3. Promote staging with `staging-<cycle-id>-rc<n+1>`.
-4. Prod promotes **`prod-<cycle-id>`** on the final validated commit; `release-notes.md` includes all RCs.
+2. Patch **release PR** adds **`rc<n+1>/`** under the **same** cycle id ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)); do not allocate a new cycle id. The workspace remains in Changesets prerelease mode ([ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)).
+3. Promote staging with `staging-<cycle-id>-rc<n+1>` (prerelease artifact pins).
+4. Prod finalization exits prerelease, cuts stable semver, refreshes the highest RC manifest pins, then promotes **`prod-<cycle-id>`**; `release-notes.md` includes all RCs.
 
 ### Hotfix releases
 
@@ -159,7 +159,7 @@ promotedAt: 2026-07-15T16:00:00Z
 
 `openedAt` is set at **rc1** and anchors the cycle id calendar date. `promotedAt` MUST be set when production promotion completes; it records **when the cycle shipped to prod**, which can be days or weeks after `openedAt` ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
 
-**`rc2/manifest.yml`:**
+**`rc2/manifest.yml`** (during soak—prerelease pins per [ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)):
 
 ```yaml
 release: 2026.07.01.1
@@ -167,9 +167,11 @@ rc: 2
 cutAt: 2026-07-03T09:15:00Z
 
 artifacts:
-  server: server-v5.2.1
-  web: web-v2.4.0
+  server: server-v5.2.1-rc.1
+  web: web-v2.4.0-rc.0
 ```
+
+At production finalization, tooling refreshes this highest RC manifest to **stable** pins (for example `server-v5.2.1`, `web-v2.4.0`) before `prod-2026.07.01.1`.
 
 **`rc2/notes.md`** (artifact 2 — this cut only):
 
@@ -223,3 +225,4 @@ See [examples/release-train-review-artifacts.md](examples/release-train-review-a
 - [ADR 0038](0038-release-train-identifiers-and-github-releases.md) — cycle-open calendar date semantics
 - [ADR 0039](0039-release-manifest-pin-sets-and-tooling-owned-deploy-order.md) — pin-only manifest fields
 - [ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md) — release cycles, RC ids, directory layout
+- [ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md) — prerelease until production; hotfix may skip pre mode

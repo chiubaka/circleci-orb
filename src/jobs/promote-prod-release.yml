@@ -1,6 +1,7 @@
 description: >
-  Finalize a deployable application release cycle for production (ADR 0041): promotedAt,
-  release-notes.md rollup, prod-<cycle-id> tag, and canonical GitHub Release.
+  Finalize a deployable application release cycle for production (ADR 0041 / ADR 0043):
+  optional prerelease exit and stable version cut, promotedAt, release-notes.md rollup,
+  prod-<cycle-id> tag, and canonical GitHub Release.
 
 executor:
   name: docker-node
@@ -37,7 +38,22 @@ parameters:
     default: finalize
     description: >
       Which commit prod-<cycle-id> and the GitHub Release target. finalize tags the
-      finalize commit; validated tags the pre-finalize target-ref commit (ADR 0031).
+      finalize commit; validated tags the pre-finalize target-ref commit only when no
+      ADR 0043 stable cut ran (hotfix/legacy).
+  deployable-packages:
+    type: string
+    default: ""
+    description: >
+      Required when exiting Changesets prerelease to refresh stable manifest pins.
+  stable-publish-script:
+    type: string
+    default: ""
+  release-notes-grouping:
+    type: enum
+    enum:
+      - bump-type
+      - category
+    default: category
   resource-class:
     default: medium
     enum:
@@ -49,12 +65,18 @@ parameters:
       - 2xlarge
       - 2xlarge+
     type: enum
+  skip-install:
+    type: boolean
+    default: false
+    description: >
+      Skip pnpm install. Set false (default) when production finalization may run
+      changeset pre exit / changeset version (ADR 0043).
 
 steps:
   - setup:
       app-dir: << parameters.app-dir >>
       checkout: true
-      skip-pnpm-install: true
+      skip-pnpm-install: << parameters.skip-install >>
   - promote-prod-release:
       app-dir: << parameters.app-dir >>
       primary-branch: << parameters.primary-branch >>
@@ -63,3 +85,6 @@ steps:
       release-id: << parameters.release-id >>
       target-ref: << parameters.target-ref >>
       tag-target: << parameters.tag-target >>
+      deployable-packages: << parameters.deployable-packages >>
+      stable-publish-script: << parameters.stable-publish-script >>
+      release-notes-grouping: << parameters.release-notes-grouping >>

@@ -145,7 +145,7 @@ build_force_with_lease_arg() {
 
 run_changesets_release_pr_main() {
   local pnpm_bin app_dir primary pending title release_branch repo_slug u r pr_num auth_header push_url lease_arg push_output
-  local create_manifest_raw create_manifest_lower manifest_script
+  local create_manifest_raw create_manifest_lower create_manifest manifest_script hotfix_raw hotfix_lower pre_mode
   # body_file is intentionally not local: the EXIT trap runs after this function returns.
   pnpm_bin=${PNPM_BINARY:-pnpm}
   app_dir=${APP_DIR:-.}
@@ -170,13 +170,41 @@ run_changesets_release_pr_main() {
   git checkout "$primary"
   git reset --hard "origin/${primary}"
 
+  create_manifest_raw=${CREATE_RELEASE_MANIFEST:-false}
+  create_manifest_lower=$(printf '%s' "$create_manifest_raw" | tr '[:upper:]' '[:lower:]')
+  create_manifest=false
+  if [[ "$create_manifest_lower" == "true" ]] || [[ "$create_manifest_lower" == "1" ]]; then
+    create_manifest=true
+  fi
+
+  # ADR 0043: normal application cycles use Changesets prerelease until prod; hotfixes may skip.
+  if [[ "$create_manifest" == "true" ]]; then
+    hotfix_raw=${RELEASE_IS_HOTFIX:-false}
+    hotfix_lower=$(printf '%s' "$hotfix_raw" | tr '[:upper:]' '[:lower:]')
+    pre_mode=""
+    if [[ -f .changeset/pre.json ]]; then
+      pre_mode=$(node -e 'const fs=require("fs");try{const j=JSON.parse(fs.readFileSync(".changeset/pre.json","utf8"));process.stdout.write(String(j.mode||""));}catch{process.stdout.write("");}')
+    fi
+    if [[ "$hotfix_lower" == "true" ]] || [[ "$hotfix_lower" == "1" ]]; then
+      if [[ "$pre_mode" == "pre" ]]; then
+        echo "runChangesetsReleasePr: RELEASE_IS_HOTFIX=true but Changesets is in prerelease mode (.changeset/pre.json)." >&2
+        echo "  Finish or abandon the open application cycle before cutting a hotfix that skips prerelease." >&2
+        exit 1
+      fi
+      echo "runChangesetsReleasePr: hotfix release — skipping changeset pre enter (stable version cut)."
+    elif [[ "$pre_mode" == "pre" ]]; then
+      echo "runChangesetsReleasePr: already in Changesets prerelease mode; continuing soak cut."
+    else
+      echo "runChangesetsReleasePr: entering Changesets prerelease mode (tag=rc) for application cycle."
+      "$pnpm_bin" exec changeset pre enter rc
+    fi
+  fi
+
   "$pnpm_bin" exec changeset version
 
   rewrite_changelogs_for_category_grouping
 
-  create_manifest_raw=${CREATE_RELEASE_MANIFEST:-false}
-  create_manifest_lower=$(printf '%s' "$create_manifest_raw" | tr '[:upper:]' '[:lower:]')
-  if [[ "$create_manifest_lower" == "true" ]] || [[ "$create_manifest_lower" == "1" ]]; then
+  if [[ "$create_manifest" == "true" ]]; then
     if [[ -z "${DEPLOYABLE_PACKAGES:-}" ]]; then
       echo "runChangesetsReleasePr: DEPLOYABLE_PACKAGES is required when create-release-manifest is true." >&2
       echo "  Format: key=relative/path,key2=path2 (e.g. server=packages/server,web=apps/web)." >&2

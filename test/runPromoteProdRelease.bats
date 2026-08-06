@@ -148,3 +148,25 @@ _run_promote_prod_release() {
   assert_failure
   assert_output --partial "TAG_TARGET must be finalize or validated"
 }
+
+@test "pre-exit fails fast when DEPLOYABLE_PACKAGES is unset" {
+  local clone bindir gh_call_log
+  clone=$(_promote_prod_init_clone)
+  bindir=$(_write_gh_stub)
+  gh_call_log=$(mktemp)
+  cd "$clone" || exit 1
+  mkdir -p .changeset
+  printf '%s\n' '{"mode":"pre","tag":"rc","changesets":[]}' >.changeset/pre.json
+  git add .changeset/pre.json
+  git commit -m "enter pre" >/dev/null 2>&1
+
+  _run_promote_prod_release "$bindir" "$gh_call_log" \
+    REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT="$PROJECT_ROOT/src/scripts/refreshHighestRcManifestPins.mjs"
+
+  assert_failure
+  assert_output --partial "DEPLOYABLE_PACKAGES is required"
+  # Must fail before mutating Changesets pre state.
+  run cat .changeset/pre.json
+  assert_success
+  assert_output --partial '"mode":"pre"'
+}

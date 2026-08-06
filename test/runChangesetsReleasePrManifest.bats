@@ -100,3 +100,78 @@ _init_git_with_origin() {
   run grep -F "directus: directus-v1.0.0" ".releases/2099.12.31.1/rc1/manifest.yml"
   assert_success
 }
+
+@test "runChangesetsReleasePr enters prerelease mode when create-release-manifest is true" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-enter-pre"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-enter-pre"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-enter-pre"
+  cp -a "$FIXTURE_MONOREPO" "$repo_dir"
+  mkdir -p "$repo_dir/apps/directus"
+  printf '%s\n' '{"name":"directus","version":"1.0.0"}' >"$repo_dir/apps/directus/package.json"
+  _simulate_circleci_script "$script_dir"
+  _init_git_with_origin "$repo_dir"
+  WRITE_RELEASE_CYCLE_STAGE_DIR="$stage_dir" \
+    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+
+  cd "$repo_dir"
+  pnpm_bin="${BATS_TEST_TMPDIR}/pnpm-enter-pre"
+  cat >"$pnpm_bin" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$*" == *"changeset pre enter rc"* ]]; then
+  mkdir -p .changeset
+  printf '%s\n' '{"mode":"pre","tag":"rc","changesets":[]}' >.changeset/pre.json
+fi
+exit 0
+EOF
+  chmod +x "$pnpm_bin"
+
+  GITHUB_TOKEN=test \
+  PRIMARY_BRANCH=main \
+  CREATE_RELEASE_MANIFEST=true \
+  DEPLOYABLE_PACKAGES=directus=apps/directus \
+  UTC_DATE_OVERRIDE=2099.12.31 \
+  UTC_TIMESTAMP_OVERRIDE=2099-12-31T12:00:00Z \
+  WRITE_RELEASE_CYCLE_SCRIPT="${stage_dir}/writeReleaseCycle.mjs" \
+  PNPM_BINARY="$pnpm_bin" \
+  APP_DIR=. \
+    run bash "${script_dir}/runChangesetsReleasePr.sh"
+
+  assert_success
+  assert_output --partial "entering Changesets prerelease mode"
+  assert [ -f .changeset/pre.json ]
+  run grep -F '"mode":"pre"' .changeset/pre.json
+  assert_success
+}
+
+@test "runChangesetsReleasePr hotfix skips prerelease enter" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-hotfix-skip-pre"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-hotfix-skip-pre"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-hotfix"
+  cp -a "$FIXTURE_MONOREPO" "$repo_dir"
+  mkdir -p "$repo_dir/apps/directus"
+  printf '%s\n' '{"name":"directus","version":"1.0.0"}' >"$repo_dir/apps/directus/package.json"
+  _simulate_circleci_script "$script_dir"
+  _init_git_with_origin "$repo_dir"
+  WRITE_RELEASE_CYCLE_STAGE_DIR="$stage_dir" \
+    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+
+  cd "$repo_dir"
+  pnpm_mock=$(mock_create)
+
+  GITHUB_TOKEN=test \
+  PRIMARY_BRANCH=main \
+  CREATE_RELEASE_MANIFEST=true \
+  RELEASE_IS_HOTFIX=true \
+  DEPLOYABLE_PACKAGES=directus=apps/directus \
+  UTC_DATE_OVERRIDE=2099.12.31 \
+  UTC_TIMESTAMP_OVERRIDE=2099-12-31T12:00:00Z \
+  WRITE_RELEASE_CYCLE_SCRIPT="${stage_dir}/writeReleaseCycle.mjs" \
+  PNPM_BINARY="$pnpm_mock" \
+  APP_DIR=. \
+    run bash "${script_dir}/runChangesetsReleasePr.sh"
+
+  assert_success
+  assert_output --partial "hotfix release — skipping changeset pre enter"
+  refute_output --partial "entering Changesets prerelease mode"
+  assert [ ! -f .changeset/pre.json ]
+}
