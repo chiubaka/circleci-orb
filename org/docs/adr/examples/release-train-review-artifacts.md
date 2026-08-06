@@ -15,12 +15,12 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Feature PRs on `main` accumulate `.changeset/` files.
 2. `changesets-release-pr` enters prerelease mode (`changeset pre enter rc`), versions packages (for example `server@5.2.0-rc.0`, `web@2.4.0-rc.0`), allocates cycle `2026.07.01.1`, creates:
 
-```text
-.releases/2026.07.01.1/
-  cycle.yml
-  rc1/manifest.yml    # server-v5.2.0-rc.0, web-v2.4.0-rc.0
-  rc1/release-notes.md
-```
+   ```text
+   .releases/2026.07.01.1/
+     cycle.yml
+     rc1/manifest.yml    # server-v5.2.0-rc.0, web-v2.4.0-rc.0
+     rc1/release-notes.md
+   ```
 
 3. Release PR body shows the rc1 batch (**artifact 1**); cycle `release-notes.md` already holds the rollup section for rc1.
 4. Merge → gated publish (prerelease artifact tags) → `staging-2026.07.01.1-rc1` → staging deploy.
@@ -30,12 +30,12 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 1. Staging QA finds a bug; fix PR adds a `.changeset/` with `Fix: …`.
 2. Follow-up release PR stays in prerelease mode and adds **`rc2/`** under the **same** cycle (no new cycle id):
 
-```text
-.releases/2026.07.01.1/
-  …
-  rc2/manifest.yml    # server-v5.2.1-rc.1, web-v2.4.0-rc.0
-  rc2/release-notes.md        # artifact 2 — this cut only
-```
+   ```text
+   .releases/2026.07.01.1/
+     …
+     rc2/manifest.yml    # server-v5.2.1-rc.1, web-v2.4.0-rc.0
+     rc2/release-notes.md        # artifact 2 — this cut only
+   ```
 
 3. Patch release PR body shows only the fix.
 4. Merge → `staging-2026.07.01.1-rc2` → staging deploy.
