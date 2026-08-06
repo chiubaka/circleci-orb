@@ -1,5 +1,16 @@
 # @chiubaka/circleci-orb
 
+## 0.24.0
+
+### Features
+
+- Enter Changesets prerelease for application release cycles and cut stable versions at production finalization (ADR 0043)
+- Refresh cycle release-notes.md on every RC cut and default to package-then-category note nesting
+
+### Bug Fixes
+
+- Make RC cuts recoverable when cycle release-notes rollup fails, and require cycle rollup files on every validated cycle
+
 ## 0.23.0
 
 ### Features
