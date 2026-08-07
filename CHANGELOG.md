@@ -1,5 +1,16 @@
 # @chiubaka/circleci-orb
 
+## 0.24.1
+
+### Improvements
+
+- Require sentence-case summary text after category prefixes in verify-changesets.
+
+### Bug Fixes
+
+- default `target-ref` to empty on promote/tag/release commands so pipelines without `pipeline.git.revision` (API/schedule triggers) still compile; scripts already fall back to `CIRCLE_SHA1` or `HEAD`.
+- Forward `primary-branch` from `promote-prod-release` into nested `setup` so Turbo SCM base uses the configured primary branch instead of defaulting to `master`.
+
 ## 0.24.0
 
 ### Features
