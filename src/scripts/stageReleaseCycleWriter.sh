@@ -1200,12 +1200,27 @@ const BUMP_TYPE_CONFIG = {
   },
 };
 
+function bulletSummaryText(block) {
+  const first = block[0];
+  const m = String(first).match(/^[-*]\s?(.*)$/);
+  return m ? m[1] : String(first).replace(/^[-*]\s?/, "");
+}
+
 function buildCategoryConfig(prefixes) {
-  const { classifyChangelogBullet, CATEGORY_ORDER, CATEGORY_SECTION_TITLE } = prefixes;
+  const {
+    classifyChangelogBullet,
+    CATEGORY_ORDER,
+    CATEGORY_SECTION_TITLE,
+    isDependencyBumpBullet,
+  } = prefixes;
   return {
     order: CATEGORY_ORDER,
     titles: CATEGORY_SECTION_TITLE,
     fallbackBucket: null,
+    isDependencyBumpBullet:
+      typeof isDependencyBumpBullet === "function"
+        ? isDependencyBumpBullet
+        : () => false,
     classifyHeading(line) {
       const t = String(line).trim();
       if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
@@ -1218,10 +1233,7 @@ function buildCategoryConfig(prefixes) {
       return null;
     },
     classifyBulletBlock(block) {
-      const first = block[0];
-      const m = String(first).match(/^[-*]\s?(.*)$/);
-      const text = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-      return classifyChangelogBullet(text);
+      return classifyChangelogBullet(bulletSummaryText(block));
     },
   };
 }
@@ -1298,6 +1310,11 @@ function collectUntilNextHeading(lines, start, config) {
   return { blocks: splitBulletBlocks(segment), nextIdx: i };
 }
 
+function shouldDropDependencyBump(block, config) {
+  if (typeof config.isDependencyBumpBullet !== "function") return false;
+  return config.isDependencyBumpBullet(bulletSummaryText(block));
+}
+
 /** @param {string[]} bodyLines @param {typeof BUMP_TYPE_CONFIG} config */
 function parseVersionBody(bodyLines, config) {
   /** @type {Record<string, string[][][]>} */
@@ -1314,6 +1331,8 @@ function parseVersionBody(bodyLines, config) {
       for (const b of blocks) {
         if (config.fallbackBucket) {
           buckets[cat].push(b);
+        } else if (shouldDropDependencyBump(b, config)) {
+          continue;
         } else {
           const bucket = config.classifyBulletBlock(b);
           // rewriteChangelogCategories strips prefix tokens after placing bullets under category
@@ -1326,6 +1345,7 @@ function parseVersionBody(bodyLines, config) {
       while (i < bodyLines.length && !config.classifyHeading(bodyLines[i])) i += 1;
       const chunk = bodyLines.slice(start, i);
       for (const b of splitBulletBlocks(chunk)) {
+        if (shouldDropDependencyBump(b, config)) continue;
         const bucket = config.classifyBulletBlock(b);
         if (bucket === null) {
           if (config.fallbackBucket) {
@@ -1502,7 +1522,6 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
-
 CHIUBAKA_ORB_FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_V1_EOF
 cat >"${stage_dir}/changesetCategoryPrefixes.mjs" <<'CHIUBAKA_ORB_CHANGESET_CATEGORY_PREFIXES_V1_EOF'
 /**
@@ -1681,6 +1700,36 @@ export function stripChangelogBulletAnnotations(text) {
   } while (t !== prev);
 
   return String(text).trim();
+}
+
+/**
+ * Changesets `getDependencyReleaseLine` parent bullet, optionally with commit
+ * shas and/or a trailing colon (e.g. `Updated dependencies [abc1234]:`).
+ */
+const UPDATED_DEPENDENCIES_BULLET_RE =
+  /^Updated dependencies(?:\s+\[[^\]]+\])?\s*:?\s*$/i;
+
+/**
+ * Bare package@version line produced when Prettier promotes an orphaned
+ * indented dependency child to a top-level bullet (scoped or unscoped, with
+ * optional prerelease/build metadata).
+ */
+const PACKAGE_AT_VERSION_BULLET_RE =
+  /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*))*))?(?:\+([0-9a-z-]+(?:\.[0-9a-z-]+)*))?$/i;
+
+/**
+ * True when a changelog bullet is Changesets internal dependency-bump noise
+ * rather than an authored category-prefixed summary. Matches both the
+ * `Updated dependencies` parent line and bare `pkg@version` orphan children.
+ *
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {boolean}
+ */
+export function isDependencyBumpBullet(text) {
+  const t = String(text).trim();
+  if (!t) return false;
+  if (UPDATED_DEPENDENCIES_BULLET_RE.test(t)) return true;
+  return PACKAGE_AT_VERSION_BULLET_RE.test(t);
 }
 
 /**

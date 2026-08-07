@@ -190,3 +190,65 @@ setup() {
   "
   assert_success
 }
+
+@test "isDependencyBumpBullet recognizes Updated dependencies parent shapes" {
+  run node -e "
+    import { isDependencyBumpBullet } from '$PREFIXES';
+    const positives = [
+      'Updated dependencies',
+      'Updated dependencies:',
+      'Updated dependencies [abc1234]',
+      'Updated dependencies [abc1234]:',
+      'Updated dependencies [abc1234, def5678]:',
+      'updated dependencies [ABC1234]:',
+    ];
+    for (const text of positives) {
+      if (!isDependencyBumpBullet(text)) {
+        console.error('expected dependency bump:', text);
+        process.exit(1);
+      }
+    }
+  "
+  assert_success
+}
+
+@test "isDependencyBumpBullet recognizes bare package@version orphan children" {
+  run node -e "
+    import { isDependencyBumpBullet } from '$PREFIXES';
+    const positives = [
+      '@snowday/domain@0.1.1',
+      '@scope/pkg@1.2.3-rc.4',
+      'unscoped-pkg@2.0.0',
+      '@acme/lib@1.0.0+build.1',
+    ];
+    for (const text of positives) {
+      if (!isDependencyBumpBullet(text)) {
+        console.error('expected dependency bump:', text);
+        process.exit(1);
+      }
+    }
+  "
+  assert_success
+}
+
+@test "isDependencyBumpBullet rejects authored summaries that mention versions" {
+  run node -e "
+    import { isDependencyBumpBullet } from '$PREFIXES';
+    const negatives = [
+      'Fix: pin @scope/pkg@1.2.3',
+      'Other: Bump @snowday/domain@0.1.1 for consumers',
+      'Feature: Show @user badges',
+      'Updated dependencies in docs',
+      'plain summary',
+      '@scope/pkg',
+      '@scope/pkg@not-a-version',
+    ];
+    for (const text of negatives) {
+      if (isDependencyBumpBullet(text)) {
+        console.error('unexpected dependency bump:', text);
+        process.exit(1);
+      }
+    }
+  "
+  assert_success
+}

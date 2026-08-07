@@ -177,6 +177,36 @@ export function stripChangelogBulletAnnotations(text) {
 }
 
 /**
+ * Changesets `getDependencyReleaseLine` parent bullet, optionally with commit
+ * shas and/or a trailing colon (e.g. `Updated dependencies [abc1234]:`).
+ */
+const UPDATED_DEPENDENCIES_BULLET_RE =
+  /^Updated dependencies(?:\s+\[[^\]]+\])?\s*:?\s*$/i;
+
+/**
+ * Bare package@version line produced when Prettier promotes an orphaned
+ * indented dependency child to a top-level bullet (scoped or unscoped, with
+ * optional prerelease/build metadata).
+ */
+const PACKAGE_AT_VERSION_BULLET_RE =
+  /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*))*))?(?:\+([0-9a-z-]+(?:\.[0-9a-z-]+)*))?$/i;
+
+/**
+ * True when a changelog bullet is Changesets internal dependency-bump noise
+ * rather than an authored category-prefixed summary. Matches both the
+ * `Updated dependencies` parent line and bare `pkg@version` orphan children.
+ *
+ * @param {string} text Changelog bullet text after the list marker (`- `).
+ * @returns {boolean}
+ */
+export function isDependencyBumpBullet(text) {
+  const t = String(text).trim();
+  if (!t) return false;
+  if (UPDATED_DEPENDENCIES_BULLET_RE.test(t)) return true;
+  return PACKAGE_AT_VERSION_BULLET_RE.test(t);
+}
+
+/**
  * @param {string} text Changelog bullet text after the list marker (`- `).
  * @returns {CategoryBucket | null}
  */

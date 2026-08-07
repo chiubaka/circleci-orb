@@ -126,15 +126,24 @@ function collectUntilNextHeading(lines, start) {
 }
 
 function collectBlocksFromBody(bodyLines, prefixes) {
-  const { classifyChangelogBullet, CATEGORY_ORDER, stripChangelogBulletCategoryPrefix } =
-    prefixes;
+  const {
+    classifyChangelogBullet,
+    CATEGORY_ORDER,
+    isDependencyBumpBullet,
+    stripChangelogBulletCategoryPrefix,
+  } = prefixes;
   /** @type {Record<string, string[][][]>} */
   const buckets = Object.fromEntries(CATEGORY_ORDER.map((key) => [key, []]));
   const unclassified = [];
 
   function addBlocks(blocks) {
     for (const block of blocks) {
-      const bucket = classifyChangelogBullet(bulletSummaryText(block));
+      const summary = bulletSummaryText(block);
+      // Drop Changesets dependency-bump noise (Updated dependencies / bare pkg@version).
+      if (typeof isDependencyBumpBullet === "function" && isDependencyBumpBullet(summary)) {
+        continue;
+      }
+      const bucket = classifyChangelogBullet(summary);
       if (bucket === null) {
         unclassified.push(block);
       } else {
