@@ -78,7 +78,7 @@ Consequences for hybrids:
 ### Relationship to release-cycle and review-artifact ADRs
 
 - An **RC** remains one version cut and pin set within a cycle ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)), but for normal cycles that cut yields **prerelease** package semver until production finalization.
-- Per-RC `notes.md` still snapshots the batch at each cut; production `release-notes.md` remains the rollup published at `prod-<cycle-id>` ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Stable changelog sections produced at pre-exit belong with the production finalize commit and MUST be reflected in the production review story (rollup and/or highest-RC notes refresh as implemented by tooling).
+- Per-RC `notes.md` still snapshots the batch at each cut; production `release-notes.md` remains the **collated** cycle rollup published at `prod-<cycle-id>` ([ADR 0041](0041-release-train-review-artifacts-for-deployable-applications.md)). Stable changelog sections produced at pre-exit belong with the production finalize commit and MUST be reflected in the production review story (collated rollup and/or highest-RC notes refresh as implemented by tooling).
 
 ### Consequences
 

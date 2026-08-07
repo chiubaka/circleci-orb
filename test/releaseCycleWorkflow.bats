@@ -41,7 +41,7 @@ setup() {
   assert_output --partial "missing release-notes.md"
 }
 
-@test "rollup writes release-notes.md with rc headings" {
+@test "rollup collates RC notes without RC headings" {
   work="${BATS_TEST_TMPDIR}/rollup-cycle"
   mkdir -p "$work"
   cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" "$work/"
@@ -49,13 +49,35 @@ setup() {
   run node "$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" "$work/2026.05.08.1"
   assert_success
   assert [ -f "$work/2026.05.08.1/release-notes.md" ]
-  run grep -F "## 2026.05.08.1-rc1" "$work/2026.05.08.1/release-notes.md"
+  run grep -F "### @chiubaka/server" "$work/2026.05.08.1/release-notes.md"
   assert_success
+  run grep -F "#### Bug Fixes" "$work/2026.05.08.1/release-notes.md"
+  assert_success
+  run grep -F "## 2026.05.08.1-rc1" "$work/2026.05.08.1/release-notes.md"
+  assert_failure
 
   mkdir -p "$work/2026.05.08.1/rc2"
-  cp "$work/2026.05.08.1/rc1/release-notes.md" "$work/2026.05.08.1/rc2/release-notes.md"
+  cat >"$work/2026.05.08.1/rc2/release-notes.md" <<'EOF'
+### @chiubaka/server
+
+#### Features
+
+- Add soak patch feature
+
+## Published versions
+
+- `@chiubaka/server@1.2.4`
+EOF
   run node "$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" "$work/2026.05.08.1"
   assert_success
+  run grep -F "#### Features" "$work/2026.05.08.1/release-notes.md"
+  assert_success
+  run grep -F "Add soak patch feature" "$work/2026.05.08.1/release-notes.md"
+  assert_success
+  run grep -F "Fix export queue handling" "$work/2026.05.08.1/release-notes.md"
+  assert_success
   run grep -F "## 2026.05.08.1-rc2" "$work/2026.05.08.1/release-notes.md"
+  assert_failure
+  run grep -F '@chiubaka/server@1.2.4' "$work/2026.05.08.1/release-notes.md"
   assert_success
 }

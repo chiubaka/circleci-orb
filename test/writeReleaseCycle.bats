@@ -43,6 +43,9 @@ _init_git_with_origin() {
   assert [ -f ".releases/2099.12.31.1/rc1/release-notes.md" ]
   assert [ -f ".releases/2099.12.31.1/release-notes.md" ]
   run grep -F "## 2099.12.31.1-rc1" ".releases/2099.12.31.1/release-notes.md"
+  assert_failure
+  run grep -F "_No CHANGELOG.md updates in this release cycle._" \
+    ".releases/2099.12.31.1/release-notes.md"
   assert_success
   run grep -F "release: 2099.12.31.1" ".releases/2099.12.31.1/cycle.yml"
   assert_success
