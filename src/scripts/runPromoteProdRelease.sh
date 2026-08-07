@@ -180,6 +180,18 @@ _resolve_tag_sha() {
   esac
 }
 
+# Finalize commit and annotated prod tags need identity. The promote-prod-release
+# job configures this via configure-git-user; fail early when callers skip that step.
+_require_git_identity() {
+  local name email
+  name=$(git config user.name 2>/dev/null || true)
+  email=$(git config user.email 2>/dev/null || true)
+  if [[ -z "$name" || -z "$email" ]]; then
+    echo "runPromoteProdRelease: git user.name and user.email must be set before the finalize commit or annotated prod tag (enable the job configure-git-user step, or set git-user-name / git-user-email)." >&2
+    return 1
+  fi
+}
+
 run_promote_prod_release_main() {
   local app_dir releases_dir cycle_dir finalize_script notes_path primary auth_header push_url repo_slug u r
   local target_ref validated_sha finalize_sha tag_sha tag remote_sha on_existing
@@ -241,6 +253,9 @@ run_promote_prod_release_main() {
   if git diff --cached --quiet; then
     echo "runPromoteProdRelease: cycle already finalized on ${target_ref}; continuing."
   else
+    if ! _require_git_identity; then
+      exit 1
+    fi
     git commit --no-verify -m "chore(release): finalize ${CYCLE_ID} for production"
     finalize_sha=$(git rev-parse HEAD)
   fi
@@ -286,6 +301,9 @@ run_promote_prod_release_main() {
       exit 1
     fi
   else
+    if ! _require_git_identity; then
+      exit 1
+    fi
     git -c tag.gpgSign=false tag -fa "$tag" -m "promotion: ${tag}" "$tag_sha"
     git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
       push "$push_url" "refs/tags/${tag}"

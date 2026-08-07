@@ -14,9 +14,23 @@ parameters:
   primary-branch:
     type: string
     default: "master"
+  configure-git-user:
+    type: boolean
+    default: true
+    description: >
+      Configure global git user before finalize commit and annotated prod tag.
+      CircleCI Docker executors have no default identity.
   create-github-release:
     type: boolean
     default: true
+  git-user-email:
+    type: string
+    default: circleci@chiubaka.com
+    description: Git user email when configure-git-user is true.
+  git-user-name:
+    type: string
+    default: CircleCI
+    description: Git user name when configure-git-user is true.
   on-existing-tag:
     type: enum
     enum:
@@ -86,6 +100,18 @@ steps:
       checkout: true
       primary-branch: << parameters.primary-branch >>
       skip-pnpm-install: << parameters.skip-install >>
+  - when:
+      condition: << parameters.configure-git-user >>
+      steps:
+        - run:
+            name: Configure git user
+            working_directory: << parameters.app-dir >>
+            environment:
+              GIT_USER_NAME: << parameters.git-user-name >>
+              GIT_USER_EMAIL: << parameters.git-user-email >>
+            command: |
+              git config --global user.name "$GIT_USER_NAME"
+              git config --global user.email "$GIT_USER_EMAIL"
   - promote-prod-release:
       app-dir: << parameters.app-dir >>
       primary-branch: << parameters.primary-branch >>
