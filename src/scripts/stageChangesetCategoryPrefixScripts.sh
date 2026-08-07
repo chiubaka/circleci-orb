@@ -185,11 +185,14 @@ export function stripChangelogBulletAnnotations(text) {
 }
 
 /**
- * Changesets `getDependencyReleaseLine` parent bullet, optionally with commit
- * shas and/or a trailing colon (e.g. `Updated dependencies [abc1234]:`).
+ * Changesets `getDependencyReleaseLine` parent bullet, optionally with one or
+ * more 7–40 character hexadecimal commit SHAs and/or a trailing colon
+ * (e.g. `Updated dependencies [abc1234]:`). Non-SHA bracket text such as
+ * `[docs]` is intentionally not matched so authored unprefixed bullets stay
+ * subject to the strict category-prefix error path.
  */
 const UPDATED_DEPENDENCIES_BULLET_RE =
-  /^Updated dependencies(?:\s+\[[^\]]+\])?\s*:?\s*$/i;
+  /^Updated dependencies(?:\s+\[[0-9a-f]{7,40}(?:\s*,\s*[0-9a-f]{7,40})*\])?\s*:?\s*$/i;
 
 /**
  * Bare package@version line produced when Prettier promotes an orphaned
