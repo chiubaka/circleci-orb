@@ -28,8 +28,10 @@ parameters:
     description: Optional cycle id override (YYYY.MM.DD.N). When empty, inferred from .releases/ on the commit.
   target-ref:
     type: string
-    default: "<< pipeline.git.revision >>"
-    description: Commit to finalize and tag (defaults to pipeline revision).
+    default: ""
+    description: >
+      Commit to finalize and tag. Empty (default) falls back to CIRCLE_SHA1 or HEAD
+      in the script so config compile does not require pipeline.git.revision.
   tag-target:
     type: enum
     enum:
