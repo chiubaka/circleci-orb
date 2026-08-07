@@ -6,27 +6,25 @@ setup() {
 }
 
 @test "jobs that accept primary-branch forward it into nested setup" {
+  # Avoid PyYAML: CircleCI bats image has no yaml module. Stdlib-only scan.
   run python3 - "$PROJECT_ROOT" <<'PY'
 from pathlib import Path
+import re
 import sys
-
-import yaml
 
 root = Path(sys.argv[1])
 failures = []
+expected = "primary-branch: << parameters.primary-branch >>"
+setup_block = re.compile(r"(?m)^  - setup:\n((?:      .*\n)*)")
 
 for path in sorted((root / "src" / "jobs").glob("*.yml")):
-    doc = yaml.safe_load(path.read_text())
-    params = doc.get("parameters") or {}
-    if "primary-branch" not in params:
+    text = path.read_text()
+    if not re.search(r"(?m)^  primary-branch:\s*$", text):
         continue
-    for step in doc.get("steps") or []:
-        if not isinstance(step, dict) or "setup" not in step:
-            continue
-        setup = step["setup"] or {}
-        if "primary-branch" not in setup:
+    for match in setup_block.finditer(text):
+        block = match.group(1)
+        if expected not in block:
             failures.append(path.relative_to(root).as_posix())
-        break
 
 if failures:
     print("Jobs missing primary-branch forward to setup:")
