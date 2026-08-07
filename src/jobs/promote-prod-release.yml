@@ -82,6 +82,7 @@ steps:
   - setup:
       app-dir: << parameters.app-dir >>
       checkout: true
+      primary-branch: << parameters.primary-branch >>
       skip-pnpm-install: << parameters.skip-install >>
   - promote-prod-release:
       app-dir: << parameters.app-dir >>
