@@ -170,3 +170,61 @@ _run_promote_prod_release() {
   assert_success
   assert_output --partial '"mode":"pre"'
 }
+
+@test "stable cut tolerates dependency-bump-only changelogs under category grouping" {
+  local clone bindir gh_call_log pnpm_bindir
+  clone=$(_promote_prod_init_clone)
+  bindir=$(_write_gh_stub)
+  gh_call_log=$(mktemp)
+  cd "$clone" || exit 1
+
+  mkdir -p .changeset apps/server apps/web
+  printf '%s\n' '{"mode":"pre","tag":"rc","changesets":[]}' >.changeset/pre.json
+  printf '%s\n' '{"name":"@t/server","version":"5.1.0-rc.1"}' >apps/server/package.json
+  printf '%s\n' '{"name":"@t/web","version":"2.3.0-rc.1"}' >apps/web/package.json
+  git add .changeset/pre.json apps/server/package.json apps/web/package.json
+  git commit -m "enter pre with deployable packages" >/dev/null 2>&1
+
+  pnpm_bindir=$(mktemp -d)
+  cat >"${pnpm_bindir}/pnpm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# Stub: pnpm exec changeset pre exit | version
+if [[ "${1:-}" == "exec" && "${2:-}" == "changeset" && "${3:-}" == "pre" && "${4:-}" == "exit" ]]; then
+  printf '%s\n' '{"mode":"exit","tag":"rc","changesets":[]}' >.changeset/pre.json
+  exit 0
+fi
+if [[ "${1:-}" == "exec" && "${2:-}" == "changeset" && "${3:-}" == "version" ]]; then
+  mkdir -p apps/server apps/web
+  printf '%s\n' '{"name":"@t/server","version":"5.1.0"}' >apps/server/package.json
+  printf '%s\n' '{"name":"@t/web","version":"2.3.0"}' >apps/web/package.json
+  cat >apps/server/CHANGELOG.md <<'CHANGELOG'
+# @t/server
+## 5.1.0
+### Patch Changes
+- @snowday/domain@0.1.1
+- @snowday/directus-contract@0.1.1
+- Updated dependencies [abc1234]:
+  - @snowday/data-platform@0.1.1
+CHANGELOG
+  exit 0
+fi
+echo "unexpected pnpm invocation: $*" >&2
+exit 1
+EOF
+  chmod +x "${pnpm_bindir}/pnpm"
+
+  _run_promote_prod_release "$bindir" "$gh_call_log" \
+    PATH="${pnpm_bindir}:${bindir}:$PATH" \
+    PNPM_BINARY=pnpm \
+    DEPLOYABLE_PACKAGES="server=apps/server,web=apps/web" \
+    REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT="$PROJECT_ROOT/src/scripts/refreshHighestRcManifestPins.mjs" \
+    REWRITE_CHANGELOG_CATEGORIES_SCRIPT="$PROJECT_ROOT/src/scripts/rewriteChangelogCategories.mjs" \
+    CHANGESET_CATEGORY_PREFIXES_SCRIPT="$PROJECT_ROOT/src/scripts/changesetCategoryPrefixes.mjs" \
+    RELEASE_NOTES_GROUPING=category
+
+  assert_success
+  assert_output --partial "no changelog files were rewritten"
+  run git rev-parse "prod-2026.05.08.1^{commit}"
+  assert_success
+}

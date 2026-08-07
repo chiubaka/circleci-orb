@@ -49,12 +49,27 @@ const BUMP_TYPE_CONFIG = {
   },
 };
 
+function bulletSummaryText(block) {
+  const first = block[0];
+  const m = String(first).match(/^[-*]\s?(.*)$/);
+  return m ? m[1] : String(first).replace(/^[-*]\s?/, "");
+}
+
 function buildCategoryConfig(prefixes) {
-  const { classifyChangelogBullet, CATEGORY_ORDER, CATEGORY_SECTION_TITLE } = prefixes;
+  const {
+    classifyChangelogBullet,
+    CATEGORY_ORDER,
+    CATEGORY_SECTION_TITLE,
+    isDependencyBumpBullet,
+  } = prefixes;
   return {
     order: CATEGORY_ORDER,
     titles: CATEGORY_SECTION_TITLE,
     fallbackBucket: null,
+    isDependencyBumpBullet:
+      typeof isDependencyBumpBullet === "function"
+        ? isDependencyBumpBullet
+        : () => false,
     classifyHeading(line) {
       const t = String(line).trim();
       if (/^###\s*Breaking(?:\s+Changes)?\s*$/i.test(t)) return "breaking";
@@ -67,10 +82,7 @@ function buildCategoryConfig(prefixes) {
       return null;
     },
     classifyBulletBlock(block) {
-      const first = block[0];
-      const m = String(first).match(/^[-*]\s?(.*)$/);
-      const text = m ? m[1] : String(first).replace(/^[-*]\s?/, "");
-      return classifyChangelogBullet(text);
+      return classifyChangelogBullet(bulletSummaryText(block));
     },
   };
 }
@@ -147,6 +159,11 @@ function collectUntilNextHeading(lines, start, config) {
   return { blocks: splitBulletBlocks(segment), nextIdx: i };
 }
 
+function shouldDropDependencyBump(block, config) {
+  if (typeof config.isDependencyBumpBullet !== "function") return false;
+  return config.isDependencyBumpBullet(bulletSummaryText(block));
+}
+
 /** @param {string[]} bodyLines @param {typeof BUMP_TYPE_CONFIG} config */
 function parseVersionBody(bodyLines, config) {
   /** @type {Record<string, string[][][]>} */
@@ -163,6 +180,8 @@ function parseVersionBody(bodyLines, config) {
       for (const b of blocks) {
         if (config.fallbackBucket) {
           buckets[cat].push(b);
+        } else if (shouldDropDependencyBump(b, config)) {
+          continue;
         } else {
           const bucket = config.classifyBulletBlock(b);
           // rewriteChangelogCategories strips prefix tokens after placing bullets under category
@@ -175,6 +194,7 @@ function parseVersionBody(bodyLines, config) {
       while (i < bodyLines.length && !config.classifyHeading(bodyLines[i])) i += 1;
       const chunk = bodyLines.slice(start, i);
       for (const b of splitBulletBlocks(chunk)) {
+        if (shouldDropDependencyBump(b, config)) continue;
         const bucket = config.classifyBulletBlock(b);
         if (bucket === null) {
           if (config.fallbackBucket) {

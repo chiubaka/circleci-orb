@@ -132,6 +132,72 @@ EOF
   rm -f "$out"
 }
 
+@test "category mode drops orphaned bare package@version dependency-bump bullets" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog app 1.0.1 "### Patch Changes
+- Fix: Correct typo
+- @snowday/data-platform@0.1.1
+- @snowday/directus-contract@0.1.1
+- @snowday/domain@0.1.1"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
+  assert_success
+
+  run grep -F "Correct typo" "$out"
+  assert_success
+  run grep -F "@snowday/data-platform@0.1.1" "$out"
+  assert_failure
+  run grep -F "@snowday/domain@0.1.1" "$out"
+  assert_failure
+  rm -f "$out"
+}
+
+@test "category mode drops Updated dependencies parent bullets with indented children" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog app 1.0.1 "### Patch Changes
+- Feature: Ship carousel
+- Updated dependencies [abc1234]:
+  - @snowday/domain@0.1.1
+- Updated dependencies
+  - unscoped-pkg@2.0.0"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
+  assert_success
+
+  run grep -F "Ship carousel" "$out"
+  assert_success
+  run grep -F "Updated dependencies" "$out"
+  assert_failure
+  run grep -F "@snowday/domain@0.1.1" "$out"
+  assert_failure
+  rm -f "$out"
+}
+
+@test "category mode succeeds when changelog body is only dependency bumps" {
+  local out
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  _make_pkg_changelog app 0.1.1 "### Patch Changes
+- @snowday/domain@0.1.1
+- Updated dependencies [abc1234]:
+  - @snowday/directus-contract@0.1.1"
+
+  out=$(mktemp)
+  run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
+  assert_success
+
+  run grep -F "@snowday/domain@0.1.1" "$out"
+  assert_failure
+  run grep -F "Updated dependencies" "$out"
+  assert_failure
+  run grep -F "## Published versions" "$out"
+  assert_success
+  rm -f "$out"
+}
+
 @test "category mode accepts bullets under category headings after rewriteChangelogCategories" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1

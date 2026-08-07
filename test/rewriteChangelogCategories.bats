@@ -74,6 +74,83 @@ EOF
   assert_success
 }
 
+@test "rewriter drops orphaned bare package@version dependency-bump bullets" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p pkg
+  cat >pkg/CHANGELOG.md <<'EOF'
+# @t/app
+## 1.0.1
+### Patch Changes
+- Fix: Correct typo
+- @snowday/data-platform@0.1.1
+- @snowday/directus-contract@0.1.1
+- @snowday/domain@0.1.1
+EOF
+
+  run node "$REWRITER" pkg/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Bug Fixes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Correct typo" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "@snowday/data-platform@0.1.1" pkg/CHANGELOG.md
+  assert_failure
+  run grep -F "@snowday/domain@0.1.1" pkg/CHANGELOG.md
+  assert_failure
+}
+
+@test "rewriter drops Updated dependencies parent bullets with indented children" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p pkg
+  cat >pkg/CHANGELOG.md <<'EOF'
+# @t/app
+## 1.0.1
+### Patch Changes
+- Feature: Ship carousel
+- Updated dependencies [abc1234]:
+  - @snowday/domain@0.1.1
+  - @snowday/directus-contract@0.1.1
+- Updated dependencies
+  - unscoped-pkg@2.0.0
+EOF
+
+  run node "$REWRITER" pkg/CHANGELOG.md
+  assert_success
+
+  run grep -F "### Features" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Ship carousel" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "Updated dependencies" pkg/CHANGELOG.md
+  assert_failure
+  run grep -F "@snowday/domain@0.1.1" pkg/CHANGELOG.md
+  assert_failure
+}
+
+@test "rewriter leaves changelog unchanged when only dependency bumps remain" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p pkg
+  cat >pkg/CHANGELOG.md <<'EOF'
+# @t/app
+## 0.1.1
+### Patch Changes
+- @snowday/domain@0.1.1
+- @snowday/directus-contract@0.1.1
+EOF
+
+  run node "$REWRITER" pkg/CHANGELOG.md
+  assert_success
+  assert_output --partial "no changelog files were rewritten"
+
+  run grep -F "### Patch Changes" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "@snowday/domain@0.1.1" pkg/CHANGELOG.md
+  assert_success
+  run grep -F "### Bug Fixes" pkg/CHANGELOG.md
+  assert_failure
+}
+
 @test "rewriter accepts default changelog-git bullets with shortSha prefix" {
   cd "$BATS_TEST_TMPDIR" || exit 1
   mkdir -p pkg
