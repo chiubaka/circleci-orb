@@ -85,13 +85,18 @@ if not (setup_at < configure_at < promote_at):
 if "condition: << parameters.configure-git-user >>" not in body:
     print("missing when condition on configure-git-user")
     sys.exit(1)
-cmd = (
-    "git config --global user.name << parameters.git-user-name >> "
-    "&& git config --global user.email << parameters.git-user-email >>"
-)
-if cmd not in body:
-    print("missing configure-git-user command matching sibling jobs")
-    sys.exit(1)
+# Pass identity through run-step env and quote at the shell so names with
+# spaces / metacharacters are not word-split (safer than sibling inline expand).
+required = [
+    "GIT_USER_NAME: << parameters.git-user-name >>",
+    "GIT_USER_EMAIL: << parameters.git-user-email >>",
+    'git config --global user.name "$GIT_USER_NAME"',
+    'git config --global user.email "$GIT_USER_EMAIL"',
+]
+for needle in required:
+    if needle not in body:
+        print(f"missing configure-git-user fragment: {needle}")
+        sys.exit(1)
 PY
   assert_success
 }

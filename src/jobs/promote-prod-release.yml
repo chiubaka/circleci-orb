@@ -106,7 +106,12 @@ steps:
         - run:
             name: Configure git user
             working_directory: << parameters.app-dir >>
-            command: git config --global user.name << parameters.git-user-name >> && git config --global user.email << parameters.git-user-email >>
+            environment:
+              GIT_USER_NAME: << parameters.git-user-name >>
+              GIT_USER_EMAIL: << parameters.git-user-email >>
+            command: |
+              git config --global user.name "$GIT_USER_NAME"
+              git config --global user.email "$GIT_USER_EMAIL"
   - promote-prod-release:
       app-dir: << parameters.app-dir >>
       primary-branch: << parameters.primary-branch >>
