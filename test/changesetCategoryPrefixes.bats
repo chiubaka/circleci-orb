@@ -81,6 +81,59 @@ setup() {
   assert_success
 }
 
+@test "validateChangesetSummaryCategory rejects lowercase summary after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n\\nOther: upgrade CI tooling\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('must be capitalized')) process.exit(2);
+  "
+  assert_success
+}
+
+@test "validateChangesetSummaryCategory rejects empty summary after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n\\nOther:\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('must be capitalized')) process.exit(2);
+  "
+  assert_success
+}
+
+@test "validateChangesetSummaryCategory rejects lowercase astral letter after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n\\nOther: \\u{10428}deseret lowercase\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('must be capitalized')) process.exit(2);
+  "
+  assert_success
+}
+
+@test "validateChangesetSummaryCategory allows non-letter starts after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const cases = [
+      'Fix: \`foo\` no longer throws',
+      'Feature: 2x faster search',
+      'Improvement: \"Quoted\" label',
+    ];
+    for (const summary of cases) {
+      const content = '---\\n\"@t/pkg\": patch\\n---\\n\\n' + summary + '\\n';
+      const r = validateChangesetSummaryCategory(content);
+      if (!r.ok) {
+        console.error(summary, r.error);
+        process.exit(1);
+      }
+    }
+  "
+  assert_success
+}
+
 @test "isEmptyChangeset recognizes changeset add --empty format" {
   run node -e "
     import { isEmptyChangeset, validateChangesetSummaryCategory } from '$PREFIXES';

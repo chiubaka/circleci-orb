@@ -127,6 +127,21 @@ export function stripCategoryPrefix(text) {
 }
 
 /**
+ * True when the summary after a recognized category prefix uses sentence case:
+ * the first character must not be a lowercase letter (uppercase letters and
+ * non-letters such as digits, backticks, or quotes are allowed).
+ *
+ * @param {string} headline Prefixed summary headline (first line of a changeset body).
+ * @returns {boolean}
+ */
+export function hasCapitalizedSummaryAfterPrefix(headline) {
+  const summary = stripCategoryPrefix(headline).trimStart();
+  if (!summary) return false;
+  const firstCharacter = [...summary][0];
+  return !/\p{Ll}/u.test(firstCharacter);
+}
+
+/**
  * Strip Changesets changelog bullet metadata before category matching.
  * `@changesets/cli/changelog` re-exports `@changesets/changelog-git`, which prefixes bullets with
  * `<shortSha>: ` when a changeset commit is known. `@changesets/changelog-github` may prefix with
@@ -229,6 +244,14 @@ export function validateChangesetSummaryCategory(content) {
         `got: ${JSON.stringify(headline)}`,
     };
   }
+  if (!hasCapitalizedSummaryAfterPrefix(headline)) {
+    return {
+      ok: false,
+      error:
+        `summary text after the category prefix must be capitalized (sentence case); ` +
+        `got: ${JSON.stringify(headline)}`,
+    };
+  }
   return { ok: true, headline, bucket };
 }
 
@@ -255,7 +278,6 @@ export function formatAcceptedPrefixesList() {
     (g) => `${g.section}: ${g.prefixes.join(", ")}`,
   ).join("; ");
 }
-
 CHIUBAKA_ORB_CATEGORY_PREFIXES_V1_EOF
 cat >"$verify_out" <<'CHIUBAKA_ORB_VERIFY_CATEGORY_PREFIXES_V1_EOF'
 #!/usr/bin/env node

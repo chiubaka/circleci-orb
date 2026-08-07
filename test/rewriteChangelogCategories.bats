@@ -19,7 +19,7 @@ setup() {
 - Deprecation: Old client helper
 ### Patch Changes
 - Fix: Correct typo
-- Other: ops-only note
+- Other: Ops-only note
 EOF
 
   run node "$REWRITER" pkg/CHANGELOG.md
@@ -51,7 +51,7 @@ EOF
   assert_success
   run grep -F "Correct typo" pkg/CHANGELOG.md
   assert_success
-  run grep -F "ops-only note" pkg/CHANGELOG.md
+  run grep -F "Ops-only note" pkg/CHANGELOG.md
   assert_success
   run grep -F "Breaking:" pkg/CHANGELOG.md
   assert_failure
