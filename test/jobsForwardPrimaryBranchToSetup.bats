@@ -23,7 +23,10 @@ for path in sorted((root / "src" / "jobs").glob("*.yml")):
         continue
     for match in setup_block.finditer(text):
         block = match.group(1)
-        if expected not in block:
+        if not re.search(
+            rf"(?m)^      {re.escape(expected)}[ \t]*$",
+            block,
+        ):
             failures.append(path.relative_to(root).as_posix())
 
 if failures:
