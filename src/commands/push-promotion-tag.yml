@@ -23,8 +23,10 @@ parameters:
       Environment prefix without trailing hyphen (e.g. staging, prod). Empty disables this step.
   target-ref:
     type: string
-    default: "<< pipeline.git.revision >>"
-    description: Commit to tag (defaults to pipeline revision / CIRCLE_SHA1 in script).
+    default: ""
+    description: >
+      Commit to tag. Empty (default) falls back to CIRCLE_SHA1 or HEAD in the script
+      so config compile does not require pipeline.git.revision.
 
 steps:
   - run:

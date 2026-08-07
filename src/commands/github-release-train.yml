@@ -37,10 +37,10 @@ parameters:
       Overriding can break parity with release train identifiers and manifests (ADRs 0038, 0039).
   target-ref:
     type: string
-    default: "<< pipeline.git.revision >>"
+    default: ""
     description: >
-      Commit or ref passed to gh --target (defaults to the pipeline revision). Empty falls back to
-      CIRCLE_SHA1 or HEAD in the script.
+      Commit or ref passed to gh --target. Empty (default) falls back to CIRCLE_SHA1 or HEAD
+      in the script so config compile does not require pipeline.git.revision.
   on-existing-tag:
     type: enum
     enum:
