@@ -14,6 +14,9 @@ _promote_prod_init_clone() {
   git init --bare "$bare" >/dev/null 2>&1
   mkdir -p "$clone"
   git -C "$clone" init >/dev/null 2>&1
+  # Mirrors the job's "Configure git user" step (CircleCI Docker has no defaults).
+  # Production identity comes from promote-prod-release.yml; tests set local config
+  # so script coverage does not depend on the developer's ambient git identity.
   git -C "$clone" config user.email test@test
   git -C "$clone" config user.name Test
   bare_abs=$(cd "$(dirname "$bare")" && pwd)/$(basename "$bare")
@@ -59,6 +62,26 @@ _run_promote_prod_release() {
     PATH="${bindir}:$PATH" \
     "$@" \
     bash "$PROJECT_ROOT/src/scripts/runPromoteProdRelease.sh"
+}
+
+@test "fails early with clear message when git identity is missing" {
+  local clone bindir gh_call_log
+  clone=$(_promote_prod_init_clone)
+  bindir=$(_write_gh_stub)
+  gh_call_log=$(mktemp)
+  cd "$clone" || exit 1
+  git config --unset-all user.name || true
+  git config --unset-all user.email || true
+  # Isolate from ambient global identity (CI images have none; local may differ).
+  export GIT_CONFIG_GLOBAL=/dev/null
+  export GIT_CONFIG_SYSTEM=/dev/null
+
+  _run_promote_prod_release "$bindir" "$gh_call_log"
+
+  assert_failure
+  assert_output --partial "user.name"
+  assert_output --partial "user.email"
+  refute_output --partial "Author identity unknown"
 }
 
 @test "default finalize mode tags prod release at finalize commit" {
