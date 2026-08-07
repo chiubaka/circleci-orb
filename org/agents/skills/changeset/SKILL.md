@@ -25,7 +25,7 @@ For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages,
 1. **Confirm the repo uses Changesets** (`.changeset/config.json`, `@changesets/cli`).
 2. **Determine monorepo type** for the packages in the frontmatter (library, app/deployable, or hybrid). This sets **voice** only.
 3. **Choose a category prefix** from the taxonomy below. Prefixes are **required in all org repos** — not optional for library monorepos.
-4. **Write the headline** after the prefix using the voice for that monorepo type.
+4. **Write the headline** after the prefix using the voice for that monorepo type. Start the summary in **sentence case** (capitalize the first letter after the prefix).
 5. **Set semver** in frontmatter independently of category (a bug fix can be `major` if breaking; a feature can be `patch` if additive and non-breaking).
 
 **Anti-patterns**
@@ -33,6 +33,7 @@ For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages,
 - Do **not** pick a prefix because the _work_ mentions “features” (for example, building category-prefix support ≠ automatically `Feature:` — classify by **consumer impact**).
 - Do **not** omit a prefix expecting silent fallback — use **`Other:`** explicitly when no other category fits.
 - Do **not** conflate prefix with voice: library repos use prefixes too; the text after the prefix stays **technical**.
+- Do **not** leave the summary after the prefix lowercase (`Other: upgrade …`) — use sentence case (`Other: Upgrade …`). Release tooling strips the prefix, so the remaining bullet must read as a standalone capitalized sentence.
 
 ## Monorepo type (choose the right voice)
 
@@ -112,6 +113,7 @@ App monorepos still use **`Breaking:`** or **`Deprecation:`** when users must ch
 **The first line after the closing `---` is the changelog headline** — prefix plus summary. Release tooling strips the prefix token when rendering grouped changelogs; author with the prefix in the changeset file.
 
 - **Prefix required** — start with an accepted category token (see [Full taxonomy](#full-taxonomy)).
+- **Sentence case after prefix** — capitalize the first letter of the summary (after `: `). Non-letter starts such as `` ` ``, `"`, or a digit are allowed.
 - **One short line** — clear, scannable, **like a release note bullet**, not a paragraph.
 - **Self-contained** — the headline (after prefix) should stand alone. Do not rely on a body paragraph.
 - **Impact over implementation** — state what consumers must know (new option, stricter validation, removed export), not how the code was refactored. Technical terms are fine when they are the consumer-facing contract (API names, config keys, breaking types).
@@ -159,6 +161,18 @@ Disable `react/react-in-jsx-scope` in the default React preset.
 
 Fix: add a category prefix, for example `Improvement: Disable …`.
 
+### Bad example — library (lowercase after prefix)
+
+```markdown
+---
+"@chiubaka/circleci-orb": patch
+---
+
+Other: upgrade CI to the latest orb release.
+```
+
+Fix: capitalize the summary after the prefix, for example `Other: Upgrade CI to the latest orb release.`.
+
 ### Bad example — library (first line too long)
 
 ```markdown
@@ -178,6 +192,7 @@ Fix: keep a **single** crisp sentence after the prefix; put migration detail in 
 **The first line after the closing `---` is the release note headline** — prefix plus product-oriented summary.
 
 - **Prefix required** — same taxonomy as library repos.
+- **Sentence case after prefix** — same capitalization rule as library monorepos.
 - **Product language** — describe what users see, can do, or no longer struggle with.
 - **No technical concepts** — avoid API routes, database tables, package names, refactors, “backend/frontend,” framework names, and other implementation vocabulary unless it is the **user-visible product name** (for example, a branded integration users recognize).
 - **One short line** — same brevity rules as library monorepos.
@@ -255,6 +270,7 @@ Breaking: Require `AuthClientOptions.region` and remove the deprecated `apiHost`
 
 - [ ] Identified **monorepo type** (library, app/deployable, or hybrid) and matched **voice** for text after the prefix.
 - [ ] **Category prefix** present and appropriate (`Breaking:`, `Feature:`, `Fix:`, `Other:`, etc.).
+- [ ] Summary after the prefix is **sentence case** (capitalized; not `Other: upgrade …`).
 - [ ] Frontmatter lists every affected **published package or deployable artifact** with the right **semver** bump (independent of category).
 - [ ] **First line** after `---` is prefix + crisp, self-contained summary.
 - [ ] **No body** unless the audience needs migration or must-know steps that cannot fit in the headline alone.

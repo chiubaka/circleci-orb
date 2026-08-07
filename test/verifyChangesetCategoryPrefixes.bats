@@ -66,6 +66,22 @@ EOF
   assert_success
 }
 
+@test "verifyChangesetCategoryPrefixes fails on lowercase summary after prefix" {
+  cd "$BATS_TEST_TMPDIR" || exit 1
+  mkdir -p .changeset
+  cat >.changeset/bad.md <<'EOF'
+---
+"@t/pkg": patch
+---
+Other: upgrade CI to the latest orb
+EOF
+
+  run node "$VERIFY" .changeset/bad.md
+  assert_failure
+  run grep -F "must be capitalized" <<<"$output"
+  assert_success
+}
+
 @test "embedded category prefix scripts match source modules" {
   local embedded_prefixes embedded_verify expected_prefixes expected_verify
   embedded_prefixes="$(python3 -c "

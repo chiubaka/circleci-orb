@@ -99,8 +99,8 @@ EOF
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
   _make_pkg_changelog app 1.0.0 "### Minor Changes
-- Feature: ship new dashboard
-- Fix: handle empty state"
+- Feature: Ship new dashboard
+- Fix: Handle empty state"
 
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
@@ -110,9 +110,9 @@ EOF
   assert_success
   run grep -F "#### Bug Fixes" "$out"
   assert_success
-  run grep -F "ship new dashboard" "$out"
+  run grep -F "Ship new dashboard" "$out"
   assert_success
-  run grep -F "handle empty state" "$out"
+  run grep -F "Handle empty state" "$out"
   assert_success
   run grep -F "### Minor Changes" "$out"
   assert_failure
@@ -181,7 +181,7 @@ EOF
 @test "category mode places Other-prefixed bullets under Other Changes" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
-  _make_pkg_changelog app 1.0.0 "- Other: internal dependency maintenance"
+  _make_pkg_changelog app 1.0.0 "- Other: Internal dependency maintenance"
 
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
@@ -189,7 +189,7 @@ EOF
 
   run grep -F "#### Other Changes" "$out"
   assert_success
-  run grep -F "internal dependency maintenance" "$out"
+  run grep -F "Internal dependency maintenance" "$out"
   assert_success
   run grep -F "Other:" "$out"
   assert_failure
@@ -200,19 +200,19 @@ EOF
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
   _make_pkg_changelog app 1.0.0 "### Other Changes
-- Other: tagged other entry
+- Other: Tagged other entry
 ### Deprecations
-- Deprecation: old API
+- Deprecation: Old API
 ### Bug Fixes
-- Fix: bug
+- Fix: Bug
 ### Improvements
-- Improvement: imp
+- Improvement: Imp
 ### Features
-- Feature: feat
+- Feature: Feat
 ### Security
-- Security: patch CVE
+- Security: Patch CVE
 ### Breaking Changes
-- Breaking: remove endpoint"
+- Breaking: Remove endpoint"
 
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
@@ -229,9 +229,9 @@ EOF
 @test "category mode places Breaking Security and Deprecation bullets under correct headings" {
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
-  _make_pkg_changelog lib 2.0.0 "- Breaking: drop legacy export
-- Security: rotate signing keys
-- Deprecation: prefer new client"
+  _make_pkg_changelog lib 2.0.0 "- Breaking: Drop legacy export
+- Security: Rotate signing keys
+- Deprecation: Prefer new client"
 
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" lib/CHANGELOG.md
@@ -243,11 +243,11 @@ EOF
   assert_success
   run grep -F "#### Deprecations" "$out"
   assert_success
-  run grep -F "drop legacy export" "$out"
+  run grep -F "Drop legacy export" "$out"
   assert_success
-  run grep -F "rotate signing keys" "$out"
+  run grep -F "Rotate signing keys" "$out"
   assert_success
-  run grep -F "prefer new client" "$out"
+  run grep -F "Prefer new client" "$out"
   assert_success
   rm -f "$out"
 }
@@ -256,13 +256,13 @@ EOF
   local out
   cd "$BATS_TEST_TMPDIR" || exit 1
   _make_pkg_changelog app 1.0.0 "### Other Changes
-- Other: tagged other entry
+- Other: Tagged other entry
 ### Bug Fixes
-- Fix: bug
+- Fix: Bug
 ### Features
-- Feature: feat
+- Feature: Feat
 ### Improvements
-- Improvement: imp"
+- Improvement: Imp"
 
   out=$(mktemp)
   run env RELEASE_NOTES_GROUPING=category node "$FORMATTER" "$out" app/CHANGELOG.md
