@@ -185,14 +185,26 @@ export function stripChangelogBulletAnnotations(text) {
 }
 
 /**
- * Changesets `getDependencyReleaseLine` parent bullet, optionally with one or
- * more 7–40 character hexadecimal commit SHAs and/or a trailing colon
- * (e.g. `Updated dependencies [abc1234]:`). Non-SHA bracket text such as
- * `[docs]` is intentionally not matched so authored unprefixed bullets stay
- * subject to the strict category-prefix error path.
+ * One Changesets dependency-line SHA reference:
+ * - bare hex (`@changesets/changelog-git`)
+ * - backtick-wrapped hex (`@changesets/changelog-github` fallback)
+ * - Markdown commit link `` [`sha`](url) `` (`changelog-github`)
  */
-const UPDATED_DEPENDENCIES_BULLET_RE =
-  /^Updated dependencies(?:\s+\[[0-9a-f]{7,40}(?:\s*,\s*[0-9a-f]{7,40})*\])?\s*:?\s*$/i;
+const DEPENDENCY_SHA_REF_RE =
+  "(?:[0-9a-f]{7,40}|`[0-9a-f]{7,40}`|\\[`[0-9a-f]{7,40}`\\]\\([^)]+\\))";
+
+/**
+ * Changesets `getDependencyReleaseLine` parent bullet, optionally with one or
+ * more commit SHA refs and/or a trailing colon
+ * (e.g. `Updated dependencies [abc1234]:`, or
+ * `Updated dependencies [[\`abc1234\`](https://…)]:`). Non-SHA bracket text
+ * such as `[docs]` is intentionally not matched so authored unprefixed
+ * bullets stay subject to the strict category-prefix error path.
+ */
+const UPDATED_DEPENDENCIES_BULLET_RE = new RegExp(
+  `^Updated dependencies(?:\\s+\\[${DEPENDENCY_SHA_REF_RE}(?:\\s*,\\s*${DEPENDENCY_SHA_REF_RE})*\\])?\\s*:?\\s*$`,
+  "i",
+);
 
 /**
  * Bare package@version line produced when Prettier promotes an orphaned

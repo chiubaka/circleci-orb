@@ -201,6 +201,10 @@ setup() {
       'Updated dependencies [abc1234]:',
       'Updated dependencies [abc1234, def5678]:',
       'updated dependencies [ABC1234]:',
+      'Updated dependencies [\`abc1234\`]',
+      'Updated dependencies [\`abc1234\`]:',
+      'Updated dependencies [[\`abc1234\`](https://github.com/org/repo/commit/abc1234)]:',
+      'Updated dependencies [[\`abc1234\`](https://github.com/org/repo/commit/abc1234), [\`def5678\`](https://github.com/org/repo/commit/def5678)]:',
     ];
     for (const text of positives) {
       if (!isDependencyBumpBullet(text)) {
@@ -241,8 +245,11 @@ setup() {
       'Updated dependencies in docs',
       'Updated dependencies [docs]',
       'Updated dependencies [docs]:',
+      'Updated dependencies [[docs](https://example.com)]:',
       'Updated dependencies [notasha]',
       'Updated dependencies [abc123]',
+      'Updated dependencies [\`docs\`]:',
+      'Updated dependencies [[\`docs\`](https://example.com)]:',
       'plain summary',
       '@scope/pkg',
       '@scope/pkg@not-a-version',
