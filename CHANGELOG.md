@@ -1,5 +1,11 @@
 # @chiubaka/circleci-orb
 
+## 0.24.3
+
+### Bug Fixes
+
+- Configure git user identity in `promote-prod-release` so finalize commits and annotated prod tags succeed on CircleCI Docker executors without a consumer pre-step.
+
 ## 0.24.2
 
 ### Bug Fixes
