@@ -1636,7 +1636,8 @@ export function stripCategoryPrefix(text) {
 export function hasCapitalizedSummaryAfterPrefix(headline) {
   const summary = stripCategoryPrefix(headline).trimStart();
   if (!summary) return false;
-  return !/\p{Ll}/u.test(summary[0]);
+  const firstCharacter = [...summary][0];
+  return !/\p{Ll}/u.test(firstCharacter);
 }
 
 /**

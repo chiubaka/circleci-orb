@@ -92,6 +92,28 @@ setup() {
   assert_success
 }
 
+@test "validateChangesetSummaryCategory rejects empty summary after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n\\nOther:\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('must be capitalized')) process.exit(2);
+  "
+  assert_success
+}
+
+@test "validateChangesetSummaryCategory rejects lowercase astral letter after prefix" {
+  run node -e "
+    import { validateChangesetSummaryCategory } from '$PREFIXES';
+    const content = '---\\n\"@t/pkg\": patch\\n---\\n\\nOther: \\u{10428}deseret lowercase\\n';
+    const r = validateChangesetSummaryCategory(content);
+    if (r.ok) process.exit(1);
+    if (!r.error.includes('must be capitalized')) process.exit(2);
+  "
+  assert_success
+}
+
 @test "validateChangesetSummaryCategory allows non-letter starts after prefix" {
   run node -e "
     import { validateChangesetSummaryCategory } from '$PREFIXES';

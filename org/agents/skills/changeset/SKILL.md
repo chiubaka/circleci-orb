@@ -25,7 +25,7 @@ For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages,
 1. **Confirm the repo uses Changesets** (`.changeset/config.json`, `@changesets/cli`).
 2. **Determine monorepo type** for the packages in the frontmatter (library, app/deployable, or hybrid). This sets **voice** only.
 3. **Choose a category prefix** from the taxonomy below. Prefixes are **required in all org repos** — not optional for library monorepos.
-4. **Write the headline** after the prefix using the voice for that monorepo type. Start the summary in **sentence case** (capitalize the first letter after the prefix).
+4. **Write the headline** after the prefix using the voice for that monorepo type. Use **sentence case** when the summary starts with a letter; non-letter starts are allowed.
 5. **Set semver** in frontmatter independently of category (a bug fix can be `major` if breaking; a feature can be `patch` if additive and non-breaking).
 
 **Anti-patterns**
@@ -113,7 +113,7 @@ App monorepos still use **`Breaking:`** or **`Deprecation:`** when users must ch
 **The first line after the closing `---` is the changelog headline** — prefix plus summary. Release tooling strips the prefix token when rendering grouped changelogs; author with the prefix in the changeset file.
 
 - **Prefix required** — start with an accepted category token (see [Full taxonomy](#full-taxonomy)).
-- **Sentence case after prefix** — capitalize the first letter of the summary (after `: `). Non-letter starts such as `` ` ``, `"`, or a digit are allowed.
+- **Sentence case after prefix** — capitalize the first letter when the summary starts with a letter. Non-letter starts such as backticks, quotation marks, or a digit are allowed.
 - **One short line** — clear, scannable, **like a release note bullet**, not a paragraph.
 - **Self-contained** — the headline (after prefix) should stand alone. Do not rely on a body paragraph.
 - **Impact over implementation** — state what consumers must know (new option, stricter validation, removed export), not how the code was refactored. Technical terms are fine when they are the consumer-facing contract (API names, config keys, breaking types).
