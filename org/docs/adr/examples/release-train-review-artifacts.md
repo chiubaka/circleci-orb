@@ -44,8 +44,9 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
 
 1. Staging sign-off on commit with final `rc2/manifest.yml` (still prerelease pins).
 2. `promote-prod-release` exits prerelease, versions to stable (`server@5.2.1`, `web@2.4.0`), refreshes `rc2/manifest.yml` pins, sets **`promotedAt`**, refreshes cycle **`release-notes.md`**, pushes finalize commit, then **`prod-2026.07.01.1`**.
-3. Coordinated deploy uses stable pins on the finalize commit.
-4. GitHub Release **`2026.07.01.1`** with **`release-notes.md`** body (**artifact 3**).
+3. The finalize commit on the primary branch builds artifacts / deploy-dev only—it must **not** re-run gated publish or re-offer `hold-promote-prod` (consumers gate those on `run-changesets-publish` vs `offer-promote-prod`).
+4. Coordinated deploy uses stable pins on the finalize commit.
+5. GitHub Release **`2026.07.01.1`** with **`release-notes.md`** body (**artifact 3**).
 
 ## Two-environment variant (topology C — dev + gated prod)
 

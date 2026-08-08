@@ -1,80 +1,113 @@
 description: >
   Application monorepo (staging-first): Changesets release PR with .releases/<cycle-id>/ tree,
   gated publish that pushes staging-<cycle-id>-rc<n>, promote-prod-release for production GitHub
-  Releases, and tag-triggered coordinated-deploy workflows. Library repos should omit
-  create-release-manifest and promotion-tag-prefix (see publish-library-release.yml).
+  Releases, and tag-triggered coordinated-deploy workflows. Continuation parameters from
+  compute-changesets-publish-parameters gate publish vs promote separately so a finalize commit on
+  the primary branch does not re-run gated publish or re-offer hold-promote-prod. Library repos
+  should omit create-release-manifest and promotion-tag-prefix (see publish-library-release.yml).
 
 usage:
   version: 2.1
+  setup: true
   orbs:
-    chiubaka: chiubaka/circleci-orb@0.18.0
-    path-filtering: circleci/path-filtering@1.0.0
+    chiubaka: chiubaka/circleci-orb@0.24.3
+    continuation: circleci/continuation@2.0.1
+    jq: circleci/jq@3.0.2
+
+  jobs:
+    setup-release-parameters:
+      docker:
+        - image: cimg/base:stable
+      resource_class: small
+      steps:
+        - checkout
+        - jq/install
+        - chiubaka/compute-changesets-publish-parameters:
+            base-revision: master
+        - continuation/continue:
+            configuration_path: .circleci/continue_config.yml
+            parameters: /tmp/pipeline-parameters.json
 
   workflows:
-    verify:
+    setup:
       jobs:
-        - chiubaka/verify-changesets:
-            require-changeset-category-prefix: true
-            filters:
-              branches:
-                ignore: master
-        - chiubaka/verify-release-manifest:
-            filters:
-              branches:
-                ignore: master
+        - setup-release-parameters
 
-    release-pr:
-      jobs:
-        - chiubaka/changesets-release-pr:
-            context: [github]
-            create-release-manifest: true
-            deployable-packages: server=packages/server,web=apps/web
-            release-notes-grouping: category
-            filters:
-              branches:
-                only: master
-
-    publish:
-      jobs:
-        - chiubaka/changesets-gated-publish:
-            context: [github-packages-publish]
-            create-github-release: false
-            promotion-tag-prefix: staging
-            release-notes-grouping: category
-            filters:
-              branches:
-                only: master
-
-    promote-prod:
-      jobs:
-        - promote-prod-approval:
-            type: approval
-            filters:
-              branches:
-                only: master
-        - chiubaka/promote-prod-release:
-            context: [github]
-            primary-branch: master
-            requires:
-              - promote-prod-approval
-            filters:
-              branches:
-                only: master
-
-    deploy-staging:
-      jobs:
-        - chiubaka/coordinated-deploy:
-            context: [deploy-staging]
-            deploy-script: deploy:coordinated
-            filters:
-              tags:
-                only: /^staging-.*-rc[0-9]+$/
-
-    deploy-prod:
-      jobs:
-        - chiubaka/coordinated-deploy:
-            context: [deploy-prod]
-            deploy-script: deploy:coordinated
-            filters:
-              tags:
-                only: /^prod-.*/
+  # Example continuation file `.circleci/continue_config.yml` (snippet):
+  #   version: 2.1
+  #   parameters:
+  #     run-changesets-publish:
+  #       type: boolean
+  #       default: false
+  #     offer-promote-prod:
+  #       type: boolean
+  #       default: false
+  #   orbs:
+  #     chiubaka: chiubaka/circleci-orb@0.24.3
+  #   workflows:
+  #     verify:
+  #       jobs:
+  #         - chiubaka/verify-changesets:
+  #             require-changeset-category-prefix: true
+  #             filters:
+  #               branches:
+  #                 ignore: master
+  #         - chiubaka/verify-release-manifest:
+  #             filters:
+  #               branches:
+  #                 ignore: master
+  #
+  #     release-pr:
+  #       jobs:
+  #         - chiubaka/changesets-release-pr:
+  #             context: [github]
+  #             create-release-manifest: true
+  #             deployable-packages: server=packages/server,web=apps/web
+  #             release-notes-grouping: category
+  #             filters:
+  #               branches:
+  #                 only: master
+  #
+  #     publish:
+  #       when:
+  #         and:
+  #           - equal: [master, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.run-changesets-publish >>]
+  #       jobs:
+  #         - chiubaka/changesets-gated-publish:
+  #             context: [github-packages-publish]
+  #             create-github-release: false
+  #             promotion-tag-prefix: staging
+  #             release-notes-grouping: category
+  #
+  #     promote-prod:
+  #       when:
+  #         and:
+  #           - equal: [master, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.offer-promote-prod >>]
+  #       jobs:
+  #         - promote-prod-approval:
+  #             type: approval
+  #         - chiubaka/promote-prod-release:
+  #             context: [github]
+  #             primary-branch: master
+  #             requires:
+  #               - promote-prod-approval
+  #
+  #     deploy-staging:
+  #       jobs:
+  #         - chiubaka/coordinated-deploy:
+  #             context: [deploy-staging]
+  #             deploy-script: deploy:coordinated
+  #             filters:
+  #               tags:
+  #                 only: /^staging-.*-rc[0-9]+$/
+  #
+  #     deploy-prod:
+  #       jobs:
+  #         - chiubaka/coordinated-deploy:
+  #             context: [deploy-prod]
+  #             deploy-script: deploy:coordinated
+  #             filters:
+  #               tags:
+  #                 only: /^prod-.*/
