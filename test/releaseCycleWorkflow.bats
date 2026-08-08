@@ -64,6 +64,10 @@ setup() {
 
 - Add soak patch feature
 
+#### Bug Fixes
+
+- Fix export queue handling
+
 ## Published versions
 
 - `@chiubaka/server@1.2.4`
@@ -76,8 +80,34 @@ EOF
   assert_success
   run grep -F "Fix export queue handling" "$work/2026.05.08.1/release-notes.md"
   assert_success
+  # Repeated rc1 bullet must appear exactly once after collation.
+  run bash -c "grep -cF 'Fix export queue handling' '$work/2026.05.08.1/release-notes.md'"
+  assert_output "1"
   run grep -F "## 2026.05.08.1-rc2" "$work/2026.05.08.1/release-notes.md"
   assert_failure
   run grep -F '@chiubaka/server@1.2.4' "$work/2026.05.08.1/release-notes.md"
   assert_success
+  # Later RC published pin supersedes the earlier one.
+  run grep -F '@chiubaka/server@1.2.3' "$work/2026.05.08.1/release-notes.md"
+  assert_failure
+}
+
+@test "rollup fails when rc notes contain unparsed content" {
+  work="${BATS_TEST_TMPDIR}/rollup-unparsed"
+  mkdir -p "$work/2026.05.08.1/rc1"
+  printf 'release: 2026.05.08.1\nopenedAt: 2026-05-08T00:00:00Z\n' \
+    >"$work/2026.05.08.1/cycle.yml"
+  cat >"$work/2026.05.08.1/rc1/release-notes.md" <<'EOF'
+### @chiubaka/server
+
+#### Bug Fixes
+
+This prose is not a bullet and must not be silently dropped.
+
+- Fix export queue handling
+EOF
+  run node "$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" "$work/2026.05.08.1"
+  assert_failure
+  assert_output --partial "unparsed"
+  assert_output --partial "This prose is not a bullet"
 }

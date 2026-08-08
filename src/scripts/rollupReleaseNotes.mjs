@@ -13,6 +13,8 @@
  *   RELEASE_NOTES_GROUPING — category | bump-type (default category)
  *   RELEASE_NOTES_NESTING — package-then-category | category-then-package
  *   CHANGESET_CATEGORY_PREFIXES_SCRIPT — optional override for prefixes module
+ *   ROLLUP_ALLOW_UNPARSED_RELEASE_NOTES — when "true", warn on unparsed lines
+ *     instead of failing (default: fail)
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -46,15 +48,13 @@ async function loadCategoryPrefixes() {
   return import(pathToFileURL(path.join(SCRIPT_DIR, "changesetCategoryPrefixes.mjs")).href);
 }
 
-function classifyCategoryHeading(line) {
+function classifyCategoryHeading(line, titles) {
   const t = String(line).trim().replace(/^#{1,6}\s+/, "");
-  if (/^Breaking(?:\s+Changes)?$/i.test(t)) return "breaking";
-  if (/^Security$/i.test(t)) return "security";
-  if (/^Features?$/i.test(t)) return "features";
-  if (/^Improvements?$/i.test(t)) return "improvements";
-  if (/^(?:Bug\s+)?Fix(?:es)?$/i.test(t)) return "bugfixes";
-  if (/^Deprecations?$/i.test(t)) return "deprecations";
-  if (/^Other(?:\s+Changes)?$/i.test(t)) return "other";
+  const normalized = t.toLowerCase();
+  for (const [key, title] of Object.entries(titles ?? {})) {
+    const bare = String(title).replace(/^#+\s*/, "").trim().toLowerCase();
+    if (normalized === bare) return key;
+  }
   return null;
 }
 
@@ -62,6 +62,11 @@ function classifyBumpHeading(line) {
   const t = String(line).trim().replace(/^#{1,6}\s+/, "");
   const m = t.match(/^(Major|Minor|Patch)(?:\s+Changes)?$/i);
   return m ? m[1].toLowerCase() : null;
+}
+
+function classifySectionHeading(line, grouping, titles) {
+  if (grouping === "bump-type") return classifyBumpHeading(line);
+  return classifyCategoryHeading(line, titles);
 }
 
 function headingLevel(line) {
@@ -108,9 +113,14 @@ function stripListMarker(line) {
 
 function splitTopLevelBulletBlocks(lines) {
   const blocks = [];
+  /** @type {number[]} */
+  const consumedOffsets = [];
   let i = 0;
   while (i < lines.length) {
-    while (i < lines.length && String(lines[i]).trim() === "") i += 1;
+    while (i < lines.length && String(lines[i]).trim() === "") {
+      consumedOffsets.push(i);
+      i += 1;
+    }
     if (i >= lines.length) break;
     if (!isTopLevelBullet(lines[i])) {
       i += 1;
@@ -123,18 +133,24 @@ function splitTopLevelBulletBlocks(lines) {
       if (isTopLevelBullet(line) && block.length > 0) break;
       if (block.length === 0 && !isTopLevelBullet(line)) break;
       block.push(line);
+      consumedOffsets.push(i);
       i += 1;
     }
     if (block.length > 0) blocks.push(block);
   }
-  return blocks;
+  return { blocks, consumedOffsets };
 }
 
 function splitIndentedBulletBlocks(lines) {
   const blocks = [];
+  /** @type {number[]} */
+  const consumedOffsets = [];
   let i = 0;
   while (i < lines.length) {
-    while (i < lines.length && String(lines[i]).trim() === "") i += 1;
+    while (i < lines.length && String(lines[i]).trim() === "") {
+      consumedOffsets.push(i);
+      i += 1;
+    }
     if (i >= lines.length) break;
     if (!isIndentedBullet(lines[i])) {
       i += 1;
@@ -148,6 +164,7 @@ function splitIndentedBulletBlocks(lines) {
       if (block.length === 0 && !isIndentedBullet(line)) break;
       if (isTopLevelBullet(line)) break;
       block.push(line);
+      consumedOffsets.push(i);
       i += 1;
     }
     if (block.length > 0) {
@@ -159,7 +176,7 @@ function splitIndentedBulletBlocks(lines) {
       blocks.push(normalized);
     }
   }
-  return blocks;
+  return { blocks, consumedOffsets };
 }
 
 function bulletKey(block) {
@@ -177,46 +194,58 @@ function appendUniqueBlocks(target, blocks) {
   }
 }
 
-function classifySectionHeading(line, grouping) {
-  if (grouping === "bump-type") return classifyBumpHeading(line);
-  return classifyCategoryHeading(line);
-}
-
 /**
  * Parse one RC notes file into package buckets + published versions.
  * Accepts both package-then-category and category-then-package layouts.
+ * @returns {{ packages: Map<string, {name: string, buckets: Record<string, string[][]>}>, published: string[], unparsed: {line: number, text: string}[] }}
  */
-function parseRcNotes(content, order, grouping) {
+function parseRcNotes(content, order, grouping, titles) {
   const packages = new Map();
   const published = [];
+  /** @type {Set<number>} */
+  const consumed = new Set();
+  const mark = (...idxs) => {
+    for (const idx of idxs) {
+      if (typeof idx === "number" && idx >= 0) consumed.add(idx);
+    }
+  };
+  const markOffsets = (base, offsets) => {
+    for (const offset of offsets) mark(base + offset);
+  };
+
   if (isEmptyNotesPlaceholder(content)) {
-    return { packages, published };
+    return { packages, published, unparsed: [] };
   }
 
   const lines = content.replace(/\r\n/g, "\n").split("\n");
   let i = 0;
   let currentPackage = null;
-  let currentCategory = null;
 
-  const flushCategoryBlocks = (pkgName, cat, segmentLines) => {
+  const flushCategoryBlocks = (pkgName, cat, segmentStart, segmentLines) => {
     if (!pkgName || !cat || !order.includes(cat)) return;
     const pkg = ensurePackage(packages, pkgName, order);
-    const blocks = splitTopLevelBulletBlocks(segmentLines);
+    const { blocks, consumedOffsets } = splitTopLevelBulletBlocks(segmentLines);
     appendUniqueBlocks(pkg.buckets[cat], blocks);
+    markOffsets(segmentStart, consumedOffsets);
   };
 
-  const flushNestedPackageBlocks = (cat, segmentLines) => {
+  const flushNestedPackageBlocks = (cat, segmentStart, segmentLines) => {
     if (!cat || !order.includes(cat)) return;
     let j = 0;
     while (j < segmentLines.length) {
-      while (j < segmentLines.length && String(segmentLines[j]).trim() === "") j += 1;
+      while (j < segmentLines.length && String(segmentLines[j]).trim() === "") {
+        mark(segmentStart + j);
+        j += 1;
+      }
       if (j >= segmentLines.length) break;
       const pkgName = packageBulletName(segmentLines[j]);
       if (!pkgName) {
         j += 1;
         continue;
       }
+      mark(segmentStart + j);
       j += 1;
+      const nestedStart = j;
       const nested = [];
       while (j < segmentLines.length) {
         const line = segmentLines[j];
@@ -226,7 +255,9 @@ function parseRcNotes(content, order, grouping) {
         j += 1;
       }
       const pkg = ensurePackage(packages, pkgName, order);
-      appendUniqueBlocks(pkg.buckets[cat], splitIndentedBulletBlocks(nested));
+      const { blocks, consumedOffsets } = splitIndentedBulletBlocks(nested);
+      appendUniqueBlocks(pkg.buckets[cat], blocks);
+      markOffsets(segmentStart + nestedStart, consumedOffsets);
     }
   };
 
@@ -235,28 +266,34 @@ function parseRcNotes(content, order, grouping) {
     const level = headingLevel(line);
 
     if (isPublishedVersionsHeading(line)) {
+      mark(i);
       i += 1;
       while (i < lines.length && headingLevel(lines[i]) === 0) {
         const m = String(lines[i]).match(/^[-*]\s+`([^`]+)`\s*$/);
-        if (m) published.push(m[1]);
+        if (m) {
+          published.push(m[1]);
+          mark(i);
+        } else if (String(lines[i]).trim() === "") {
+          mark(i);
+        }
         i += 1;
       }
       continue;
     }
 
     if (level >= 2 && /^##\s+\S/.test(line) && !isPublishedVersionsHeading(line)) {
-      // Skip stray ## headings (e.g. legacy RC ids if re-rolled).
+      // Leave unrecognized ## sections unparsed (including following body).
       i += 1;
       continue;
     }
 
     if (level === 3 || level === 4) {
-      const section = classifySectionHeading(line, grouping);
+      const section = classifySectionHeading(line, grouping, titles);
       if (section) {
         if (level === 3 && currentPackage === null) {
-          // category-then-package: ### Category
-          currentCategory = section;
+          mark(i);
           i += 1;
+          const segmentStart = i;
           const segment = [];
           while (i < lines.length) {
             const lvl = headingLevel(lines[i]);
@@ -265,14 +302,13 @@ function parseRcNotes(content, order, grouping) {
             segment.push(lines[i]);
             i += 1;
           }
-          flushNestedPackageBlocks(currentCategory, segment);
-          currentCategory = null;
+          flushNestedPackageBlocks(section, segmentStart, segment);
           continue;
         }
         if (currentPackage !== null) {
-          // package-then-category: #### Category under ### package
-          currentCategory = section;
+          mark(i);
           i += 1;
+          const segmentStart = i;
           const segment = [];
           while (i < lines.length) {
             const lvl = headingLevel(lines[i]);
@@ -281,25 +317,33 @@ function parseRcNotes(content, order, grouping) {
             segment.push(lines[i]);
             i += 1;
           }
-          flushCategoryBlocks(currentPackage, currentCategory, segment);
-          currentCategory = null;
+          flushCategoryBlocks(currentPackage, section, segmentStart, segment);
           continue;
         }
       }
 
       if (level === 3 && !section) {
-        // package-then-category: ### @scope/name
         currentPackage = String(line).replace(/^###\s+/, "").trim();
-        currentCategory = null;
+        mark(i);
         i += 1;
         continue;
       }
     }
 
+    if (String(line).trim() === "") {
+      mark(i);
+    }
     i += 1;
   }
 
-  return { packages, published };
+  const unparsed = [];
+  for (let idx = 0; idx < lines.length; idx += 1) {
+    if (consumed.has(idx)) continue;
+    if (String(lines[idx]).trim() === "") continue;
+    unparsed.push({ line: idx + 1, text: lines[idx] });
+  }
+
+  return { packages, published, unparsed };
 }
 
 function demoteHeading(title) {
@@ -429,10 +473,16 @@ async function main() {
 
   const merged = new Map();
   let published = [];
+  const allowUnparsed =
+    String(process.env.ROLLUP_ALLOW_UNPARSED_RELEASE_NOTES || "")
+      .trim()
+      .toLowerCase() === "true";
+  /** @type {{ path: string, line: number, text: string }[]} */
+  const unparsedAll = [];
 
   for (const { notesPath } of rcNotes) {
     const body = fs.readFileSync(notesPath, "utf8");
-    const parsed = parseRcNotes(body, order, GROUPING);
+    const parsed = parseRcNotes(body, order, GROUPING, titles);
     for (const [name, pkg] of parsed.packages) {
       const target = ensurePackage(merged, name, order);
       for (const cat of order) {
@@ -440,6 +490,26 @@ async function main() {
       }
     }
     published = mergePublishedVersions(published, parsed.published);
+    for (const entry of parsed.unparsed) {
+      unparsedAll.push({ path: notesPath, ...entry });
+    }
+  }
+
+  if (unparsedAll.length > 0) {
+    const samples = unparsedAll
+      .slice(0, 5)
+      .map((entry) => `${entry.path}:${entry.line}: ${entry.text.trim()}`)
+      .join("\n");
+    const detail =
+      `unparsed ${unparsedAll.length} line(s) in rc release-notes ` +
+      `(would be omitted from cycle Artifact 3). Examples:\n${samples}`;
+    if (allowUnparsed) {
+      process.stderr.write(`rollupReleaseNotes: warning: ${detail}\n`);
+    } else {
+      fail(
+        `${detail}\nSet ROLLUP_ALLOW_UNPARSED_RELEASE_NOTES=true to warn instead of fail.`,
+      );
+    }
   }
 
   const lines =
