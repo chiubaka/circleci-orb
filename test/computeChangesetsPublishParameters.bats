@@ -51,20 +51,23 @@ run_compute_script() {
 write_open_cycle() {
   local repo_dir="$1"
   local cycle_id="${2:-2026.07.08.1}"
-  mkdir -p "$repo_dir/.releases/$cycle_id"
+  mkdir -p "$repo_dir/.releases/$cycle_id/rc1"
   printf '%s\n' "release: \"$cycle_id\"" "openedAt: \"2026-07-08T12:00:00Z\"" \
     >"$repo_dir/.releases/$cycle_id/cycle.yml"
+  printf '%s\n' "packages: {}" >"$repo_dir/.releases/$cycle_id/rc1/manifest.yml"
 }
 
 write_promoted_cycle() {
   local repo_dir="$1"
   local cycle_id="${2:-2026.07.08.1}"
-  mkdir -p "$repo_dir/.releases/$cycle_id"
+  local promoted_at="${3:-\"2026-07-09T18:00:00Z\"}"
+  mkdir -p "$repo_dir/.releases/$cycle_id/rc1"
   printf '%s\n' \
     "release: \"$cycle_id\"" \
     "openedAt: \"2026-07-08T12:00:00Z\"" \
-    "promotedAt: \"2026-07-09T18:00:00Z\"" \
+    "promotedAt: ${promoted_at}" \
     >"$repo_dir/.releases/$cycle_id/cycle.yml"
+  printf '%s\n' "packages: {}" >"$repo_dir/.releases/$cycle_id/rc1/manifest.yml"
 }
 
 @test "returns both true for version-packages subject with changelog and open cycle" {
@@ -114,6 +117,29 @@ write_promoted_cycle() {
 @test "returns offer false when cycle already has promotedAt" {
   repo_dir="$(create_repo_with_remote)"
   write_promoted_cycle "$repo_dir"
+  printf '%s\n' '{"name":"pkg-a","version":"1.1.0"}' >"$repo_dir/packages/pkg-a/package.json"
+  git -C "$repo_dir" add packages/pkg-a/package.json .releases
+  git -C "$repo_dir" commit -m "chore(release): version packages (pkg-a@1.1.0)" >/dev/null
+
+  result="$(run_compute_script "$repo_dir")"
+  assert_equal "$result" '{"run-changesets-publish":true,"offer-promote-prod":false}'
+}
+
+@test "treats quoted empty promotedAt as open" {
+  repo_dir="$(create_repo_with_remote)"
+  write_promoted_cycle "$repo_dir" "2026.07.08.1" '""'
+  printf '%s\n' '{"name":"pkg-a","version":"1.1.0"}' >"$repo_dir/packages/pkg-a/package.json"
+  git -C "$repo_dir" add packages/pkg-a/package.json .releases
+  git -C "$repo_dir" commit -m "chore(release): version packages (pkg-a@1.1.0)" >/dev/null
+
+  result="$(run_compute_script "$repo_dir")"
+  assert_equal "$result" '{"run-changesets-publish":true,"offer-promote-prod":true}'
+}
+
+@test "returns offer false when tip cycle is promoted even if another cycle is open" {
+  repo_dir="$(create_repo_with_remote)"
+  write_promoted_cycle "$repo_dir" "2026.07.08.1"
+  write_open_cycle "$repo_dir" "2026.07.01.1"
   printf '%s\n' '{"name":"pkg-a","version":"1.1.0"}' >"$repo_dir/packages/pkg-a/package.json"
   git -C "$repo_dir" add packages/pkg-a/package.json .releases
   git -C "$repo_dir" commit -m "chore(release): version packages (pkg-a@1.1.0)" >/dev/null

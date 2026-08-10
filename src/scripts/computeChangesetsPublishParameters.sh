@@ -10,8 +10,9 @@
 #
 # run-changesets-publish is true only when the path signal is true AND HEAD subject matches
 # RELEASE_MERGE_SUBJECT_REGEX (default: ^chore\(release\): version packages).
-# offer-promote-prod is true only when run-changesets-publish is true AND .releases/ has at
-# least one open cycle (cycle.yml present, promotedAt absent or empty).
+# offer-promote-prod is true only when run-changesets-publish is true AND the release cycle
+# resolved for CIRCLE_SHA1 (same highest .releases/<cycle-id>/rc<n> rule as promote-prod-release)
+# has cycle.yml with promotedAt absent or empty (including quoted empty scalars).
 #
 # Optional INCLUDE_PR_METADATA=true merges circle_pull_request and circle_pr_number for consumers
 # whose continuation pipelines need PR context (CircleCI does not propagate CIRCLE_PULL_REQUEST).
@@ -34,24 +35,51 @@ include_pr_metadata_enabled() {
   [[ "$INCLUDE_PR_METADATA_LOWER" == "true" ]] || [[ "$include_pr_metadata_raw" == "1" ]]
 }
 
-# Open cycle: .releases/<YYYY.MM.DD.N>/cycle.yml exists and promotedAt is absent/empty.
-has_open_release_cycle() {
-  local cycle_dir cycle_id cycle_yml
-  [[ -d "$RELEASES_DIR" ]] || return 1
-  shopt -s nullglob
-  for cycle_dir in "$RELEASES_DIR"/*/; do
-    cycle_id=$(basename "$cycle_dir")
+# True when promotedAt is present with a non-empty scalar (quotes stripped). Empty "" / '' count as unset.
+cycle_yml_has_promoted_at() {
+  local text="$1"
+  local value
+  value=$(printf '%s\n' "$text" | sed -n 's/^promotedAt:[[:space:]]*//p' | head -n1)
+  [[ -n "$value" ]] || return 1
+  value=$(printf '%s' "$value" | sed -E 's/^["'\'']//; s/["'\''][[:space:]]*$//; s/[[:space:]]+$//')
+  [[ -n "$value" ]]
+}
+
+# Highest cycle id under RELEASES_DIR at CIRCLE_SHA1 that has at least one rcN/ (promote resolver rule).
+resolve_highest_cycle_id_on_commit() {
+  local cycle_id best="" entry has_rc
+  while IFS= read -r cycle_id; do
+    [[ -z "$cycle_id" ]] && continue
     [[ "$cycle_id" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]] || continue
-    cycle_yml="${cycle_dir}cycle.yml"
-    [[ -f "$cycle_yml" ]] || continue
-    if grep -Eq '^promotedAt:[[:space:]]*[^[:space:]#]' "$cycle_yml"; then
-      continue
+    has_rc=false
+    while IFS= read -r entry; do
+      [[ "$entry" =~ ^rc[0-9]+$ ]] || continue
+      has_rc=true
+      break
+    done < <(git ls-tree -d --name-only "${CIRCLE_SHA1}:${RELEASES_DIR}/${cycle_id}" 2>/dev/null || true)
+    [[ "$has_rc" == "true" ]] || continue
+    if [[ -z "$best" ]]; then
+      best=$cycle_id
+    elif [[ "$(printf '%s\n%s\n' "$best" "$cycle_id" | sort -V | tail -n1)" == "$cycle_id" ]]; then
+      best=$cycle_id
     fi
-    shopt -u nullglob
-    return 0
-  done
-  shopt -u nullglob
-  return 1
+  done < <(git ls-tree -d --name-only "${CIRCLE_SHA1}:${RELEASES_DIR}" 2>/dev/null || true)
+  [[ -n "$best" ]] || return 1
+  printf '%s\n' "$best"
+}
+
+# True when the cycle resolveCycleOnCommit would pick for CIRCLE_SHA1 is still unpromoted.
+commit_cycle_is_open_for_promote() {
+  local cycle_id cycle_yml_text
+  cycle_id=$(resolve_highest_cycle_id_on_commit) || return 1
+  if ! cycle_yml_text=$(git show "${CIRCLE_SHA1}:${RELEASES_DIR}/${cycle_id}/cycle.yml" 2>/dev/null); then
+    return 1
+  fi
+  if cycle_yml_has_promoted_at "$cycle_yml_text"; then
+    return 1
+  fi
+  echo "Open cycle for promote offer: ${cycle_id}"
+  return 0
 }
 
 subject_matches_release_merge() {
@@ -179,7 +207,7 @@ offer=false
 
 if [[ "$path_signal" == "true" ]] && subject_matches_release_merge; then
   publish=true
-  if has_open_release_cycle; then
+  if commit_cycle_is_open_for_promote; then
     offer=true
   fi
 fi

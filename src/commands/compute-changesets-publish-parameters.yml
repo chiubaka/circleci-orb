@@ -4,13 +4,14 @@ description: >
   origin/<base-revision>. Path signal matches release-related paths (CHANGELOG.md or package.json
   top-level version changes). run-changesets-publish requires that path signal plus a HEAD subject
   matching release-merge-subject-regex (default: version-packages release merges). offer-promote-prod
-  additionally requires an open .releases/<cycle-id>/cycle.yml (no promotedAt). Pair with
-  circleci/continuation continue (pipeline parameters) and/or a gated-publish job pre-step that reads
-  the same JSON. Optionally forward CIRCLE_PULL_REQUEST and CIRCLE_PR_NUMBER as continuation pipeline
-  parameters (include-pr-metadata) because setup workflows do not propagate those env vars into
-  continuation pipelines (for example Codecov PR association). Requires git, jq, and fetch access to
-  origin. Install jq first (for example circleci/jq jq/install) when using minimal images such as
-  cimg/base.
+  additionally requires that the release cycle resolved for the tip commit (highest
+  .releases/<cycle-id>/rc<n>, same rule as promote-prod-release) still has no non-empty promotedAt.
+  Pair with circleci/continuation continue (pipeline parameters) and/or a gated-publish job pre-step
+  that reads the same JSON. Optionally forward CIRCLE_PULL_REQUEST and CIRCLE_PR_NUMBER as
+  continuation pipeline parameters (include-pr-metadata) because setup workflows do not propagate
+  those env vars into continuation pipelines (for example Codecov PR association). Requires git, jq,
+  and fetch access to origin. Install jq first (for example circleci/jq jq/install) when using
+  minimal images such as cimg/base.
 
 parameters:
   base-revision:
@@ -43,8 +44,8 @@ parameters:
     type: string
     default: .releases
     description: >
-      Directory scanned for open release cycles when computing offer-promote-prod (cycle.yml without
-      promotedAt).
+      Directory used to resolve the tip-commit release cycle when computing offer-promote-prod
+      (highest cycle with an rc tree; offer only if that cycle.yml has no non-empty promotedAt).
 
 steps:
   - run:
