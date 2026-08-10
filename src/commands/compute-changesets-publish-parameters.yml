@@ -1,13 +1,17 @@
 description: >
-  Write /tmp/pipeline-parameters.json (or OUTPUT_PATH) with {"run-changesets-publish": true|false}
-  from git diff against origin/<base-revision>, matching release-related paths (CHANGELOG.md or
-  package.json top-level version changes). Pair with circleci/continuation continue (optional
-  pipeline parameter run-changesets-publish) and/or a gated-publish job pre-step that reads the same
-  JSON. Optionally forward CIRCLE_PULL_REQUEST and CIRCLE_PR_NUMBER as continuation pipeline
-  parameters (include-pr-metadata) because setup workflows do not propagate those env vars into
-  continuation pipelines (for example Codecov PR association). Requires git, jq, and fetch access to
-  origin. Install jq first (for example circleci/jq jq/install) when using minimal images such as
-  cimg/base.
+  Write /tmp/pipeline-parameters.json (or OUTPUT_PATH) with
+  {"run-changesets-publish": true|false, "offer-promote-prod": true|false} from git diff against
+  origin/<base-revision>. Path signal matches release-related paths (CHANGELOG.md or package.json
+  top-level version changes). run-changesets-publish requires that path signal plus a HEAD subject
+  matching release-merge-subject-regex (default: version-packages release merges). offer-promote-prod
+  additionally requires that the release cycle resolved for the tip commit (highest
+  .releases/<cycle-id>/rc<n>, same rule as promote-prod-release) still has no non-empty promotedAt.
+  Pair with circleci/continuation continue (pipeline parameters) and/or a gated-publish job pre-step
+  that reads the same JSON. Optionally forward CIRCLE_PULL_REQUEST and CIRCLE_PR_NUMBER as
+  continuation pipeline parameters (include-pr-metadata) because setup workflows do not propagate
+  those env vars into continuation pipelines (for example Codecov PR association). Requires git, jq,
+  and fetch access to origin. Install jq first (for example circleci/jq jq/install) when using
+  minimal images such as cimg/base.
 
 parameters:
   base-revision:
@@ -29,13 +33,28 @@ parameters:
       When true, also write circle_pull_request and circle_pr_number (empty string when unset) for
       continuation pipeline.parameters. CIRCLE_PR_NUMBER falls back to the trailing path segment of
       CIRCLE_PULL_REQUEST when the number env var is empty.
+  release-merge-subject-regex:
+    type: string
+    default: "^chore\\(release\\): version packages"
+    description: >
+      Extended regex matched against the HEAD commit subject. Required (with path signal) for
+      run-changesets-publish and offer-promote-prod. Align with assert-release-merge /
+      changesets-gated-publish.
+  releases-dir:
+    type: string
+    default: .releases
+    description: >
+      Directory used to resolve the tip-commit release cycle when computing offer-promote-prod
+      (highest cycle with an rc tree; offer only if that cycle.yml has no non-empty promotedAt).
 
 steps:
   - run:
-      name: Compute run-changesets-publish pipeline parameter
+      name: Compute Changesets publish and promote-prod pipeline parameters
       environment:
         BASE_REVISION: << parameters.base-revision >>
         OUTPUT_PATH: << parameters.output-path >>
         SAME_BASE_RUN: << parameters.same-base-run >>
         INCLUDE_PR_METADATA: << parameters.include-pr-metadata >>
+        RELEASE_MERGE_SUBJECT_REGEX: << parameters.release-merge-subject-regex >>
+        RELEASES_DIR: << parameters.releases-dir >>
       command: << include(scripts/computeChangesetsPublishParameters.sh) >>

@@ -1,64 +1,98 @@
 description: >
   Application monorepo with release cycles but manual promotion tags (no promotion-tag-prefix on
   gated publish). Push staging-<cycle-id>-rc<n> or prod-<cycle-id> via git/GitHub UI; use
-  promote-prod-release when ready for production GitHub Releases.
+  promote-prod-release when ready for production GitHub Releases. Gate publish and promote-prod on
+  separate continuation parameters from compute-changesets-publish-parameters so finalize commits do
+  not re-enter either train.
 
 usage:
   version: 2.1
+  setup: true
   orbs:
-    chiubaka: chiubaka/circleci-orb@0.18.0
+    chiubaka: chiubaka/circleci-orb@0.24.3
+    continuation: circleci/continuation@2.0.1
+    jq: circleci/jq@3.0.2
+
+  jobs:
+    setup-release-parameters:
+      docker:
+        - image: cimg/base:stable
+      resource_class: small
+      steps:
+        - checkout
+        - jq/install
+        - chiubaka/compute-changesets-publish-parameters:
+            base-revision: main
+        - continuation/continue:
+            configuration_path: .circleci/continue_config.yml
+            parameters: /tmp/pipeline-parameters.json
 
   workflows:
-    verify:
+    setup:
       jobs:
-        - chiubaka/verify-changesets:
-            require-changeset-category-prefix: true
-            filters:
-              branches:
-                ignore: main
+        - setup-release-parameters
 
-    release-pr:
-      jobs:
-        - chiubaka/changesets-release-pr:
-            context: [github]
-            create-release-manifest: true
-            deployable-packages: server=packages/server,web=apps/web
-            release-notes-grouping: category
-            filters:
-              branches:
-                only: main
-
-    publish:
-      jobs:
-        - chiubaka/changesets-gated-publish:
-            context: [github-packages-publish]
-            create-github-release: false
-            release-notes-grouping: category
-            filters:
-              branches:
-                only: main
-
-    promote-prod:
-      jobs:
-        - promote-prod-approval:
-            type: approval
-            filters:
-              branches:
-                only: main
-        - chiubaka/promote-prod-release:
-            context: [github]
-            primary-branch: main
-            requires:
-              - promote-prod-approval
-            filters:
-              branches:
-                only: main
-
-    deploy:
-      jobs:
-        - chiubaka/coordinated-deploy:
-            context: [deploy]
-            deploy-script: deploy:coordinated
-            filters:
-              tags:
-                only: /^(staging|prod)-.*/
+  # Example continuation file `.circleci/continue_config.yml` (snippet):
+  #   version: 2.1
+  #   parameters:
+  #     run-changesets-publish:
+  #       type: boolean
+  #       default: false
+  #     offer-promote-prod:
+  #       type: boolean
+  #       default: false
+  #   orbs:
+  #     chiubaka: chiubaka/circleci-orb@0.24.3
+  #   workflows:
+  #     verify:
+  #       jobs:
+  #         - chiubaka/verify-changesets:
+  #             require-changeset-category-prefix: true
+  #             filters:
+  #               branches:
+  #                 ignore: main
+  #
+  #     release-pr:
+  #       jobs:
+  #         - chiubaka/changesets-release-pr:
+  #             context: [github]
+  #             create-release-manifest: true
+  #             deployable-packages: server=packages/server,web=apps/web
+  #             release-notes-grouping: category
+  #             filters:
+  #               branches:
+  #                 only: main
+  #
+  #     publish:
+  #       when:
+  #         and:
+  #           - equal: [main, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.run-changesets-publish >>]
+  #       jobs:
+  #         - chiubaka/changesets-gated-publish:
+  #             context: [github-packages-publish]
+  #             create-github-release: false
+  #             release-notes-grouping: category
+  #
+  #     promote-prod:
+  #       when:
+  #         and:
+  #           - equal: [main, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.offer-promote-prod >>]
+  #       jobs:
+  #         - promote-prod-approval:
+  #             type: approval
+  #         - chiubaka/promote-prod-release:
+  #             context: [github]
+  #             primary-branch: main
+  #             requires:
+  #               - promote-prod-approval
+  #
+  #     deploy:
+  #       jobs:
+  #         - chiubaka/coordinated-deploy:
+  #             context: [deploy]
+  #             deploy-script: deploy:coordinated
+  #             filters:
+  #               tags:
+  #                 only: /^(staging|prod)-.*/

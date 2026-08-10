@@ -1,9 +1,10 @@
 description: >
-  Dynamic setup workflow: compute pipeline parameter run-changesets-publish from git diff
-  (CHANGELOG.md or package.json version field changes), then continue to a main config that gates
-  chiubaka/changesets-gated-publish (for example with pipeline.parameters or with a pre-step that
-  runs the same script and circleci step halt). Uses chiubaka/compute-changesets-publish-parameters
-  (same logic as src/scripts/computeChangesetsPublishParameters.sh). Orb repos that must not resolve
+  Dynamic setup workflow: compute pipeline parameters run-changesets-publish and
+  offer-promote-prod from git diff (CHANGELOG.md or package.json version field changes) plus HEAD
+  subject and open-cycle checks, then continue to a main config that gates
+  chiubaka/changesets-gated-publish and (for app monorepos) promote-prod separately. Uses
+  chiubaka/compute-changesets-publish-parameters (same logic as
+  src/scripts/computeChangesetsPublishParameters.sh). Orb repos that must not resolve
   chiubaka/circleci-orb@dev:<< pipeline.git.revision >> before publish can merge an inline orb in
   setup (see mergeContinueWithInlineOrb.py in this repository). Enable "Dynamic Config using setup
   workflows" in CircleCI project settings.
@@ -12,7 +13,7 @@ usage:
   version: 2.1
   setup: true
   orbs:
-    chiubaka: chiubaka/circleci-orb@0.15.0
+    chiubaka: chiubaka/circleci-orb@0.24.3
     continuation: circleci/continuation@2.0.1
     jq: circleci/jq@3.0.2
 
@@ -45,6 +46,9 @@ usage:
   #     run-changesets-publish:
   #       type: boolean
   #       default: false
+  #     offer-promote-prod:
+  #       type: boolean
+  #       default: false
   #     circle_pull_request:
   #       type: string
   #       default: ""
@@ -52,7 +56,7 @@ usage:
   #       type: string
   #       default: ""
   #   orbs:
-  #     chiubaka: chiubaka/circleci-orb@0.15.0
+  #     chiubaka: chiubaka/circleci-orb@0.24.3
   #   workflows:
   #     master-publish:
   #       when:
@@ -65,3 +69,18 @@ usage:
   #             primary-branch: master
   #             # create-github-release defaults to true: git tag release/<UTC>.N + GitHub Release titled <UTC>.N
   #             # create-github-release: false
+  #     # App staging-first: gate promote on offer-promote-prod (not run-changesets-publish) so a
+  #     # finalize commit after promote-prod-release does not re-offer hold-promote-prod.
+  #     promote-prod:
+  #       when:
+  #         and:
+  #           - equal: [master, << pipeline.git.branch >>]
+  #           - equal: [true, << pipeline.parameters.offer-promote-prod >>]
+  #       jobs:
+  #         - promote-prod-approval:
+  #             type: approval
+  #         - chiubaka/promote-prod-release:
+  #             context: [github]
+  #             primary-branch: master
+  #             requires:
+  #               - promote-prod-approval
