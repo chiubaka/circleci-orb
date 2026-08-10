@@ -1,4 +1,9 @@
-### Bug Fixes
+### @chiubaka/server
 
-- **@chiubaka/server**
-  - Fix export queue handling
+#### Bug Fixes
+
+- Fix export queue handling
+
+## Published versions
+
+- `@chiubaka/server@1.2.3`

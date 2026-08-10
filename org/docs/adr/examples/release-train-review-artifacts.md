@@ -22,7 +22,7 @@ Illustrative walkthrough for a three-environment application monorepo. Not norma
      rc1/release-notes.md
    ```
 
-3. Release PR body shows the rc1 batch (**artifact 1**); cycle `release-notes.md` already holds the rollup section for rc1.
+3. Release PR body shows the rc1 batch (**artifact 1**); cycle `release-notes.md` already holds the collated full-cycle notes (rc1 only at this point).
 4. Merge → gated publish (prerelease artifact tags) → `staging-2026.07.01.1-rc1` → staging deploy.
 
 ## rc2 — soak patch (2026-07-03)
@@ -56,7 +56,7 @@ Same directory layout and prerelease-at-rc1 rule. Only `rc1/` before prod; if no
   cycle.yml
   rc1/manifest.yml
   rc1/release-notes.md
-  release-notes.md   # single section ## 2026.07.01.1-rc1
+  release-notes.md   # collated cycle notes (no ## <cycle-id>-rc1 heading)
 ```
 
 Promotion: `prod-2026.07.01.1` after finalize (no staging promotion tags).

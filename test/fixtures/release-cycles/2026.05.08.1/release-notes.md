@@ -1,6 +1,9 @@
-## 2026.05.08.1-rc1
+### @chiubaka/server
 
-### Bug Fixes
+#### Bug Fixes
 
-- **@chiubaka/server**
-  - Fix export queue handling
+- Fix export queue handling
+
+## Published versions
+
+- `@chiubaka/server@1.2.3`

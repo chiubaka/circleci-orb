@@ -1,6 +1,6 @@
 ---
 status: accepted
-date: 2026-07-07
+date: 2026-08-08
 decision-makers: Daniel Chiu
 ---
 
@@ -71,7 +71,7 @@ Every release cycle uses a directory ([ADR 0042](0042-release-cycles-rc-identifi
 1. Format the **newly written top version block** from each affected deployable `CHANGELOG.md` (same batch formatter as release-PR bodies).
 2. Write **`rc<n>/release-notes.md`** for that cut only (overwrite on re-run of the same RC is forbidden; each RC directory is created once).
 3. Update **`rc<n>/manifest.yml`** pins and **`cutAt`** (ISO-8601 UTC) for that cut.
-4. Refresh the cycle-level **`release-notes.md`** as a rollup of all `rc*/release-notes.md` in order. Section headings in the rollup MUST use the full **RC promotion id** (`<cycle-id>-rc<n>`, for example `2026.07.01.1-rc1`), not bare `rc1` / `rc2`. Production finalization regenerates the same rollup after any stable-version ceremony.
+4. Refresh the cycle-level **`release-notes.md`** as a **collated** rollup of all `rc*/release-notes.md` files in cut order. The rollup MUST merge bullets across cuts into the same nesting used for batch release notes (default **package-then-category**: publishable package, then change category). It MUST **not** emit RC promotion headings (`<cycle-id>-rc<n>`) or otherwise structure Artifact 3 as a per-candidate changelog. Per-cut detail remains in `rc<n>/release-notes.md`. Production finalization regenerates the same collated rollup after any stable-version ceremony.
 
 All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changesets-hygiene/SKILL.md](../../agents/skills/changesets-hygiene/SKILL.md)).
 
@@ -87,7 +87,7 @@ All notes files are **tooling-owned**; do not hand-edit ([agents/skills/changese
 
 **Artifact 2:** Applies when a cycle has more than one cut—typically staging soak (topologies A, B). Each cut gets its own `rc<n>/release-notes.md`. Optional CI SHOULD surface the latest RC notes when deploying `staging-<cycle-id>-rc<n>`.
 
-**Artifact 3:** Cycle-level `release-notes.md` concatenates (or regenerates from) all `rc*/release-notes.md` in order, with each section headed by the full RC promotion id (`<cycle-id>-rc<n>`). It is **refreshed on every RC cut** so reviewers can read the full cycle story during soak. Published at **`prod-<cycle-id>`** as the GitHub Release body. The GitHub Release title uses the cycle id only (no `-rc` suffix) ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
+**Artifact 3:** Cycle-level `release-notes.md` **collates** all `rc*/release-notes.md` content into a single changelog—grouped like other release notes (default package-then-category)—**without** RC promotion section headings. It is **refreshed on every RC cut** so reviewers can read the full cycle story during soak. Published at **`prod-<cycle-id>`** as the GitHub Release body. The GitHub Release title uses the cycle id only (no `-rc` suffix) ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)).
 
 ### Publication timing
 
@@ -105,14 +105,14 @@ Review artifacts and on-disk layout are **the same** across supported topologies
 | **B — Staging + prod**       | No deployed dev; same staging RC flow as A         | Yes, when soak adds rc2+        |
 | **C — Dev + prod**           | Dev continuous; gated prod; often single `rc1` cut | Rare (second pre-prod cut only) |
 
-Topology **C** still uses `rc1/` and `release-notes.md` with heading `## <cycle-id>-rc1`; it does not require staging promotion tags.
+Topology **C** still uses `rc1/` and a collated cycle `release-notes.md` (for a single cut, equivalent to reformatting that cut’s notes without an RC heading); it does not require staging promotion tags.
 
 ### Soak iteration rules
 
 1. Fixes merge with new `.changeset/` entries.
 2. Patch **release PR** adds **`rc<n+1>/`** under the **same** cycle id ([ADR 0042](0042-release-cycles-rc-identifiers-and-manifest-directories.md)); do not allocate a new cycle id. The workspace remains in Changesets prerelease mode ([ADR 0043](0043-prerelease-until-production-for-application-release-cycles.md)).
 3. Promote staging with `staging-<cycle-id>-rc<n+1>` (prerelease artifact pins).
-4. Prod finalization exits prerelease, cuts stable semver, refreshes the highest RC manifest pins, then promotes **`prod-<cycle-id>`**; `release-notes.md` includes all RCs.
+4. Prod finalization exits prerelease, cuts stable semver, refreshes the highest RC manifest pins, then promotes **`prod-<cycle-id>`**; `release-notes.md` is the collated full-cycle changelog (not a per-RC concatenation).
 
 ### Hotfix releases
 
@@ -122,7 +122,7 @@ Production hotfixes are **new release cycles**, not soak iterations ([ADR 0042 �
 | ------------------------------------------- | --------------------------------------------------------------------------------- |
 | **1** (`rc1/release-notes.md`)                      | Hotfix-only batch since last prod (release PR body mirrors this)                  |
 | **2**                                       | Typically absent (single `rc1` cut)                                               |
-| **3** (`release-notes.md` → GitHub Release) | Full hotfix cycle at `prod-<new-cycle-id>`; often one section `## <cycle-id>-rc1` |
+| **3** (`release-notes.md` → GitHub Release) | Full hotfix cycle at `prod-<new-cycle-id>`; collated notes (often a single cut’s content) |
 
 Staging promotion for hotfixes is optional per repository policy; canonical GitHub Release timing and `promotedAt` rules are unchanged.
 
@@ -186,18 +186,18 @@ At production finalization, tooling refreshes this highest RC manifest to **stab
 **`release-notes.md`** (artifact 3 — excerpt; present after rc2 cut):
 
 ```markdown
-## 2026.07.01.1-rc1
+### @chiubaka/server
 
-### Features
+#### Features
 
-…
+- …
 
-## 2026.07.01.1-rc2
+#### Bug Fixes
 
-### Bug Fixes
-
-…
+- Fix null handling when export queue is empty
 ```
+
+RC promotion headings are intentionally omitted; reviewers use `rc1/release-notes.md` / `rc2/release-notes.md` for per-cut diffs.
 
 **Promotion tags:** `staging-2026.07.01.1-rc1`, `staging-2026.07.01.1-rc2`, `prod-2026.07.01.1`.
 
