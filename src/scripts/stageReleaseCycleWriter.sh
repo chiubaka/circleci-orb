@@ -739,9 +739,9 @@ cat >"${stage_dir}/finalizeReleaseCycle.mjs" <<'CHIUBAKA_ORB_FINALIZE_RELEASE_CY
 /**
  * Set promotedAt on cycle.yml and write release-notes.md (ADR 0041).
  *
- * When STABLE_RELEASE_NOTES_CHANGELOG_PATHS is set (comma-separated CHANGELOG paths
- * after ADR 0043 pre-exit), formats cycle release-notes.md from stable changelogs.
- * Otherwise rolls up per-RC release-notes.md files.
+ * Always rolls up per-RC release-notes.md files. When STABLE_PACKAGE_VERSIONS is set
+ * (name=version pairs after ADR 0043 pre-exit), refreshes existing Published
+ * versions entries to those stable semvers without adding packages.
  *
  * Usage: node finalizeReleaseCycle.mjs <.releases/cycle-id>
  */
@@ -767,57 +767,68 @@ function yamlQuote(value) {
   return JSON.stringify(value);
 }
 
-function parseStableChangelogPaths() {
-  if (process.env.STABLE_RELEASE_NOTES_CHANGELOG_PATHS === undefined) {
-    return null;
-  }
-  return process.env.STABLE_RELEASE_NOTES_CHANGELOG_PATHS.split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
+/** Stable MAJOR.MINOR.PATCH only (no prerelease suffix). */
+function isStableSemver(version) {
+  return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(String(version));
 }
 
-function resolveFormatterScript() {
-  const override = process.env.FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT;
-  if (override && fs.existsSync(override)) return override;
-  const sibling = path.join(
-    SCRIPT_DIR,
-    "formatChangesetsBatchReleaseNotes.mjs",
-  );
-  if (fs.existsSync(sibling)) return sibling;
-  fail(
-    "STABLE_RELEASE_NOTES_CHANGELOG_PATHS set but FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT " +
-      "not set and formatChangesetsBatchReleaseNotes.mjs not found",
-  );
+function parseStablePackageVersions() {
+  const raw = process.env.STABLE_PACKAGE_VERSIONS;
+  if (!raw?.trim()) return null;
+  const versions = new Map();
+  for (const part of raw.split(",")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq < 1) continue;
+    const name = trimmed.slice(0, eq).trim();
+    const version = trimmed.slice(eq + 1).trim();
+    if (name && isStableSemver(version)) versions.set(name, version);
+  }
+  return versions.size > 0 ? versions : null;
 }
 
-function writeStableReleaseNotes(cycleDir, changelogPaths) {
-  const outPath = path.join(cycleDir, "release-notes.md");
-  if (changelogPaths.length === 0) {
-    fs.writeFileSync(
-      outPath,
-      "_No CHANGELOG.md updates in the stable version cut._\n",
-      "utf8",
-    );
-    return;
+function publishedPackageName(entry) {
+  const at = String(entry).lastIndexOf("@");
+  if (at <= 0) return "";
+  return entry.slice(0, at);
+}
+
+function refreshPublishedVersions(notesPath, versions) {
+  if (!versions || !fs.existsSync(notesPath)) return;
+  const lines = fs.readFileSync(notesPath, "utf8").split("\n");
+  let inPublished = false;
+  let changed = false;
+  const out = [];
+  for (const line of lines) {
+    if (/^##\s+Published versions\s*$/i.test(line.trim())) {
+      inPublished = true;
+      out.push(line);
+      continue;
+    }
+    if (inPublished && /^##\s+\S/.test(line.trim())) {
+      inPublished = false;
+    }
+    if (inPublished) {
+      const match = line.match(/^[-*]\s+`([^`]+)`\s*$/);
+      if (match) {
+        const entry = match[1];
+        const name = publishedPackageName(entry);
+        const version = name ? versions.get(name) : undefined;
+        if (version) {
+          const next = `${name}@${version}`;
+          if (next !== entry) {
+            out.push(`- \`${next}\``);
+            changed = true;
+            continue;
+          }
+        }
+      }
+    }
+    out.push(line);
   }
-  const formatter = resolveFormatterScript();
-  const result = spawnSync(
-    process.execPath,
-    [formatter, outPath, ...changelogPaths],
-    {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        RELEASE_NOTES_GROUPING:
-          process.env.RELEASE_NOTES_GROUPING ?? "category",
-        RELEASE_NOTES_NESTING:
-          process.env.RELEASE_NOTES_NESTING ?? "package-then-category",
-      },
-    },
-  );
-  if (result.status !== 0) {
-    const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
-    fail(`failed to format stable cycle release-notes.md: ${detail}`);
+  if (changed) {
+    fs.writeFileSync(notesPath, out.join("\n"), "utf8");
   }
 }
 
@@ -852,11 +863,10 @@ function main() {
   const predecessorCycle = parseYamlScalar("predecessorCycle", text);
   if (!release) fail(`${cycleYml}: missing release field`);
 
-  const stableChangelogPaths = parseStableChangelogPaths();
-  if (stableChangelogPaths !== null) {
-    writeStableReleaseNotes(abs, stableChangelogPaths);
-  } else {
-    rollupReleaseNotes(abs);
+  rollupReleaseNotes(abs);
+  const stableVersions = parseStablePackageVersions();
+  if (stableVersions) {
+    refreshPublishedVersions(path.join(abs, "release-notes.md"), stableVersions);
   }
 
   const alreadyPromoted = hasPromotedAt(text);
@@ -882,6 +892,7 @@ function main() {
 }
 
 main();
+
 CHIUBAKA_ORB_FINALIZE_RELEASE_CYCLE_V1_EOF
 cat >"${stage_dir}/rollupReleaseNotes.mjs" <<'CHIUBAKA_ORB_ROLLUP_RELEASE_NOTES_V1_EOF'
 #!/usr/bin/env node

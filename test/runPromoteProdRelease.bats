@@ -286,6 +286,102 @@ EOF
   assert_success
 }
 
+@test "stable cut does not fold internal package changelogs into cycle release notes" {
+  local clone bindir gh_call_log pnpm_bindir notes_path
+  clone=$(_promote_prod_init_clone)
+  bindir=$(_write_gh_stub)
+  gh_call_log=$(mktemp)
+  cd "$clone" || exit 1
+
+  mkdir -p .changeset apps/server apps/web packages/lib
+  printf '%s\n' '{"mode":"pre","tag":"rc","changesets":[]}' >.changeset/pre.json
+  printf '%s\n' '{"name":"@t/server","version":"5.1.0-rc.0"}' >apps/server/package.json
+  printf '%s\n' '{"name":"@t/web","version":"2.3.0-rc.0"}' >apps/web/package.json
+  printf '%s\n' '{"name":"@t/lib","version":"1.0.0-rc.0"}' >packages/lib/package.json
+  cat >.releases/2026.05.08.1/rc1/release-notes.md <<'RC_NOTES'
+### @t/server
+
+#### Other Changes
+
+- Upgrade CI so production release notes list stable package versions
+
+### @t/web
+
+#### Bug Fixes
+
+- Show current learning opportunity details
+
+## Published versions
+
+- `@t/server@5.1.0-rc.0`
+- `@t/web@2.3.0-rc.0`
+RC_NOTES
+  git add .
+  git commit -m "enter pre with deployable packages" >/dev/null 2>&1
+
+  pnpm_bindir=$(mktemp -d)
+  cat >"${pnpm_bindir}/pnpm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == "exec" && "${2:-}" == "changeset" && "${3:-}" == "pre" && "${4:-}" == "exit" ]]; then
+  printf '%s\n' '{"mode":"exit","tag":"rc","changesets":[]}' >.changeset/pre.json
+  exit 0
+fi
+if [[ "${1:-}" == "exec" && "${2:-}" == "changeset" && "${3:-}" == "version" ]]; then
+  mkdir -p apps/server apps/web packages/lib
+  printf '%s\n' '{"name":"@t/server","version":"5.1.0"}' >apps/server/package.json
+  printf '%s\n' '{"name":"@t/web","version":"2.3.0"}' >apps/web/package.json
+  printf '%s\n' '{"name":"@t/lib","version":"1.0.0"}' >packages/lib/package.json
+  cat >apps/server/CHANGELOG.md <<'CHANGELOG'
+# @t/server
+## 5.1.0
+### Other Changes
+- Other: Upgrade CI so production release notes list stable package versions
+  - @t/lib@1.0.0
+CHANGELOG
+  cat >apps/web/CHANGELOG.md <<'CHANGELOG'
+# @t/web
+## 2.3.0
+### Bug Fixes
+- Fix: Show current learning opportunity details
+### Other Changes
+- Other: Upgrade CI so production release notes list stable package versions
+CHANGELOG
+  cat >packages/lib/CHANGELOG.md <<'CHANGELOG'
+# @t/lib
+## 1.0.0
+### Other Changes
+- Other: Upgrade CI so production release notes list stable package versions
+CHANGELOG
+  exit 0
+fi
+echo "unexpected pnpm invocation: $*" >&2
+exit 1
+EOF
+  chmod +x "${pnpm_bindir}/pnpm"
+
+  _run_promote_prod_release "$bindir" "$gh_call_log" \
+    PATH="${pnpm_bindir}:${bindir}:$PATH" \
+    PNPM_BINARY=pnpm \
+    DEPLOYABLE_PACKAGES="server=apps/server,web=apps/web" \
+    REFRESH_HIGHEST_RC_MANIFEST_PINS_SCRIPT="$PROJECT_ROOT/src/scripts/refreshHighestRcManifestPins.mjs" \
+    FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/formatChangesetsBatchReleaseNotes.mjs" \
+    CHANGESET_CATEGORY_PREFIXES_SCRIPT="$PROJECT_ROOT/src/scripts/changesetCategoryPrefixes.mjs" \
+    ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
+    RELEASE_NOTES_GROUPING=category
+
+  assert_success
+  notes_path=".releases/2026.05.08.1/release-notes.md"
+  run grep -F '`@t/server@5.1.0`' "$notes_path"
+  assert_success
+  run grep -F '`@t/web@2.3.0`' "$notes_path"
+  assert_success
+  run grep -F '@t/lib' "$notes_path"
+  assert_failure
+  run grep -F "Show current learning opportunity details" "$notes_path"
+  assert_success
+}
+
 @test "stable cut tolerates dependency-bump-only changelogs under category grouping" {
   local clone bindir gh_call_log pnpm_bindir
   clone=$(_promote_prod_init_clone)
