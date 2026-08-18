@@ -237,6 +237,18 @@ run_promote_prod_release_main() {
   # (Bash disables errexit for commands in `if` conditions.)
   exit_prerelease_and_cut_stable
 
+  if [[ "${DID_STABLE_CUT:-false}" == "true" ]]; then
+    local -a stable_changelog_paths=()
+    mapfile -t stable_changelog_paths < <(list_changed_changelog_paths | grep -v '^$' || true)
+    STABLE_RELEASE_NOTES_CHANGELOG_PATHS=$(
+      IFS=,
+      printf '%s' "${stable_changelog_paths[*]}"
+    )
+    export STABLE_RELEASE_NOTES_CHANGELOG_PATHS
+  else
+    unset STABLE_RELEASE_NOTES_CHANGELOG_PATHS
+  fi
+
   if ! finalize_script=$(_resolve_finalize_script); then
     exit 1
   fi
