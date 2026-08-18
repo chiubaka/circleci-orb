@@ -53,6 +53,36 @@ list_changed_changelog_paths() {
   } | { grep -E '(^|/)CHANGELOG\.md$' || :; } | LC_ALL=C sort -u
 }
 
+# name=version pairs from package.json files changed by the stable version cut.
+collect_changed_package_versions() {
+  local -a pjson_paths=()
+  mapfile -t pjson_paths < <(
+    {
+      git diff --name-only
+      git ls-files --others --exclude-standard
+    } | { grep -E '(^|/)package\.json$' || :; } | LC_ALL=C sort -u | grep -v '^$' || true
+  )
+  if [[ ${#pjson_paths[@]} -eq 0 ]]; then
+    printf ''
+    return 0
+  fi
+  node -e '
+    const fs = require("fs");
+    const parts = [];
+    for (const p of process.argv.slice(1)) {
+      try {
+        const j = JSON.parse(fs.readFileSync(p, "utf8"));
+        if (typeof j.name === "string" && j.name && typeof j.version === "string" && j.version) {
+          parts.push(`${j.name}=${j.version}`);
+        }
+      } catch {
+        // Ignore unreadable package.json files; Published versions stay as rolled up.
+      }
+    }
+    process.stdout.write(parts.join(","));
+  ' "${pjson_paths[@]}"
+}
+
 _resolve_rewriter_script() {
   if [[ -n "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT:-}" && -f "${REWRITE_CHANGELOG_CATEGORIES_SCRIPT}" ]]; then
     printf '%s\n' "$REWRITE_CHANGELOG_CATEGORIES_SCRIPT"
@@ -238,15 +268,10 @@ run_promote_prod_release_main() {
   exit_prerelease_and_cut_stable
 
   if [[ "${DID_STABLE_CUT:-false}" == "true" ]]; then
-    local -a stable_changelog_paths=()
-    mapfile -t stable_changelog_paths < <(list_changed_changelog_paths | grep -v '^$' || true)
-    STABLE_RELEASE_NOTES_CHANGELOG_PATHS=$(
-      IFS=,
-      printf '%s' "${stable_changelog_paths[*]}"
-    )
-    export STABLE_RELEASE_NOTES_CHANGELOG_PATHS
+    STABLE_PACKAGE_VERSIONS=$(collect_changed_package_versions)
+    export STABLE_PACKAGE_VERSIONS
   else
-    unset STABLE_RELEASE_NOTES_CHANGELOG_PATHS
+    unset STABLE_PACKAGE_VERSIONS
   fi
 
   if ! finalize_script=$(_resolve_finalize_script); then
