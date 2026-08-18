@@ -45,12 +45,14 @@ CHANGELOG
   cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" "$work/.releases/"
 
   cd "$work" || exit 1
-  run env \
+  run env -u STABLE_RELEASE_NOTES_CHANGELOG_PATHS \
     ROLLUP_RELEASE_NOTES_SCRIPT="$PROJECT_ROOT/src/scripts/rollupReleaseNotes.mjs" \
     UTC_TIMESTAMP_OVERRIDE=2026-05-08T16:00:00Z \
     node "$PROJECT_ROOT/src/scripts/finalizeReleaseCycle.mjs" ".releases/2026.05.08.1"
   assert_success
 
-  run grep -F "## 2026.05.08.1-rc1" ".releases/2026.05.08.1/release-notes.md"
+  run grep -F "### @chiubaka/server" ".releases/2026.05.08.1/release-notes.md"
   assert_success
+  run grep -F "## 2026.05.08.1-rc1" ".releases/2026.05.08.1/release-notes.md"
+  assert_failure
 }
