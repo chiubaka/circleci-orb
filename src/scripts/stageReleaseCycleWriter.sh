@@ -737,7 +737,12 @@ CHIUBAKA_ORB_RESOLVE_RELEASE_CYCLE_ON_COMMIT_V1_EOF
 cat >"${stage_dir}/finalizeReleaseCycle.mjs" <<'CHIUBAKA_ORB_FINALIZE_RELEASE_CYCLE_V1_EOF'
 #!/usr/bin/env node
 /**
- * Set promotedAt on cycle.yml and write release-notes.md rollup (ADR 0041).
+ * Set promotedAt on cycle.yml and write release-notes.md (ADR 0041).
+ *
+ * When STABLE_RELEASE_NOTES_CHANGELOG_PATHS is set (comma-separated CHANGELOG paths
+ * after ADR 0043 pre-exit), formats cycle release-notes.md from stable changelogs.
+ * Otherwise rolls up per-RC release-notes.md files.
+ *
  * Usage: node finalizeReleaseCycle.mjs <.releases/cycle-id>
  */
 import fs from "node:fs";
@@ -762,6 +767,74 @@ function yamlQuote(value) {
   return JSON.stringify(value);
 }
 
+function parseStableChangelogPaths() {
+  if (process.env.STABLE_RELEASE_NOTES_CHANGELOG_PATHS === undefined) {
+    return null;
+  }
+  return process.env.STABLE_RELEASE_NOTES_CHANGELOG_PATHS.split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function resolveFormatterScript() {
+  const override = process.env.FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT;
+  if (override && fs.existsSync(override)) return override;
+  const sibling = path.join(
+    SCRIPT_DIR,
+    "formatChangesetsBatchReleaseNotes.mjs",
+  );
+  if (fs.existsSync(sibling)) return sibling;
+  fail(
+    "STABLE_RELEASE_NOTES_CHANGELOG_PATHS set but FORMAT_CHANGESETS_BATCH_RELEASE_NOTES_SCRIPT " +
+      "not set and formatChangesetsBatchReleaseNotes.mjs not found",
+  );
+}
+
+function writeStableReleaseNotes(cycleDir, changelogPaths) {
+  const outPath = path.join(cycleDir, "release-notes.md");
+  if (changelogPaths.length === 0) {
+    fs.writeFileSync(
+      outPath,
+      "_No CHANGELOG.md updates in the stable version cut._\n",
+      "utf8",
+    );
+    return;
+  }
+  const formatter = resolveFormatterScript();
+  const result = spawnSync(
+    process.execPath,
+    [formatter, outPath, ...changelogPaths],
+    {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        RELEASE_NOTES_GROUPING:
+          process.env.RELEASE_NOTES_GROUPING ?? "category",
+        RELEASE_NOTES_NESTING:
+          process.env.RELEASE_NOTES_NESTING ?? "package-then-category",
+      },
+    },
+  );
+  if (result.status !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim() || "unknown";
+    fail(`failed to format stable cycle release-notes.md: ${detail}`);
+  }
+}
+
+function rollupReleaseNotes(cycleDir) {
+  const rollupScript =
+    process.env.ROLLUP_RELEASE_NOTES_SCRIPT ??
+    path.join(SCRIPT_DIR, "rollupReleaseNotes.mjs");
+  const result = spawnSync(process.execPath, [rollupScript, cycleDir], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    if (result.error) process.stderr.write(`${result.error.message}\n`);
+    process.stderr.write(result.stderr ?? "");
+    process.exit(result.status ?? 1);
+  }
+}
+
 function main() {
   const cycleDir = process.argv[2];
   if (!cycleDir) {
@@ -779,16 +852,11 @@ function main() {
   const predecessorCycle = parseYamlScalar("predecessorCycle", text);
   if (!release) fail(`${cycleYml}: missing release field`);
 
-  const rollupScript =
-    process.env.ROLLUP_RELEASE_NOTES_SCRIPT ??
-    path.join(SCRIPT_DIR, "rollupReleaseNotes.mjs");
-  const result = spawnSync(process.execPath, [rollupScript, abs], {
-    encoding: "utf8",
-  });
-  if (result.status !== 0) {
-    if (result.error) process.stderr.write(`${result.error.message}\n`);
-    process.stderr.write(result.stderr ?? "");
-    process.exit(result.status ?? 1);
+  const stableChangelogPaths = parseStableChangelogPaths();
+  if (stableChangelogPaths !== null) {
+    writeStableReleaseNotes(abs, stableChangelogPaths);
+  } else {
+    rollupReleaseNotes(abs);
   }
 
   const alreadyPromoted = hasPromotedAt(text);
