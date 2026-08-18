@@ -72,7 +72,8 @@ collect_changed_package_versions() {
     for (const p of process.argv.slice(1)) {
       try {
         const j = JSON.parse(fs.readFileSync(p, "utf8"));
-        if (typeof j.name === "string" && j.name && typeof j.version === "string" && j.version) {
+        if (typeof j.name === "string" && j.name && typeof j.version === "string" &&
+            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(j.version)) {
           parts.push(`${j.name}=${j.version}`);
         }
       } catch {

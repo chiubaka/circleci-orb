@@ -767,6 +767,11 @@ function yamlQuote(value) {
   return JSON.stringify(value);
 }
 
+/** Stable MAJOR.MINOR.PATCH only (no prerelease suffix). */
+function isStableSemver(version) {
+  return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(String(version));
+}
+
 function parseStablePackageVersions() {
   const raw = process.env.STABLE_PACKAGE_VERSIONS;
   if (!raw?.trim()) return null;
@@ -778,7 +783,7 @@ function parseStablePackageVersions() {
     if (eq < 1) continue;
     const name = trimmed.slice(0, eq).trim();
     const version = trimmed.slice(eq + 1).trim();
-    if (name && version) versions.set(name, version);
+    if (name && isStableSemver(version)) versions.set(name, version);
   }
   return versions.size > 0 ? versions : null;
 }
