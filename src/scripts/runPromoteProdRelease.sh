@@ -294,6 +294,7 @@ run_promote_prod_release_main() {
     if ! _require_git_identity; then
       exit 1
     fi
+    # Skip hooks: automated commits must not require consumer pre-commit tooling.
     git commit --no-verify -m "chore(release): finalize ${CYCLE_ID} for production"
     finalize_sha=$(git rev-parse HEAD)
   fi
@@ -317,8 +318,9 @@ run_promote_prod_release_main() {
 
   push_url="https://github.com/${repo_slug}.git"
   auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
-  git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-    push "$push_url" "HEAD:${primary}"
+  # Skip hooks on push: consumer pre-push must not run in release automation (HUSKY=0 belt-and-suspenders).
+  HUSKY=0 git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+    push --no-verify "$push_url" "HEAD:${primary}"
 
   tag="prod-${CYCLE_ID}"
   on_existing=${ON_EXISTING_TAG:-skip}
@@ -343,8 +345,8 @@ run_promote_prod_release_main() {
       exit 1
     fi
     git -c tag.gpgSign=false tag -fa "$tag" -m "promotion: ${tag}" "$tag_sha"
-    git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-      push "$push_url" "refs/tags/${tag}"
+    HUSKY=0 git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+      push --no-verify "$push_url" "refs/tags/${tag}"
     echo "runPromoteProdRelease: pushed ${tag} at ${tag_sha}."
   fi
 
