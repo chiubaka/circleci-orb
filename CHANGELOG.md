@@ -1,5 +1,11 @@
 # @chiubaka/circleci-orb
 
+## 0.25.3
+
+### Bug Fixes
+
+- Skip git hooks on automation `git push` so consumer pre-push hooks do not run during release jobs.
+
 ## 0.25.2
 
 ### Bug Fixes
