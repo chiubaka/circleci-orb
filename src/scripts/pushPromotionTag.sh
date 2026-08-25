@@ -144,8 +144,9 @@ push_promotion_tag_main() {
   auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
 
   git -c tag.gpgSign=false tag -a "$tag" -m "promotion: ${tag}" "$target_sha"
-  git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-    push "$push_url" "refs/tags/${tag}"
+  # Skip hooks on push: consumer pre-push must not run in promotion automation (HUSKY=0 belt-and-suspenders).
+  HUSKY=0 git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+    push --no-verify "$push_url" "refs/tags/${tag}"
   echo "pushPromotionTag: pushed ${tag} at ${target_sha}."
 }
 

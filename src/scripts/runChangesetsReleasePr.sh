@@ -238,7 +238,8 @@ run_changesets_release_pr_main() {
 
   git checkout -B "$release_branch"
   git add -A
-  # Commit subject must match PR title (single-line). Skip hooks: automated commits must not require dev-only tools (e.g. yamllint on PATH).
+  # Commit subject must match PR title (single-line). Skip hooks: automated commits must not
+  # require dev-only tools (e.g. yamllint on PATH). Lint/test still run on the resulting PR via CI.
   git commit --no-verify -m "$title"
 
   repo_slug=${GITHUB_REPO_SLUG:-}
@@ -261,15 +262,17 @@ run_changesets_release_pr_main() {
 
   auth_header=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
   lease_arg=$(build_force_with_lease_arg "$push_url" "$release_branch")
-  if ! push_output=$(git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-    push -u "$push_url" "$release_branch" "$lease_arg" 2>&1); then
+  # Skip hooks on push too: consumer pre-push (e.g. turbo test) must not run in release automation.
+  # HUSKY=0 is belt-and-suspenders with --no-verify when Husky is installed in CI.
+  if ! push_output=$(HUSKY=0 git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+    push --no-verify -u "$push_url" "$release_branch" "$lease_arg" 2>&1); then
     printf '%s\n' "$push_output" >&2
     if [[ "$push_output" == *"stale info"* ]]; then
       # Retry once with a fresh lease in case branch state moved since earlier fetch.
       git fetch origin "$release_branch" || true
       lease_arg=$(build_force_with_lease_arg "$push_url" "$release_branch")
-      git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
-        push -u "$push_url" "$release_branch" "$lease_arg"
+      HUSKY=0 git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth_header}" \
+        push --no-verify -u "$push_url" "$release_branch" "$lease_arg"
     else
       exit 1
     fi
