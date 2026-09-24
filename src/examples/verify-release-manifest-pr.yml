@@ -1,0 +1,18 @@
+description: >
+  PR check for .releases/<cycle-id>/ trees. Safe to run on every feature PR (required-check
+  friendly): skip-install defaults true, and mode=changed validates only cycles touched vs
+  primary-branch. Do not path-filter .releases/** when this job is a required GitHub check.
+
+usage:
+  version: 2.1
+  orbs:
+    chiubaka: chiubaka/circleci-orb@0.25.3
+
+  workflows:
+    pr:
+      jobs:
+        - chiubaka/verify-release-manifest:
+            primary-branch: master
+            filters:
+              branches:
+                ignore: master

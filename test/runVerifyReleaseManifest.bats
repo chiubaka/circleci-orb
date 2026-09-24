@@ -11,6 +11,18 @@ _simulate_circleci_script() {
   cp "$PROJECT_ROOT/src/scripts/runVerifyReleaseManifest.sh" "$dest_dir/runVerifyReleaseManifest.sh"
 }
 
+_stage_validators() {
+  local stage_dir=$1
+  WRITE_RELEASE_CYCLE_STAGE_DIR="${stage_dir}" \
+    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+}
+
+_init_git_repo() {
+  git init -b master >/dev/null
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+}
+
 @test "skips when no release cycles without requiring staged validator" {
   repo_dir="${BATS_TEST_TMPDIR}/repo-no-manifests"
   script_dir="${BATS_TEST_TMPDIR}/circleci-script"
@@ -18,14 +30,13 @@ _simulate_circleci_script() {
   _simulate_circleci_script "${script_dir}"
 
   cd "${repo_dir}"
-  git init -b master >/dev/null
-  git config user.email "test@example.com"
-  git config user.name "Test User"
+  _init_git_repo
   printf "readme\n" > README.md
   git add README.md
   git commit -m "base" >/dev/null
 
-  run bash "${script_dir}/runVerifyReleaseManifest.sh"
+  PRIMARY_BRANCH=master \
+    run bash "${script_dir}/runVerifyReleaseManifest.sh"
 
   assert_success
   assert_output --partial "no .releases/<cycle-id>/ trees to validate; skipping."
@@ -40,9 +51,7 @@ _simulate_circleci_script() {
     "${repo_dir}/.releases/"
 
   cd "${repo_dir}"
-  git init -b master >/dev/null
-  git config user.email "test@example.com"
-  git config user.name "Test User"
+  _init_git_repo
 
   VERIFY_RELEASE_MANIFEST_MODE=all \
     run bash "${script_dir}/runVerifyReleaseManifest.sh"
@@ -57,15 +66,12 @@ _simulate_circleci_script() {
   stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-verify"
   mkdir -p "${repo_dir}/.releases"
   _simulate_circleci_script "${script_dir}"
-  WRITE_RELEASE_CYCLE_STAGE_DIR="${stage_dir}" \
-    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+  _stage_validators "${stage_dir}"
   cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" \
     "${repo_dir}/.releases/"
 
   cd "${repo_dir}"
-  git init -b master >/dev/null
-  git config user.email "test@example.com"
-  git config user.name "Test User"
+  _init_git_repo
 
   VERIFY_RELEASE_MANIFEST_MODE=all \
   VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
@@ -82,19 +88,104 @@ _simulate_circleci_script() {
   stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-changed"
   mkdir -p "${repo_dir}/.releases"
   _simulate_circleci_script "${script_dir}"
-  WRITE_RELEASE_CYCLE_STAGE_DIR="${stage_dir}" \
-    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+  _stage_validators "${stage_dir}"
   cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" \
     "${repo_dir}/.releases/"
 
   cd "${repo_dir}"
-  git init -b master >/dev/null
-  git config user.email "test@example.com"
-  git config user.name "Test User"
+  _init_git_repo
   printf "readme\n" > README.md
   git add README.md
   git commit -m "base" >/dev/null
 
+  PRIMARY_BRANCH=master \
+  VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
+  VALIDATE_RELEASE_MANIFEST_SCRIPT="${stage_dir}/validateReleaseManifest.mjs" \
+    run bash "${script_dir}/runVerifyReleaseManifest.sh"
+
+  assert_success
+  assert_output --partial "validated 1 release cycle(s)."
+}
+
+@test "validates committed .releases cycle vs primary branch in changed mode" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-committed-releases"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-committed"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-committed"
+  mkdir -p "${repo_dir}"
+  _simulate_circleci_script "${script_dir}"
+  _stage_validators "${stage_dir}"
+
+  cd "${repo_dir}"
+  _init_git_repo
+  printf "readme\n" > README.md
+  git add README.md
+  git commit -m "base" >/dev/null
+
+  git checkout -b feature >/dev/null
+  mkdir -p .releases
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" .releases/
+  git add .releases
+  git commit -m "add release cycle" >/dev/null
+
+  PRIMARY_BRANCH=master \
+  VERIFY_RELEASE_MANIFEST_MODE=changed \
+  VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
+  VALIDATE_RELEASE_MANIFEST_SCRIPT="${stage_dir}/validateReleaseManifest.mjs" \
+    run bash "${script_dir}/runVerifyReleaseManifest.sh"
+
+  assert_success
+  assert_output --partial "validated 1 release cycle(s)."
+}
+
+@test "skips when only non-.releases files changed vs primary branch" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-unrelated-change"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-unrelated"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-unrelated"
+  mkdir -p "${repo_dir}/.releases"
+  _simulate_circleci_script "${script_dir}"
+  _stage_validators "${stage_dir}"
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" \
+    "${repo_dir}/.releases/"
+
+  cd "${repo_dir}"
+  _init_git_repo
+  printf "readme\n" > README.md
+  git add README.md .releases
+  git commit -m "base with cycle" >/dev/null
+
+  git checkout -b feature >/dev/null
+  printf "more\n" >> README.md
+  git add README.md
+  git commit -m "docs only" >/dev/null
+
+  PRIMARY_BRANCH=master \
+  VERIFY_RELEASE_MANIFEST_MODE=changed \
+  VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
+  VALIDATE_RELEASE_MANIFEST_SCRIPT="${stage_dir}/validateReleaseManifest.mjs" \
+    run bash "${script_dir}/runVerifyReleaseManifest.sh"
+
+  assert_success
+  assert_output --partial "no .releases/<cycle-id>/ trees to validate; skipping."
+}
+
+@test "mode=all validates cycle already committed on primary branch" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-all-on-primary"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-all-primary"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-all-primary"
+  mkdir -p "${repo_dir}/.releases"
+  _simulate_circleci_script "${script_dir}"
+  _stage_validators "${stage_dir}"
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" \
+    "${repo_dir}/.releases/"
+
+  cd "${repo_dir}"
+  _init_git_repo
+  printf "readme\n" > README.md
+  git add README.md .releases
+  git commit -m "base with cycle" >/dev/null
+
+  PRIMARY_BRANCH=master \
+  VERIFY_RELEASE_MANIFEST_MODE=all \
   VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
   VALIDATE_RELEASE_MANIFEST_SCRIPT="${stage_dir}/validateReleaseManifest.mjs" \
     run bash "${script_dir}/runVerifyReleaseManifest.sh"
@@ -109,8 +200,7 @@ _simulate_circleci_script() {
   stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-invalid"
   mkdir -p "${repo_dir}/.releases/2026.05.08.1/rc1"
   _simulate_circleci_script "${script_dir}"
-  WRITE_RELEASE_CYCLE_STAGE_DIR="${stage_dir}" \
-    bash "$PROJECT_ROOT/src/scripts/stageReleaseCycleWriter.sh" >/dev/null
+  _stage_validators "${stage_dir}"
   cp "$PROJECT_ROOT/test/fixtures/release-manifests/invalid-deploy-key.yml" \
     "${repo_dir}/.releases/2026.05.08.1/rc1/manifest.yml"
   printf 'release: 2026.05.08.1\nopenedAt: 2026-05-08T14:32:00Z\n' \
@@ -118,9 +208,7 @@ _simulate_circleci_script() {
   printf 'notes\n' >"${repo_dir}/.releases/2026.05.08.1/rc1/release-notes.md"
 
   cd "${repo_dir}"
-  git init -b master >/dev/null
-  git config user.email "test@example.com"
-  git config user.name "Test User"
+  _init_git_repo
 
   VERIFY_RELEASE_MANIFEST_MODE=all \
   VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
