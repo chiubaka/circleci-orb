@@ -31,7 +31,10 @@ parameters:
       Primary branch used as the merge-base for mode=changed. chiubaka/setup fetches it on origin;
       changed mode requires that ref to exist.
   resource-class:
-    default: medium
+    default: small
+    description: >
+      Defaults to small because skip-install is true. Pass medium (or larger) if you set
+      skip-install: false and need a full workspace install.
     enum:
       - small
       - medium
@@ -46,7 +49,7 @@ parameters:
     default: true
     description: >
       When true (default), skip pnpm install — validators do not need workspace node_modules. Set
-      false only if a custom verify path needs installed deps.
+      false only if a custom verify path needs installed deps (and prefer a larger resource-class).
   verify-mode:
     type: enum
     enum:
