@@ -49,7 +49,8 @@ list_cycle_paths() {
   fi
 
   {
-    git diff --name-only "$merge_base" HEAD
+    # --relative so paths match APP_DIR cwd (subdir app-dir) like the working-tree diffs.
+    git diff --relative --name-only "$merge_base" HEAD
     git diff --relative --name-only
     git diff --relative --name-only --cached
     git ls-files --others --exclude-standard

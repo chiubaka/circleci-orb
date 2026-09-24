@@ -137,6 +137,40 @@ _init_git_repo() {
   assert_output --partial "validated 1 release cycle(s)."
 }
 
+@test "validates committed .releases under subdirectory app-dir in changed mode" {
+  repo_dir="${BATS_TEST_TMPDIR}/repo-app-dir-releases"
+  script_dir="${BATS_TEST_TMPDIR}/circleci-script-app-dir"
+  stage_dir="${BATS_TEST_TMPDIR}/chiubaka-release-cycle-app-dir"
+  mkdir -p "${repo_dir}/packages/app"
+  _simulate_circleci_script "${script_dir}"
+  _stage_validators "${stage_dir}"
+
+  cd "${repo_dir}"
+  _init_git_repo
+  printf "readme\n" > README.md
+  printf "pkg\n" > packages/app/README.md
+  git add README.md packages/app/README.md
+  git commit -m "base" >/dev/null
+
+  git checkout -b feature >/dev/null
+  mkdir -p packages/app/.releases
+  cp -a "$PROJECT_ROOT/test/fixtures/release-cycles/2026.05.08.1" \
+    packages/app/.releases/
+  git add packages/app/.releases
+  git commit -m "add nested release cycle" >/dev/null
+
+  # Run from repo root with APP_DIR set (same as CircleCI working_directory + APP_DIR=.).
+  PRIMARY_BRANCH=master \
+  APP_DIR=packages/app \
+  VERIFY_RELEASE_MANIFEST_MODE=changed \
+  VALIDATE_RELEASE_CYCLE_SCRIPT="${stage_dir}/validateReleaseCycle.mjs" \
+  VALIDATE_RELEASE_MANIFEST_SCRIPT="${stage_dir}/validateReleaseManifest.mjs" \
+    run bash "${script_dir}/runVerifyReleaseManifest.sh"
+
+  assert_success
+  assert_output --partial "validated 1 release cycle(s)."
+}
+
 @test "skips when only non-.releases files changed vs primary branch" {
   repo_dir="${BATS_TEST_TMPDIR}/repo-unrelated-change"
   script_dir="${BATS_TEST_TMPDIR}/circleci-script-unrelated"
