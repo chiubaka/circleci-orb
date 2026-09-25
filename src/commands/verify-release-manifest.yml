@@ -1,7 +1,9 @@
 description: >
-  Validate pin-only .releases/<cycle-id>/ release cycle trees (ADR 0041, ADR 0042). By default
-  validates only cycle directories touched in the working tree; set mode=all to validate every cycle
-  under .releases/. Fails fast with actionable errors on schema violations.
+  Validate pin-only .releases/<cycle-id>/ release cycle trees (ADR 0041, ADR 0042; pin-only fields
+  remain ADR 0039). By default (mode=changed) validates only cycle directories that changed vs the
+  primary-branch merge base (plus untracked/cached for local parity); set mode=all to validate every
+  cycle under .releases/. Safe to run on every PR — when nothing changed, exits 0 without validating.
+  Fails fast with actionable errors on schema violations or when the merge base cannot be computed.
 
 parameters:
   app-dir:
@@ -14,7 +16,15 @@ parameters:
       - changed
       - all
     default: changed
-    description: changed validates only touched cycles; all validates every .releases/<cycle-id>/.
+    description: >
+      changed validates cycles touched vs primary-branch merge base (and untracked/cached); all
+      validates every .releases/<cycle-id>/.
+  primary-branch:
+    type: string
+    default: "master"
+    description: >
+      Branch used as the merge-base for mode=changed. Must exist locally or on origin (setup fetches
+      it when this command runs after chiubaka/setup).
 
 steps:
   - run:
@@ -27,6 +37,7 @@ steps:
       command: << include(scripts/runVerifyReleaseManifest.sh) >>
       environment:
         APP_DIR: .
+        PRIMARY_BRANCH: << parameters.primary-branch >>
         VERIFY_RELEASE_MANIFEST_MODE: << parameters.mode >>
         VALIDATE_RELEASE_CYCLE_SCRIPT: /tmp/chiubaka-release-cycle/validateReleaseCycle.mjs
         VALIDATE_RELEASE_MANIFEST_SCRIPT: /tmp/chiubaka-release-cycle/validateReleaseManifest.mjs

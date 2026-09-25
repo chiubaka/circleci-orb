@@ -1,6 +1,11 @@
 description: >
-  PR check for .releases/** changes: validates pin-only release manifests (ADR 0038). Filter the
-  workflow to paths .releases/** on the client. Pair with verify-changesets for application monorepos.
+  PR check for .releases/** changes: validates pin-only release cycle trees (ADR 0041 / ADR 0042;
+  pin-only RC fields remain ADR 0039). Safe to schedule on every PR so a required GitHub check
+  always reports — default mode=changed validates only cycles touched vs the primary-branch merge
+  base and skips with exit 0 when none changed. PNPM install is skipped by default (validators are
+  orb-staged Node). Path-filtering the workflow to .releases/** is optional and incompatible with a
+  required GitHub check unless the consumer adds a stub job. Pair with verify-changesets for
+  application monorepos.
 
 executor:
   name: docker-node
@@ -22,8 +27,14 @@ parameters:
   primary-branch:
     type: string
     default: "master"
+    description: >
+      Primary branch used as the merge-base for mode=changed. chiubaka/setup fetches it on origin;
+      changed mode requires that ref to exist.
   resource-class:
     default: small
+    description: >
+      Defaults to small because skip-install is true. Pass medium (or larger) if you set
+      skip-install: false and need a full workspace install.
     enum:
       - small
       - medium
@@ -35,7 +46,10 @@ parameters:
     type: enum
   skip-install:
     type: boolean
-    default: false
+    default: true
+    description: >
+      When true (default), skip pnpm install — validators do not need workspace node_modules. Set
+      false only if a custom verify path needs installed deps (and prefer a larger resource-class).
   verify-mode:
     type: enum
     enum:
@@ -58,3 +72,4 @@ steps:
   - verify-release-manifest:
       app-dir: << parameters.app-dir >>
       mode: << parameters.verify-mode >>
+      primary-branch: << parameters.primary-branch >>
