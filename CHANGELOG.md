@@ -1,5 +1,15 @@
 # @chiubaka/circleci-orb
 
+## 0.25.4
+
+### Bug Fixes
+
+- Run verify-release-manifest without a full pnpm install by default, and only validate .releases cycles that changed vs the primary-branch merge base.
+
+### Other Changes
+
+- Isolate parsePromotionTag bats from inherited CIRCLE_TAG on tag pipelines.
+
 ## 0.25.3
 
 ### Bug Fixes
