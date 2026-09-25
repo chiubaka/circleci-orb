@@ -3,6 +3,8 @@
 setup() {
   load "helpers/setup"
   _setup
+  # Tag-triggered CircleCI jobs set CIRCLE_TAG; the script prefers it over TAG.
+  unset CIRCLE_TAG
   PARSE_PROMOTION_TAG_SOURCE_ONLY=true
   # shellcheck disable=SC1091
   source "$PROJECT_ROOT/src/scripts/parsePromotionTag.sh"
@@ -10,7 +12,7 @@ setup() {
 }
 
 @test "parses staging promotion tag with rc suffix" {
-  run env TAG=staging-2026.04.06.1-rc2 bash -c 'parse_promotion_tag_main'
+  run env -u CIRCLE_TAG TAG=staging-2026.04.06.1-rc2 bash -c 'parse_promotion_tag_main'
   assert_success
   assert_output --partial "PROMOTION_ENV=staging"
   assert_output --partial "RELEASE_ID=2026.04.06.1"
@@ -18,7 +20,7 @@ setup() {
 }
 
 @test "parses prod promotion tag without rc suffix" {
-  run env TAG=prod-2026.04.06.2 bash -c 'parse_promotion_tag_main'
+  run env -u CIRCLE_TAG TAG=prod-2026.04.06.2 bash -c 'parse_promotion_tag_main'
   assert_success
   assert_output --partial "PROMOTION_ENV=prod"
   assert_output --partial "RELEASE_ID=2026.04.06.2"
@@ -26,13 +28,13 @@ setup() {
 }
 
 @test "fails on legacy staging tag without rc suffix" {
-  run env TAG=staging-2026.04.06.1 bash -c 'parse_promotion_tag_main'
+  run env -u CIRCLE_TAG TAG=staging-2026.04.06.1 bash -c 'parse_promotion_tag_main'
   assert_failure
   assert_output --partial "staging-<cycle-id>-rc<n>"
 }
 
 @test "fails on artifact-style tag" {
-  run env TAG=server-v1.2.3 bash -c 'parse_promotion_tag_main'
+  run env -u CIRCLE_TAG TAG=server-v1.2.3 bash -c 'parse_promotion_tag_main'
   assert_failure
   assert_output --partial "staging-<cycle-id>-rc<n>"
 }
