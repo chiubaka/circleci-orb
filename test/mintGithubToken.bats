@@ -2,7 +2,7 @@
 setup() {
   load "helpers/setup"
   _setup
-  unset GITHUB_TOKEN GH_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
   # CircleCI sets BASH_ENV globally; export_github_token appends token exports there.
   # Isolate it so later bats files are not polluted when bash sources BASH_ENV.
   _ORIGINAL_BASH_ENV="${BASH_ENV:-}"
@@ -19,6 +19,7 @@ setup() {
     mint_github_app_installation_token \
     parse_installation_token_from_response \
     export_github_token \
+    preserve_github_packages_token \
     resolve_github_token
 
   TEST_APP_PRIVATE_KEY=$(
@@ -27,7 +28,7 @@ setup() {
 }
 
 teardown() {
-  unset GITHUB_TOKEN GH_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
   if [[ -n "${_ORIGINAL_BASH_ENV:-}" ]]; then
     BASH_ENV="$_ORIGINAL_BASH_ENV"
   else
@@ -137,4 +138,50 @@ _run_mint_github_token_main() {
   args=$(mock_get_call_args "$curl_mock" 1)
   [[ "$args" == *"/app/installations/98765/access_tokens"* ]] || false
   [[ "$args" == *"Authorization: Bearer "* ]] || false
+}
+
+@test "mint_github_token_main preserves previous GITHUB_TOKEN as GITHUB_PACKAGES_TOKEN when minting" {
+  curl_mock="$(mock_create)"
+  mock_set_output "${curl_mock}" '{"token":"ghs_minted_test_token","expires_at":"2099-01-01T00:00:00Z"}'
+  bindir=$(mktemp -d)
+  ln -sf "$curl_mock" "${bindir}/curl"
+
+  bash_env="${BATS_TEST_TMPDIR}/bash_env_preserve"
+  : >"$bash_env"
+  GITHUB_TOKEN=ghp_packages_read
+  GITHUB_APP_ID=12345
+  GITHUB_APP_PRIVATE_KEY="$TEST_APP_PRIVATE_KEY"
+  GITHUB_APP_INSTALLATION_ID=98765
+  BASH_ENV="$bash_env" PATH="${bindir}:$PATH" _run_mint_github_token_main >/dev/null
+
+  assert_equal "ghs_minted_test_token" "$GITHUB_TOKEN"
+  assert_equal "ghp_packages_read" "$GITHUB_PACKAGES_TOKEN"
+  run grep 'GITHUB_PACKAGES_TOKEN=ghp_packages_read' "$bash_env"
+  assert_success
+  run grep 'GITHUB_TOKEN=ghs_minted_test_token' "$bash_env"
+  assert_success
+}
+
+@test "mint_github_token_main does not overwrite an existing GITHUB_PACKAGES_TOKEN" {
+  curl_mock="$(mock_create)"
+  mock_set_output "${curl_mock}" '{"token":"ghs_minted_test_token","expires_at":"2099-01-01T00:00:00Z"}'
+  bindir=$(mktemp -d)
+  ln -sf "$curl_mock" "${bindir}/curl"
+
+  GITHUB_TOKEN=ghp_incoming
+  GITHUB_PACKAGES_TOKEN=ghp_already_set
+  GITHUB_APP_ID=12345
+  GITHUB_APP_PRIVATE_KEY="$TEST_APP_PRIVATE_KEY"
+  GITHUB_APP_INSTALLATION_ID=98765
+  PATH="${bindir}:$PATH" _run_mint_github_token_main >/dev/null
+
+  assert_equal "ghs_minted_test_token" "$GITHUB_TOKEN"
+  assert_equal "ghp_already_set" "$GITHUB_PACKAGES_TOKEN"
+}
+
+@test "mint_github_token_main does not set GITHUB_PACKAGES_TOKEN when passing GITHUB_TOKEN through" {
+  GITHUB_TOKEN=ghp_direct
+  _run_mint_github_token_main >/dev/null
+  assert_equal "ghp_direct" "$GITHUB_TOKEN"
+  [[ -z "${GITHUB_PACKAGES_TOKEN:-}" ]]
 }

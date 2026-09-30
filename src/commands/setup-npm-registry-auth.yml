@@ -14,7 +14,8 @@ parameters:
     default: npmjs
     description: >
       npmjs: append //registry.npmjs.org/:_authToken using NPM_TOKEN.
-      github-packages: map @<owner> to npm.pkg.github.com and authenticate with GITHUB_TOKEN.
+      github-packages: map @<owner> to npm.pkg.github.com and authenticate with
+      GITHUB_PACKAGES_TOKEN when set, otherwise GITHUB_TOKEN.
   owner:
     type: string
     default: chiubaka

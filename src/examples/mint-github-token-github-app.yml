@@ -1,14 +1,16 @@
 description: >
-  Mint a GitHub App installation token in CI before release automation. Requires
-  chiubaka/circleci-orb@0.21.0 or newer (mint-github-token). Store GITHUB_APP_ID,
-  GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID in a CircleCI context
-  (client-owned app). For PAT-based auth instead, provide GITHUB_TOKEN in the
-  context and omit the app variables.
+  Mint a GitHub App installation token after install for release automation. Requires
+  chiubaka/circleci-orb with post-install mint (changesets-release-pr,
+  changesets-gated-publish, and promote-prod-release mint after setup by default).
+  Store GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID in a
+  CircleCI context (client-owned app). Provide a packages-read GITHUB_TOKEN via a
+  second context listed last so pnpm install can read private GitHub Packages before
+  mint replaces GITHUB_TOKEN. A pre-steps mint is unnecessary for those jobs.
 
 usage:
   version: 2.1
   orbs:
-    chiubaka: chiubaka/circleci-orb@0.21.0
+    chiubaka: chiubaka/circleci-orb@0.25.4
 
   workflows:
     release-pr:
@@ -16,8 +18,7 @@ usage:
         - chiubaka/changesets-release-pr:
             context:
               - github-release-app
-            pre-steps:
-              - chiubaka/mint-github-token
+              - github-packages-read
             primary-branch: main
             filters:
               branches:

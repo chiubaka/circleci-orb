@@ -2,7 +2,9 @@ description: >
   After a squash-merged release PR, run assert-release-merge then the same publish path as
   job publish (registry auth, optional build, pnpm exec changeset publish). By default, when
   create-github-release is true, also creates a GitHub Release and UTC train git tag (ADR 0038).
-  Pair with a path-filtering + continuation workflow on the client so this job only runs for relevant merges.
+  By default mints GITHUB_TOKEN after setup/install (mint-github-token: true); a pre-steps mint
+  is unnecessary. Pair with a path-filtering + continuation workflow on the client so this job
+  only runs for relevant merges.
 
 executor:
   name: docker-node
@@ -115,6 +117,13 @@ parameters:
     type: boolean
     default: false
     description: Skip pnpm install during setup.
+  mint-github-token:
+    type: boolean
+    default: true
+    description: >
+      When true (default), mint or resolve GITHUB_TOKEN after setup/install and before
+      git/gh steps. Prefer this over a pre-steps mint so pnpm install keeps the
+      packages-read GITHUB_TOKEN. A pre-step mint is unnecessary.
   always-auth:
     type: boolean
     default: true
@@ -201,6 +210,10 @@ steps:
       primary-branch: << parameters.primary-branch >>
       skip-pnpm-install: << parameters.skip-install >>
       workspace-at: << parameters.workspace-at >>
+  - when:
+      condition: << parameters.mint-github-token >>
+      steps:
+        - mint-github-token
   - steps: << parameters.setup-steps >>
   - when:
       condition: << parameters.configure-git-user >>
