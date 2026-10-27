@@ -45,14 +45,22 @@ case "$registry_backend" in
     fi
     ;;
   github-packages)
-    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-      echo "setupNpmRegistryAuth: GITHUB_TOKEN must be set when registry-backend is github-packages." >&2
+    # Prefer GITHUB_PACKAGES_TOKEN when mint-github-token replaced GITHUB_TOKEN with ghs_….
+    packages_token="${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}"
+    if [[ -z "$packages_token" ]]; then
+      echo "setupNpmRegistryAuth: GITHUB_TOKEN (or GITHUB_PACKAGES_TOKEN) must be set when registry-backend is github-packages." >&2
       echo "Grant read:packages for install-only jobs; add write:packages (and repo scope as needed) for publishing." >&2
+      echo "GitHub App installation tokens (ghs_…) are not a packages-read credential; mint after install or preserve the pre-mint token as GITHUB_PACKAGES_TOKEN." >&2
+      exit 1
+    fi
+    if [[ "$packages_token" == ghs_* && -z "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
+      echo "setupNpmRegistryAuth: GITHUB_TOKEN is a GitHub App installation token (ghs_…), which cannot download private packages owned by another org." >&2
+      echo "Provide a packages-read token as GITHUB_TOKEN at job start (e.g. github-packages-read context, listed last), or set GITHUB_PACKAGES_TOKEN. Prefer minting after install." >&2
       exit 1
     fi
     {
       echo "@${owner}:registry=https://npm.pkg.github.com"
-      echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}"
+      echo "//npm.pkg.github.com/:_authToken=${packages_token}"
       if [[ "$always_auth" == "true" ]]; then
         echo "//npm.pkg.github.com/:always-auth=true"
       fi

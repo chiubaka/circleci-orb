@@ -62,10 +62,29 @@ teardown() {
 }
 
 @test "fails when github-packages and GITHUB_TOKEN missing" {
-  run env -u GITHUB_TOKEN NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages setupNpmRegistryAuth.sh
+  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages setupNpmRegistryAuth.sh
 
   assert_failure
-  assert_output --partial 'GITHUB_TOKEN must be set'
+  assert_output --partial 'GITHUB_TOKEN (or GITHUB_PACKAGES_TOKEN) must be set'
+}
+
+@test "github-packages prefers GITHUB_PACKAGES_TOKEN over GITHUB_TOKEN" {
+  NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages \
+    GITHUB_TOKEN=ghs_minted GITHUB_PACKAGES_TOKEN=ghp_packages \
+    run setupNpmRegistryAuth.sh
+
+  assert_success
+  run cat "$NPMRC_PATH"
+  assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_packages'
+}
+
+@test "fails when github-packages GITHUB_TOKEN is an installation token without GITHUB_PACKAGES_TOKEN" {
+  run env -u GITHUB_PACKAGES_TOKEN NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages \
+    GITHUB_TOKEN=ghs_minted_only setupNpmRegistryAuth.sh
+
+  assert_failure
+  assert_output --partial 'installation token'
+  assert_output --partial 'packages-read'
 }
 
 @test "fails on unknown registry backend" {

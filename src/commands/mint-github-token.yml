@@ -4,8 +4,13 @@ description: >
   mints a short-lived GitHub App installation access token. When none of those are set
   but GITHUB_TOKEN is already provided (for example from a CircleCI context PAT), uses
   that value unchanged. Appends exports to BASH_ENV when present so later steps in the
-  same job inherit the token. Run before changesets-release-pr, github-release-train,
-  push-promotion-tag, or setup-npm-registry-auth when using a client-owned GitHub App.
+  same job inherit the token.
+
+  Prefer running this after setup / pnpm install (changesets-release-pr,
+  changesets-gated-publish, and promote-prod-release mint after install by default).
+  A pre-step mint is unnecessary for those jobs and replaces the packages-read
+  GITHUB_TOKEN before install; if you still mint early, mintGithubToken preserves the
+  previous GITHUB_TOKEN as GITHUB_PACKAGES_TOKEN so install can use it.
 
 parameters:
   github-api-url:

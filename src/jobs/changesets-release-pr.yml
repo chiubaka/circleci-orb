@@ -2,8 +2,10 @@ description: >
   On pushes to the default branch, open or update a release PR when Changesets has pending
   work that produces version bumps (install gh, then changeset version + release/<primary> + gh).
   Skips cleanly when there are no bumps (e.g. empty or verification-only changesets). Filter the
-  workflow to primary-branch only on the client side. Requires GITHUB_TOKEN with repo scopes; see
-  command docs.
+  workflow to primary-branch only on the client side. By default mints GITHUB_TOKEN after
+  setup/install (mint-github-token: true) so packages-read auth survives pnpm install; a
+  pre-steps mint is unnecessary. Requires packages-read GITHUB_TOKEN for private GitHub
+  Packages plus app credentials or a write-capable token for the release PR.
 
 executor:
   name: docker-node
@@ -125,6 +127,13 @@ parameters:
     type: boolean
     default: false
     description: Skip pnpm install (use with workspace or external cache).
+  mint-github-token:
+    type: boolean
+    default: true
+    description: >
+      When true (default), mint or resolve GITHUB_TOKEN after setup/install and before
+      git/gh steps. Prefer this over a pre-steps mint so pnpm install keeps the
+      packages-read GITHUB_TOKEN. A pre-step mint is unnecessary.
   always-auth:
     type: boolean
     default: true
@@ -150,6 +159,10 @@ steps:
       primary-branch: << parameters.primary-branch >>
       skip-pnpm-install: << parameters.skip-install >>
       workspace-at: << parameters.workspace-at >>
+  - when:
+      condition: << parameters.mint-github-token >>
+      steps:
+        - mint-github-token
   - steps: << parameters.setup-steps >>
   - when:
       condition: << parameters.configure-git-user >>

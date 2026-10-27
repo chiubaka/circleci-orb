@@ -1,7 +1,9 @@
 description: >
   Finalize a deployable application release cycle for production (ADR 0041 / ADR 0043):
   optional prerelease exit and stable version cut, promotedAt, release-notes.md rollup,
-  prod-<cycle-id> tag, and canonical GitHub Release.
+  prod-<cycle-id> tag, and canonical GitHub Release. By default mints GITHUB_TOKEN after
+  setup/install (mint-github-token: true) so packages-read auth survives pnpm install; a
+  pre-steps mint is unnecessary.
 
 executor:
   name: docker-node
@@ -93,6 +95,13 @@ parameters:
     description: >
       Skip pnpm install. Set false (default) when production finalization may run
       changeset pre exit / changeset version (ADR 0043).
+  mint-github-token:
+    type: boolean
+    default: true
+    description: >
+      When true (default), mint or resolve GITHUB_TOKEN after setup/install and before
+      git/gh steps. Prefer this over a pre-steps mint so pnpm install keeps the
+      packages-read GITHUB_TOKEN. A pre-step mint is unnecessary.
 
 steps:
   - setup:
@@ -100,6 +109,10 @@ steps:
       checkout: true
       primary-branch: << parameters.primary-branch >>
       skip-pnpm-install: << parameters.skip-install >>
+  - when:
+      condition: << parameters.mint-github-token >>
+      steps:
+        - mint-github-token
   - when:
       condition: << parameters.configure-git-user >>
       steps:

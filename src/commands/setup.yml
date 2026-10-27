@@ -71,8 +71,18 @@ steps:
       condition:
         not: << parameters.skip-pnpm-install >>
       steps:
+        - run:
+            name: Assert packages-read token for install
+            command: << include(scripts/assertGithubPackagesTokenForInstall.sh) >>
         - node/install-packages:
             check-cache: always
             pkg-manager: pnpm
             with-cache: true
             app-dir: << parameters.app-dir >>
+            # Project .npmrc often expands ${GITHUB_TOKEN} at install time. Prefer
+            # GITHUB_PACKAGES_TOKEN (preserved by mint-github-token) for this step only
+            # so a pre-step mint does not feed the ghs_ installation token to GitHub Packages.
+            override-ci-command: >
+              export GITHUB_TOKEN="${GITHUB_PACKAGES_TOKEN:-$GITHUB_TOKEN}";
+              export GH_TOKEN="${GITHUB_PACKAGES_TOKEN:-${GH_TOKEN:-$GITHUB_TOKEN}}";
+              pnpm install --frozen-lockfile
