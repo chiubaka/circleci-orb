@@ -107,12 +107,14 @@ Refresh projections first (default mode writes; `--check` validates only):
 # Example — use the script names your repository ships
 <org-prefix>/agents/scripts/bootstrap-agents-md.sh
 <org-prefix>/agents/scripts/bootstrap-skills.sh   # when org skills changed upstream
+<org-prefix>/agents/scripts/bootstrap-worktrees.sh # when worktree layout guidance changed
+# or: <org-prefix>/agents/scripts/bootstrap.sh
 ```
 
 If scripts updated projected files, fold those changes into the subtree sync squash commit so history stays **one squash commit per upstream sync**:
 
 ```bash
-git add AGENTS.md .agents/   # and any other paths your bootstrap scripts update
+git add AGENTS.md .agents/ .gitignore .vscode/   # and any other paths your bootstrap scripts update
 git commit --amend --no-edit
 ```
 
@@ -120,6 +122,7 @@ Then validate:
 
 ```bash
 <org-prefix>/agents/scripts/bootstrap-agents-md.sh --check
+# or: <org-prefix>/agents/scripts/bootstrap.sh --check
 ```
 
 ### 5. Verify the result

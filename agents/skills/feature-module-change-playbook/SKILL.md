@@ -33,6 +33,10 @@ Use this skill when:
 - Introducing or updating adapter implementations.
 - Deciding what should be exported from feature/layer barrels.
 
+## When not to use this skill
+
+Do **not** expand into feature-module restructuring by default. Per coding-discipline surgical defaults, skip this playbook when the ask is a localized bugfix, small behavior change, or docs/guidance edit that does not require new layers, barrels, or module boundaries. Prefer a minimal, request-traced diff unless the user (or an explicit architecture task) requires structural change.
+
 ## Step-by-step playbook
 
 1. Locate the owning feature module and extend it first before creating a new top-level module.
@@ -47,6 +51,8 @@ Use this skill when:
    - Slice barrels for first-class directories under composition hosts (see ADR 0008 / ADR 0016).
    - `infrastructure/<category>/index.ts` for each immediate adapter category.
 5. Keep files focused; split mixed-responsibility files unless items are expected to evolve together.
+6. If adding secured operations (credentials, actor resolution, authorization), follow `application-authz`.
+7. Before inventing shared helpers or new dependencies, follow `search-first`.
 
 ## Common mistakes to avoid
 

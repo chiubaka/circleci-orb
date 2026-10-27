@@ -151,7 +151,7 @@ Use explicit files (e.g. changesets) to declare release behavior.
 
 This decision intentionally decouples:
 
-- **Commit intent** → expressed via Conventional Commits (optional, for hygiene)
+- **Commit intent** → expressed via Conventional Commits (required for history hygiene per [ADR 0046](0046-adopt-conventional-commits-for-commits-and-pr-titles.md); not for release)
 - **Release intent** → expressed via Changesets (authoritative)
 
 This separation preserves flexibility and avoids overloading commit messages with release semantics.
@@ -161,3 +161,4 @@ This separation preserves flexibility and avoids overloading commit messages wit
 - [ADR 0023](0023-lockstep-versioning-for-related-package-groups.md) – defines the ecosystem grouping policy that informs how release intent is batched.
 - [ADR 0027](0027-use-single-changesets-workflow-in-hybrid-monorepos.md) – explains the unified Changesets workflow that connects libraries and applications.
 - [ADR 0028](0028-version-only-deployable-artifacts-by-default.md) – explains how application monorepos only version deployable artifacts by default.
+- [ADR 0046](0046-adopt-conventional-commits-for-commits-and-pr-titles.md) – Conventional Commits for commit messages and PR titles (history hygiene; not release authority).

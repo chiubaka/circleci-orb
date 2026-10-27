@@ -49,8 +49,8 @@ Within classes:
 - Avoid exporting helper functions solely for testing
 - Test primarily through public methods
 - In class-named orchestration files (for example, `*Evaluator.ts`, `*Service.ts`), treat the class as the default architectural boundary
-- In class-owned repository or adapter files (for example, `*Repository.ts`), keep record/domain mapping helpers on the class as `private static` methods by default unless the mapper is a true shared utility used across multiple classes
-- When translating between persistence or infrastructure records and domain types, prefer `toDomain` and `fromDomain` naming for those methods over ad hoc `map*` names
+- In class-owned repository, store, queue, or adapter files (for example, `*Repository.ts`, `*Store.ts`, `*Queue.ts`), keep colocated persistence/infrastructure ↔ domain translation on the class as `private static` methods by default (use instance `private` only when the helper needs `this`), unless the mapper is a true shared utility used across multiple classes
+- When translating between persistence or infrastructure records and domain types, prefer `toDomain` and `fromDomain` naming for those methods over ad hoc `map*` names; purity alone does not justify extracting those mappers to module-level functions
 
 Precedence note:
 
@@ -61,9 +61,11 @@ Precedence note:
 
 Use module-level functions when:
 
-- Implementing pure transformations or small composable logic
+- Implementing pure transformations or small composable logic that are not class-local support for a single class-owned boundary
 - Defining utilities that are genuinely reusable across multiple domains
 - The logic does not benefit from object identity or lifecycle
+
+Do not interpret “prefer module-level functions for pure transformations” as overriding the Classes guidance above. In a module whose primary export is a class (especially repositories, stores, queues, and adapters), colocated record ↔ domain mappers stay on that class as `private static toDomain` / `fromDomain` (or instance `private` when they need `this`). Module-level pure functions remain appropriate for genuinely shared utilities extracted under reuse pressure, or for modules that are not class-owned boundaries.
 
 Module-level functions should:
 

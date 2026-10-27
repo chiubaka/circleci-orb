@@ -55,6 +55,7 @@ When writing or editing an ADR:
 - State **what was decided**, **why**, and **consequences** in the ADR itself; do not replace normative ADR sections with pointers to `org/agents/skills/…`, `AGENTS.md`, or other agent-only surfaces as the source of truth.
 - It is fine to say repositories may document day-to-day practice in contributor guides or lint/review config; avoid making a specific agent skill path a requirement of the architecture decision.
 - Keep examples and confirmation steps human-actionable (review checks, lint policy, contributor docs)—the same concepts agents follow should live in skills, not in the ADR body.
+- Treat comparison labels and option nicknames invented in the ADR (for example “Model A” / “Model B”) as **ADR-local**. Consumer-facing artifacts and code comments must name the underlying concept, not those nicknames. Intentional contributor/agent guidance that discusses or points at the decision may use the labels—see `changeset` and `jsdoc` skills (**No ADR leakage**).
 
 ## Org-level ADR portability rule (critical)
 
@@ -110,3 +111,4 @@ Decision: "In `packages/l3xo/backend`, keep evaluation orchestration in applicat
 - [ ] Decision is singular and durable (not a transient task note).
 - [ ] Org-level ADR has no repo-specific normative dependencies.
 - [ ] Any concrete examples are in the ADR itself or in `org/docs/adr/examples/`.
+- [ ] Comparison labels / option nicknames are framed as ADR-local; consumer-facing docs and code comments name concepts (intentional contributor/agent guidance may use the labels when discussing the decision).

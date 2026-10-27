@@ -3,9 +3,12 @@ name: changeset
 description: >-
   Authors Changesets-compatible markdown files for @changesets/cli: semver intent
   in frontmatter, required category prefix on every summary, and changelog voice
-  matched to monorepo type (library vs deployable app). Use when adding or editing
-  a changeset, preparing a release-impacting PR, or when the user mentions
-  changesets, .changeset/, or package version bumps (major, minor, patch).
+  matched to monorepo type (library vs deployable app). Treats the open PR / branch
+  merge delta (base…HEAD) as the unit of truth—not individual commits. Reconcile by
+  rewriting single-headline notes for net consumer impact; never amalgamate task
+  diaries into one multi-prefix file. Use when adding, editing, or reconciling
+  changesets, preparing a release-impacting PR, or when the user mentions
+  changesets, .changeset/, or package version bumps.
 ---
 
 # Changesets (@changesets/cli)
@@ -16,23 +19,133 @@ A changeset file declares **which packages** bump and **how the change reads in 
 
 Release automation groups published changelogs by **category** (Features, Improvements, Bug Fixes, and related sections). Every changeset summary **must** start with a category prefix so grouping works. **Voice** (technical vs product language) still depends on monorepo type — prefix and voice are independent.
 
+## Unit of truth: PR / branch merge delta
+
+A changeset describes **consumer-visible difference between the merge base and the branch tip** (what lands when the PR merges), **not** what happened in the latest commit or agent task.
+
+**Ask before authoring or keeping a changeset:**
+
+> Relative to the PR base (usually `main` / `master`), what will users / consumers experience differently after this PR merges?
+
+If the answer is “nothing” for a given note, that changeset should not exist—even if this commit fixed a bug, reverted WIP, or repaired a regression **introduced earlier on this same branch**.
+
+**Default timing:** drafting or updating a changeset mid-task is fine, but **reconcile against base…HEAD before handoff** (review skill / PR ready). Do not treat “I completed a task” as automatic justification for a new changeset file.
+
+**Holistic means judgment, not concatenation:** Re-read the full PR and decide what release notes (if any) should exist for the finished consumer outcome. It does **not** mean keep every intermediate note, and it does **not** mean paste many `Feature:` / `Fix:` / `Improvement:` lines into one `.changeset/*.md` file.
+
+### Commit-shaped vs merge-shaped (anti-patterns)
+
+| Anti-pattern                                                                                            | Why it’s wrong                                                                 | Correct behavior                                                                                               |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Add `Fix:` because this commit fixed a bug **this branch introduced**                                   | Changelog readers never saw the broken intermediate state                      | **No new Fix changeset**; **rewrite** or leave the original Feature/Improvement **headline** if still accurate |
+| Add a second changeset for the same package describing a refinement of work already noted on the branch | Redundant / fragmented release notes                                           | **Rewrite** the existing branch changeset’s **single** headline so it describes the finished story             |
+| Stack many category-prefixed lines (`Feature:` / `Fix:` / …) in **one** changeset file                  | Invalid shape for category grouping; diary amalgamation disguised as reconcile | **One** prefixed headline per file. Collapse to the net consumer story, or use **separate files** sparingly    |
+| One changeset per agent task / commit by default                                                        | Release notes become a diary of implementation                                 | As few single-headline notes as needed for the **whole** merge delta                                           |
+| Leave stale branch changesets after scope shrunk                                                        | Notes describe work that no longer ships                                       | **Delete or rewrite** so the set matches final base…HEAD                                                       |
+
+### When a Fix _is_ appropriate on a feature branch
+
+Use `Fix:` only when the bug (or incorrect behavior) exists on the **merge base** / already-released line—i.e. consumers would hit it **without** this PR. Fixing a regression you introduced earlier in the same unreleased PR is usually **not** a Fix.
+
+### Merge-delta examples
+
+**Bad — commit-shaped Fix on the same branch**
+
+Branch already has:
+
+```markdown
+Feature: Add CSV export on the reports page
+```
+
+A later commit on the same PR fixes a crash in that new export. Agent adds:
+
+```markdown
+Fix: Prevent crash when exporting empty report ranges
+```
+
+**Wrong:** empty-range crash never shipped; consumers only see the finished feature.
+
+**Right:** keep or **rewrite** a single `Feature:` headline for CSV export; no `Fix:`.
+
+**Good — Fix against already-shipped behavior**
+
+PR only changes error handling for an export that already exists on the base branch:
+
+```markdown
+Fix: Prevent crash when exporting empty report ranges
+```
+
+**Good — reconcile after scope change**
+
+Branch had Feature + Improvement notes as **separate files**; final diff vs base only ships the feature. Delete the Improvement changeset. If the Feature headline is still accurate, leave it; otherwise **rewrite that one line**—do not append the Improvement text under it.
+
+**Bad — amalgamation (many prefixes in one file)**
+
+Branch work produced many task notes. Agent “reconciles” by concatenating them into a single changeset body:
+
+```markdown
+---
+"@acme/ui": minor
+---
+
+Feature: Add portable form controls with web and native adapters.
+
+Feature: Expose SelectContent `position`.
+
+Fix: Own uncontrolled checked state in native Checkbox.
+
+Fix: Honor Select `disabled` on the native trigger.
+
+Improvement: Align checked Checkbox checkmark weight across platforms.
+```
+
+**Wrong:** multiple category-prefixed headlines in one file; most lines are branch WIP, not distinct base…HEAD release stories. Category tooling expects **one** summary per changeset file.
+
+**Right:** decide the net consumer impact vs base, then **rewrite** to one headline (drop branch-only polish). Example:
+
+```markdown
+---
+"@acme/ui": minor
+---
+
+Feature: Add portable form controls (Label, Input, Textarea, Checkbox, Switch, RadioGroup, Select, Field, InputGroup) with web and native adapters.
+```
+
+Add a **second changeset file** only when base…HEAD also includes an **independent** consumer-visible delta (for example a `Fix:` for a bug that already existed on the merge base).
+
+### When multiple changeset files are appropriate
+
+**Default:** one changeset per affected package (or lockstep group) covering the PR’s primary release story.
+
+**Use additional files** only when the merge delta has **independent** consumer-visible outcomes that belong in different categories or need separate semver intent (for example new API + fix for a pre-existing bug in the same PR).
+
+**Do not** use one file per agent task, or one file that lists every task as prefixed bullets.
+
 ## When not to author a changeset
 
 For **ADR-only** or **agent-guidance-only** PRs (no changes to shipped packages, orb/scripts, or consumer-facing artifact behavior), **do not** add a `.changeset` file. Use `org/agents/skills/changesets-hygiene/SKILL.md` for the full exception list.
 
+Also do **not** add a changeset solely to document fixing, reverting, or polishing behavior that **never existed on the merge base** (unreleased WIP on this branch).
+
 ## Authoring order (always follow this sequence)
 
 1. **Confirm the repo uses Changesets** (`.changeset/config.json`, `@changesets/cli`).
-2. **Determine monorepo type** for the packages in the frontmatter (library, app/deployable, or hybrid). This sets **voice** only.
-3. **Choose a category prefix** from the taxonomy below. Prefixes are **required in all org repos** — not optional for library monorepos.
-4. **Write the headline** after the prefix using the voice for that monorepo type.
-5. **Set semver** in frontmatter independently of category (a bug fix can be `major` if breaking; a feature can be `patch` if additive and non-breaking).
+2. **Establish merge context** — identify the base branch / open PR (`git merge-base`, `gh pr view`). Reason about **base…HEAD**, not only files touched in the latest commit.
+3. **Inventory `.changeset/*.md` changed vs base** — every path **added, modified, or deleted** relative to the merge base (not only files new on the branch). Prefer **rewriting or removing** those files over adding another.
+4. **Decide net release intent** from the full merge delta (consumer-visible pre- vs post-merge state).
+5. **Determine monorepo type** for the packages in the frontmatter (library, app/deployable, or hybrid). This sets **voice** only.
+6. **Choose a category prefix** from the taxonomy below. Prefixes are **required in all org repos** — not optional for library monorepos.
+7. **Write or rewrite one headline** after the prefix using the voice for that monorepo type — **replace** the prior summary; do not append another prefixed line to the same file.
+8. **Set semver** in frontmatter independently of category (a bug fix can be `major` if breaking; a feature can be `patch` if additive and non-breaking).
+9. **Reconcile before handoff** — re-read all branch changesets against base…HEAD; delete no-ops; **rewrite** overlapping stories into as few single-headline files as needed; if any file lists multiple category-prefixed lines, treat that as a **failed reconcile** and collapse it.
 
 **Anti-patterns**
 
 - Do **not** pick a prefix because the _work_ mentions “features” (for example, building category-prefix support ≠ automatically `Feature:` — classify by **consumer impact**).
 - Do **not** omit a prefix expecting silent fallback — use **`Other:`** explicitly when no other category fits.
 - Do **not** conflate prefix with voice: library repos use prefixes too; the text after the prefix stays **technical**.
+- Do **not** author changesets as a per-commit or per-task diary; classify by **merge delta**.
+- Do **not** “reconcile” by concatenating task notes into one multi-prefix body; **rewrite** the net consumer story instead.
 
 ## Monorepo type (choose the right voice)
 
@@ -102,7 +215,8 @@ App monorepos still use **`Breaking:`** or **`Deprecation:`** when users must ch
 ```
 
 - **Frontmatter** — YAML between the first pair of `---` lines. Keys are **package names** (quoted if needed); values are **`major`**, **`minor`**, or **`patch`**.
-- **Body** — **Omit by default.** Most changesets are **only** frontmatter plus one prefixed summary line. Add paragraphs below only when the audience needs information that cannot fit in that line (see [Optional body](#optional-body-use-sparingly)).
+- **Headline** — **Exactly one** category-prefixed summary line after the closing `---`. Never stack multiple `Feature:` / `Fix:` / `Improvement:` (etc.) lines in the same file.
+- **Body** — **Omit by default.** Most changesets are **only** frontmatter plus that one headline. Add paragraphs below only when the audience needs information that cannot fit in that line (see [Optional body](#optional-body-use-sparingly)). Optional body is migration or must-know prose — **not** more category-prefixed changelog bullets.
 - **Multiple packages** — Add more keys in the same block (see [Changesets docs](https://github.com/changesets/changesets/blob/main/docs/adding-a-changeset.md)).
 
 ## Changelog text — library monorepos
@@ -116,6 +230,7 @@ App monorepos still use **`Breaking:`** or **`Deprecation:`** when users must ch
 - **Self-contained** — the headline (after prefix) should stand alone. Do not rely on a body paragraph.
 - **Impact over implementation** — state what consumers must know (new option, stricter validation, removed export), not how the code was refactored. Technical terms are fine when they are the consumer-facing contract (API names, config keys, breaking types).
 - **Do not** pack extra sentences into the headline. If the change is straightforward, **stop after that line**.
+- **No ADR leakage** — do not cite `ADR NNNN`, ADR paths, or “per ADR …” in the headline or optional body. Changelog readers lack that context; state the consumer-visible change itself. Also do not use ADR-local comparison labels (for example “Model B”, “Option 1”)—name the concept directly and succinctly.
 
 ### Good example — library (typical)
 
@@ -171,6 +286,18 @@ Improvement: Turn off `react/react-in-jsx-scope` in the default React preset. Th
 
 Fix: keep a **single** crisp sentence after the prefix; put migration detail in an optional body if needed.
 
+### Bad example — library (ADR leakage)
+
+```markdown
+---
+"@acme/auth-client": minor
+---
+
+Improvement: Align session handling with Model B (ADR 0032).
+```
+
+Fix: drop the ADR id and nickname; state the consumer-visible behavior (for example `Improvement: Keep session refresh on the client; server endpoints re-authorize every request.`).
+
 ## Changelog text — app-based deployable monorepos
 
 **Audience:** ordinary users of the deployed product — **not** engineers.
@@ -180,6 +307,7 @@ Fix: keep a **single** crisp sentence after the prefix; put migration detail in 
 - **Prefix required** — same taxonomy as library repos.
 - **Product language** — describe what users see, can do, or no longer struggle with.
 - **No technical concepts** — avoid API routes, database tables, package names, refactors, “backend/frontend,” framework names, and other implementation vocabulary unless it is the **user-visible product name** (for example, a branded integration users recognize).
+- **No ADR leakage** — same as library monorepos: no ADR identifiers, paths, or ADR-local nicknames in the headline or body.
 - **One short line** — same brevity rules as library monorepos.
 
 ### Good example — app (feature)
@@ -235,7 +363,7 @@ Add a body **only** when omitting it would leave the **intended audience** witho
 - **Library monorepos** — migration paths (rename map, config key moves, required commands), operational caveats.
 - **App monorepos** — user-facing steps that cannot fit in one line. Keep language non-technical.
 
-Do **not** add a body for implementation rationale, internal refactor context, or restating the headline.
+Do **not** add a body for implementation rationale, internal refactor context, ADR citations, or restating the headline.
 
 When a body is warranted, keep it **short** — a few sentences or bullets.
 
@@ -253,10 +381,16 @@ Breaking: Require `AuthClientOptions.region` and remove the deprecated `apiHost`
 
 ## Checklist before finishing
 
+- [ ] Judged against **base…HEAD** (open PR / branch), not the latest commit alone.
+- [ ] Reviewed **all** `.changeset/*` paths **added, modified, or deleted** vs base; **rewritten** or deleted instead of stacking redundant notes when possible.
+- [ ] No changeset describes fixing/reverting behavior **only introduced on this branch**.
+- [ ] Remaining set is **non-redundant**: as few notes as needed for the **net** pre- vs post-merge consumer impact (judgment, not a concatenated diary).
+- [ ] Each branch changeset has **exactly one** category-prefixed headline (no multi-prefix amalgamation).
 - [ ] Identified **monorepo type** (library, app/deployable, or hybrid) and matched **voice** for text after the prefix.
 - [ ] **Category prefix** present and appropriate (`Breaking:`, `Feature:`, `Fix:`, `Other:`, etc.).
 - [ ] Frontmatter lists every affected **published package or deployable artifact** with the right **semver** bump (independent of category).
 - [ ] **First line** after `---` is prefix + crisp, self-contained summary.
+- [ ] No `ADR NNNN`, ADR paths, or ADR-local shorthands (“Model B”, “Option 1”, etc.) in the headline or body—describe the concept or consumer impact directly.
 - [ ] **No body** unless the audience needs migration or must-know steps that cannot fit in the headline alone.
 - [ ] File is saved under `.changeset/` with a unique name (the CLI usually generates this).
 

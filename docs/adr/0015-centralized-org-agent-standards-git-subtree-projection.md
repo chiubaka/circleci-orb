@@ -161,10 +161,31 @@ Org guidance is split between a subtree-held **authoring source** and a reposito
 **Operator workflow (conceptual):**
 
 - After changing `AGENTS.org.md`, run the AGENTS projection script in write mode so root `AGENTS.md` picks up the org block.
-- Repositories may ship a single entrypoint that runs skills projection and AGENTS projection in one invocation.
+- Repositories may ship a single entrypoint that runs skills projection, AGENTS projection, and rules projection in one invocation.
 - Run the same scripts in read-only validation mode before merge or in CI to fail on drift or invalid markers.
 
 Together, this yields consistent org guidance in a tool-visible root file, preserved local overrides, and detectable drift when validation mode is used.
+
+#### Syncing always-on rules from `org/agents/rules/`
+
+Meta-behavioral always-on guidance (for example coding discipline) is authored under the subtree as plain markdown and projected into tool-native rules directories. Skills remain the home for on-demand workflows; `AGENTS.org.md` keeps only a short pointer to the rules source so Codex and other tools without a rules directory can still find the baseline.
+
+| Role                   | Path                                                                    |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Org source of truth    | `org/agents/rules/<name>.md`                                            |
+| Cursor projection      | `.cursor/rules/<name>.mdc` (`alwaysApply: true` plus body)              |
+| Claude Code projection | `.claude/rules/<name>.md` (body)                                        |
+| Projection entrypoint  | A script under `org/agents/scripts/` (for example `bootstrap-rules.sh`) |
+
+**Behavior:**
+
+- Write mode creates missing projections that match the org source (Cursor file includes YAML frontmatter; Claude file is the body).
+- Matching projections are left unchanged.
+- If a target exists with different content, report a conflict and do not overwrite (same spirit as skills bootstrap conflicts).
+- `--check` mode reports missing or conflicting projections and exits non-zero without writing.
+- Unrelated local rule files outside the org-managed names are left untouched.
+
+**Operator workflow:** After editing `org/agents/rules/`, run the rules projection script (or the combined bootstrap entrypoint) in write mode, then `--check`. Prefer a short `AGENTS.org.md` pointer over duplicating the full always-on text in org guidance.
 
 ### Design principles
 

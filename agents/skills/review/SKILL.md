@@ -29,6 +29,23 @@ Run by default after any non-trivial code change and **before** you tell the use
 - [ ] Treat package-scoped verification as additive only; flag handoff as incomplete if the root suite was skipped.
 - [ ] Confirm test layout remains consistent: tests under `test/` alongside `src/`, mirrored structure, and test-only helpers/fixtures/builders kept in `test/`.
 
+## Verification report
+
+Before handoff, produce this short structured summary (map Build / Types / Lint / Tests to root `pnpm build|typecheck|lint|test`; Security = this skill’s security section plus `application-authz` when triggered; Diff = changed file count; Scope = coding-discipline scope check). Use `NOT RUN` or `BLOCKED` when a check was skipped or could not complete—do not collapse those into `FAIL` or `N/A`.
+
+```text
+VERIFICATION REPORT
+Build:     PASS|FAIL|NOT RUN|BLOCKED
+Types:     PASS|FAIL|NOT RUN|BLOCKED
+Lint:      PASS|FAIL|NOT RUN|BLOCKED
+Tests:     PASS|FAIL|NOT RUN|BLOCKED
+Security:  PASS|FAIL|NOT RUN|BLOCKED|N/A
+Diff:      N files
+Scope:     OK|FAIL
+Overall:   READY|NOT READY
+Issues:    numbered list (or none)
+```
+
 ## Architecture and boundaries
 
 - [ ] Validate layering and boundary decisions against `AGENTS.md` and relevant ADRs.
@@ -41,14 +58,28 @@ Run by default after any non-trivial code change and **before** you tell the use
 - [ ] Check async sequencing, atomic scope usage, and ordering assumptions for race or consistency risks.
 - [ ] Flag any degraded observability or error handling in changed paths.
 - [ ] For `security/detect-object-injection`, prefer refactors over suppressions: use `process.env` dot access for valid keys, prefer `Map.get` or exhaustive `switch` over broad `Record[key]` indexing, and keep any unavoidable suppression one-line with rationale.
+- [ ] If the diff touches authentication, authorization, credentials, sessions, secured facade methods, or client capability/limit state, run the checklist in `org/agents/skills/application-authz/SKILL.md`.
+
+## Coding discipline (diff scope)
+
+- [ ] Diff is scoped to the request: no orthogonal “improvements,” drive-by refactors, comment rewrites, or unrelated dead-code cleanup.
+- [ ] Changed lines trace to the ask; orphans created by this change are cleaned up, but pre-existing dead code is left alone unless requested.
+- [ ] No speculative abstractions, configurability, or error handling beyond what was asked.
+- [ ] For non-trivial work, assumptions or ambiguity were stated or clarified before large implementation (see `org/agents/rules/coding-discipline.md` / `coding-discipline` skill).
+
+## Commit messages and PR titles
+
+- [ ] Commit subjects follow Conventional Commits (`type[(scope)][!]: description` with an allowed type) per `org/agents/skills/commit-message/SKILL.md` (ADR 0046).
+- [ ] When opening or updating a pull request, the **PR title** is a Conventional Commits **subject line** suitable as the squash-merge commit title; longer detail stays in the PR body.
 
 ## Agent guidance alignment
 
-- [ ] If repeated issues surface, update `AGENTS.md`/`org/agents/AGENTS.org.md` or create/update a focused skill.
+- [ ] If repeated issues surface, capture or reinforce an instinct via `org/agents/skills/session-learning/SKILL.md`. Promote to `AGENTS.md`, `org/agents/AGENTS.org.md`, or a focused skill only through that skill’s propose-and-confirm flow, then use the owning procedure: `update-agent-guidance` for `AGENTS` guidance and `create-skill` for skills (do not treat direct edits as an automatic alternative).
 - [ ] Keep skill scope narrow; avoid restating broad org conventions when cross-referencing is sufficient.
 - [ ] Run guidance sync scripts after org-level guidance or skill changes.
 - [ ] On repositories with Changesets, when the PR includes **releasable** work (behavior, APIs, orb/scripts, publishable configs), confirm release notes and semver bumps are expressed via a **new or updated** `.changeset/*.md` entry, **not** by editing `package.json` `version` or `CHANGELOG.md` directly, unless a maintainer asked for a hotfix to automation itself (see `org/agents/skills/changesets-hygiene/SKILL.md`). **Skip** this check when the change is **ADRs or agent guidance only** (no changeset expected per that skill).
-- [ ] When reviewing a `.changeset/*.md` entry, confirm the summary follows `org/agents/skills/changeset/SKILL.md`: **category prefix** on the headline, **voice** matched to monorepo type (technical for library packages, product-oriented for deployable artifacts), and semver in frontmatter independent of category.
+- [ ] Branch `.changeset/*.md` set matches **base…HEAD**: non-redundant **single-headline** notes for net consumer impact; no commit-diary stacking; no multi-`Feature:`/`Fix:` amalgamation in one file; no `Fix:` (etc.) for regressions only introduced on this branch; prefer rewritten existing branch changesets over stacked files (`org/agents/skills/changeset/SKILL.md` — **Unit of truth: PR / branch merge delta**).
+- [ ] When reviewing a `.changeset/*.md` entry, confirm the summary follows `org/agents/skills/changeset/SKILL.md`: **exactly one category-prefixed headline**, **voice** matched to monorepo type (technical for library packages, product-oriented for deployable artifacts), semver in frontmatter independent of category, and **no ADR leakage** (no `ADR NNNN`, ADR paths, or ADR-local shorthands such as “Model B”).
 
 ## Style and naming
 
@@ -83,3 +114,10 @@ Run by default after any non-trivial code change and **before** you tell the use
 
 - Use `jsdoc` when the diff adds, edits, or removes JSDoc or documentation driven by JSDoc lint.
 - Use `test-driven-development` to verify test layout conventions (`src/` mirrored under `test/`, with test-only helpers kept under `test/`).
+- Use `coding-discipline` (and `org/agents/rules/coding-discipline.md`) when judging whether a diff is surgical, overcomplicated, or assumption-driven.
+- Use `search-first` when the diff invents utilities, dependencies, or integrations without evidence of prior search.
+- Use `agent-orchestration` when judging whether exploration/delegation was appropriate vs over-delegated.
+- Use `application-authz` when the diff touches authn/authz (see Security above).
+- Use `playwright-e2e` when the diff adds or changes web E2E / Playwright suites.
+- Use `session-learning` when the same correction or guidance gap repeats and should become an instinct or promoted skill.
+- Use `commit-message` when checking or drafting commit subjects and PR titles (Conventional Commits per ADR 0046).

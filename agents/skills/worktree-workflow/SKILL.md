@@ -10,20 +10,43 @@ description: >-
 
 # Worktree workflow
 
-## Default location
+## Required location
 
-- Create new worktrees under the directory that contains the repository root:
-  `.worktrees/<repo>/<worktree-name>`.
-- Resolve `<repo>` from the main repository directory name.
-- Keep this location consistent so parallel worktrees are discoverable and easy to clean up.
+Use **one** path only: repository-root `.worktrees/<worktree-name>/`.
 
-Example:
+- Create every new worktree there. Do not invent alternate layouts.
+- **Forbidden:** paths outside the repository (including `../.worktrees/…` or
+  any sibling of the clone). Those sit outside the IDE workspace and cause
+  repeated permission prompts.
+- **Forbidden:** paths under `.git/` (including `.git/worktree-checkouts/…`).
+  Vite/Vitest and hooks break there.
+
+Example (from the repository root):
 
 ```bash
-# From <parent>/<repo>
-mkdir -p "../.worktrees/$(basename "$(pwd)")"
-git worktree add "../.worktrees/$(basename "$(pwd)")/<worktree-name>" -b "<branch-name>"
+mkdir -p .worktrees
+git worktree add .worktrees/<worktree-name> -b "<branch-name>"
 ```
+
+## Ignore / exclude (do not weaken)
+
+Repositories that run org bootstrap should already have these; if missing, add
+them (or re-run `org/agents/scripts/bootstrap.sh` / `bootstrap-worktrees.sh`):
+
+1. **`.gitignore`:** `.worktrees/` — keeps linked checkouts out of main-checkout
+   `git status`.
+2. **`.vscode/settings.json`:** `files.exclude` and `search.exclude` for
+   `**/.worktrees` — keeps Quick Open / search focused on the primary tree.
+3. **Do not** add `.worktrees/` to `.cursorignore` — that blocks Agent
+   Read/Write/@ from the primary window (terminal and MCP are not gated by
+   it). `.gitignore` already excludes `.worktrees/` from Cursor indexing, so
+   do not assume indexed discovery or unconditional `@` access; use explicit
+   paths and `git worktree list`.
+4. Skip stacking vendor-only ignores (for example `.claudeignore`) solely for
+   this layout; `.gitignore` covers most indexing exclusions.
+
+Discover worktrees with `git worktree list`, not by browsing the ignored folder
+in the UI. Rationale and rejected alternatives: org ADR 0047.
 
 ## Secret-file strategy
 
@@ -34,12 +57,14 @@ git worktree add "../.worktrees/$(basename "$(pwd)")/<worktree-name>" -b "<branc
   required by the repository (for example local credentials files, private keys,
   or service-account files used for development).
 - Never commit secret files from any worktree.
+- Run the repository’s install command (for example `pnpm install`) in a new
+  worktree before hooks or tests that need `node_modules`.
 
 Example:
 
 ```bash
-main_repo="/path/to/repo"
-worktree="/path/to/.worktrees/<repo>/<worktree-name>"
+main_repo="$(git rev-parse --show-toplevel)"
+worktree="$main_repo/.worktrees/<worktree-name>"
 
 ln -sfn "$main_repo/.env" "$worktree/.env"
 # Repeat for additional secret files required by the repository.
@@ -78,8 +103,12 @@ REDIS_URL="redis://localhost:63${WORKTREE_ID_SUFFIX}/0"
 
 ## Operating guidance
 
+- Prefer the primary IDE window with paths like `.worktrees/<name>/…` or
+  `git -C .worktrees/<name> …`.
 - Before starting services, confirm no conflicting ports or container names are in use.
 - Prefer deterministic naming (`<repo>_<worktree>_*`) for easy debugging and cleanup.
 - Keep worktree-specific overrides local and untracked unless the repository has
   an approved pattern for checked-in non-secret environment templates.
 - When done, stop worktree-local services before removing the worktree.
+- To move a worktree branch into the current IDE checkout (commit/push loose work,
+  remove the worktree, then check out the branch), use `adopt-worktree-branch`.

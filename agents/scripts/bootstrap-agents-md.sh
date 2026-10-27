@@ -9,6 +9,7 @@ Bootstraps root AGENTS.md from org-managed guidance with marker sections.
 
 Managed source:
   org/agents/AGENTS.org.md
+  (in the org repository itself: agents/AGENTS.org.md)
 
 Destination:
   AGENTS.md (repo root)
@@ -54,10 +55,29 @@ esac
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [[ -z "$REPO_ROOT" ]]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  local_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  embedded_root="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+  # Prefer consuming-repo layout first so AGENTS.md lands at the consumer root, not under org/.
+  if [[ -f "$embedded_root/org/agents/AGENTS.org.md" ]]; then
+    REPO_ROOT="$embedded_root"
+  elif [[ -f "$local_root/agents/AGENTS.org.md" ]]; then
+    REPO_ROOT="$local_root"
+  else
+    REPO_ROOT="$local_root"
+  fi
 fi
 
-ORG_SOURCE="$REPO_ROOT/org/agents/AGENTS.org.md"
+# Consuming repos embed this tree under org/; the org repo authors at agents/.
+if [[ -f "$REPO_ROOT/org/agents/AGENTS.org.md" ]]; then
+  ORG_SOURCE="$REPO_ROOT/org/agents/AGENTS.org.md"
+elif [[ -f "$REPO_ROOT/agents/AGENTS.org.md" ]]; then
+  ORG_SOURCE="$REPO_ROOT/agents/AGENTS.org.md"
+else
+  echo "Org guidance source not found (tried org/agents/AGENTS.org.md and agents/AGENTS.org.md under $REPO_ROOT)" >&2
+  exit 1
+fi
+
 TARGET_AGENTS="$REPO_ROOT/AGENTS.md"
 
 ORG_START='<!-- ORG_GUIDANCE_START -->'

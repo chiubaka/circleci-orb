@@ -14,6 +14,7 @@ secret store). The token needs `read:packages` (and org access as required by Gi
 
 - `org/docs/adr/`: org-wide ADRs and architecture conventions.
 - `org/agents/AGENTS.org.md`: org-managed baseline guidance inserted into each repo root `AGENTS.md`.
+- `org/agents/rules/`: org-managed always-on behavioral rules projected into `.cursor/rules/` and `.claude/rules/`.
 - `org/agents/skills/`: org-managed agent skills that can be distributed into local agent skill paths.
 - `org/agents/scripts/`: bootstrap/sync scripts that propagate org guidance into local repo surfaces.
 
@@ -30,7 +31,9 @@ Use org bootstrap scripts from `org/agents/scripts/`:
 
 - `bootstrap-agents-md.sh`: syncs the org-managed section of root `AGENTS.md` from `org/agents/AGENTS.org.md`.
 - `bootstrap-skills.sh`: links org-managed skills from `org/agents/skills/` into `.agents/skills/`.
-- `bootstrap.sh`: runs both scripts in order.
+- `bootstrap-rules.sh`: projects org-managed rules from `org/agents/rules/` into `.cursor/rules/` and `.claude/rules/`.
+- `bootstrap-worktrees.sh`: ensures in-repo `.worktrees/` gitignore and IDE exclude entries.
+- `bootstrap.sh`: runs skills, AGENTS, rules, and worktrees bootstrap scripts in order.
 
 Run from repository root:
 
@@ -46,6 +49,8 @@ Run from repository root:
 - If org guidance changed, verify with:
   - `org/agents/scripts/bootstrap-agents-md.sh --check`
   - (and for skill additions/renames) `org/agents/scripts/bootstrap-skills.sh --check`
+  - (and for rule additions/edits) `org/agents/scripts/bootstrap-rules.sh --check`
+  - (and for worktree layout) `org/agents/scripts/bootstrap-worktrees.sh --check`
 
 ## Bootstrap `org/` into a new repository (`git subtree`)
 

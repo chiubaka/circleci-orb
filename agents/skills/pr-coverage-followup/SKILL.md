@@ -19,7 +19,7 @@ Resolve failing coverage checks on pull requests by adding **real, behavior-focu
 - A PR check named like **codecov**, **coverage**, or **test-coverage** is failing.
 - Codecov (or similar) comments flag uncovered lines in the diff.
 - Review feedback asks for tests on changed code.
-- You are running `pr-review-thread-followup` and a thread or CI signal involves coverage.
+- You are running `pr-review-thread-followup` and a thread, top-level comment, or CI signal involves coverage.
 
 Pair with `test-driven-development` when writing tests and `review` before handoff.
 
@@ -85,7 +85,7 @@ Do **not** add tests solely to satisfy Codecov or hit a percentage. Skip or push
 - A test would **duplicate** an existing test at a higher level without adding a new failure mode.
 - The reviewer or bot asks for coverage on **trivial accessors**—reply with rationale instead of padding.
 
-If patch coverage cannot reasonably improve without low-value tests, say so in the PR (or review thread) and suggest: threshold exception, `codecov.yml` adjustment for that path, or accepting the gap with justification.
+If patch coverage cannot reasonably improve without low-value tests, say so in the PR conversation or the relevant review thread and suggest: threshold exception, `codecov.yml` adjustment for that path, or accepting the gap with justification.
 
 ## Adding meaningful tests
 
@@ -109,11 +109,11 @@ Follow `test-driven-development` for placement, naming, and assertion quality.
 
 ### With `pr-review-thread-followup`
 
-When triaging threads **or** when `gh pr checks` shows a failing coverage check:
+When triaging inline threads, top-level comments, **or** when `gh pr checks` shows a failing coverage check:
 
 1. Run this skill **before** claiming the PR is ready.
 2. Implement meaningful tests for classified **meaningful** gaps.
-3. Reply on coverage-related review threads: what you tested, what you skipped and why, or link to the commit that adds tests.
+3. Reply on coverage-related review threads **or** top-level Codecov/bot comments: what you tested, what you skipped and why, or link to the commit that adds tests.
 4. Re-push and confirm the coverage check passes—or document why an exemption is appropriate.
 
 ### Handoff checklist
@@ -125,11 +125,11 @@ Coverage follow-up:
 - [ ] Added tests only for meaningful behavior
 - [ ] Did not add padding tests to game the threshold
 - [ ] Re-ran tests (and coverage if available locally)
-- [ ] Updated PR / review threads with outcomes
+- [ ] Updated PR conversation / review threads with outcomes
 ```
 
 ## Related skills
 
-- `pr-review-thread-followup` — reply in threads when coverage feedback is part of review.
+- `pr-review-thread-followup` — reply in threads or on the PR conversation when coverage feedback is part of review.
 - `test-driven-development` — test layout and quality bar when adding coverage.
 - `review` — final gate before merge.

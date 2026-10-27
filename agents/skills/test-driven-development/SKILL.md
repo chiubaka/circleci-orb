@@ -40,3 +40,20 @@ Use whenever code behavior changes or a bug/regression is being fixed. Pair this
 
 - [ ] Run affected package test suites while iterating.
 - [ ] Before handoff, run repository-required verification commands from `AGENTS.md`.
+- [ ] For critical web user journeys, add or extend Playwright E2E per `playwright-e2e` / ADR 0040; do not replace unit TDD with E2E.
+
+## Non-test / multi-step tasks
+
+When the ask is not primarily a behavior change with tests (or spans several verification steps), still use goal-driven execution from `coding-discipline`:
+
+1. Reframe the ask as a verifiable goal (what “done” looks like).
+1. State a brief plan with explicit checks:
+
+```text
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+```
+
+1. Loop until each check passes before declaring the task complete.
+
+For behavior changes, prefer the TDD loop above; use this section for orchestration, docs, or multi-step operational work. Always-on baseline: `org/agents/rules/coding-discipline.md`.
