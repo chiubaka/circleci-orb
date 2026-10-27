@@ -8,9 +8,11 @@ description: >
 
   Prefer running this after setup / pnpm install (changesets-release-pr,
   changesets-gated-publish, and promote-prod-release mint after install by default).
-  A pre-step mint is unnecessary for those jobs and replaces the packages-read
-  GITHUB_TOKEN before install; if you still mint early, mintGithubToken preserves the
-  previous GITHUB_TOKEN as GITHUB_PACKAGES_TOKEN so install can use it.
+  A pre-step mint is unnecessary for those jobs and replaces packages-read auth
+  before install; if you still mint early, mintGithubToken preserves the previous
+  GITHUB_TOKEN as GITHUB_PACKAGES_READ_TOKEN (and deprecated GITHUB_PACKAGES_TOKEN)
+  so install can use it. Prefer providing install auth as GITHUB_PACKAGES_READ_TOKEN
+  (e.g. github-packages-read context) so it never collides with minted GITHUB_TOKEN.
 
 parameters:
   github-api-url:

@@ -102,6 +102,7 @@ export_github_token() {
 
 # Preserve the pre-mint packages-read credential so pnpm install / setup-npm-registry-auth
 # can still authenticate to GitHub Packages after GITHUB_TOKEN is replaced with ghs_….
+# Prefer GITHUB_PACKAGES_READ_TOKEN; also set deprecated GITHUB_PACKAGES_TOKEN during transition.
 preserve_github_packages_token() {
   local previous_token=$1
 
@@ -114,15 +115,19 @@ preserve_github_packages_token() {
   if [[ "$previous_token" == ghs_* ]]; then
     return 0
   fi
-  if [[ -n "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
+  if [[ -n "${GITHUB_PACKAGES_READ_TOKEN:-}" || -n "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
     return 0
   fi
 
+  export GITHUB_PACKAGES_READ_TOKEN="$previous_token"
   export GITHUB_PACKAGES_TOKEN="$previous_token"
   if [[ -n "${BASH_ENV:-}" ]]; then
-    printf 'export GITHUB_PACKAGES_TOKEN=%q\n' "$previous_token" >>"$BASH_ENV"
+    {
+      printf 'export GITHUB_PACKAGES_READ_TOKEN=%q\n' "$previous_token"
+      printf 'export GITHUB_PACKAGES_TOKEN=%q\n' "$previous_token"
+    } >>"$BASH_ENV"
   fi
-  echo "mintGithubToken: preserved previous GITHUB_TOKEN as GITHUB_PACKAGES_TOKEN for package installs."
+  echo "mintGithubToken: preserved previous GITHUB_TOKEN as GITHUB_PACKAGES_READ_TOKEN (and deprecated GITHUB_PACKAGES_TOKEN) for package installs."
 }
 
 resolve_github_token() {

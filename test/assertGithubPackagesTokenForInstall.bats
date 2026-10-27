@@ -3,14 +3,22 @@
 setup() {
   load "helpers/setup"
   _setup
-  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_PACKAGES_READ_TOKEN \
+    GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
 }
 
 teardown() {
-  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
+  unset GITHUB_TOKEN GH_TOKEN GITHUB_PACKAGES_TOKEN GITHUB_PACKAGES_READ_TOKEN \
+    GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID
 }
 
-@test "passes when GITHUB_PACKAGES_TOKEN is set even if GITHUB_TOKEN is ghs_" {
+@test "passes when GITHUB_PACKAGES_READ_TOKEN is set even if GITHUB_TOKEN is ghs_" {
+  GITHUB_PACKAGES_READ_TOKEN=ghp_read GITHUB_TOKEN=ghs_minted \
+    run assertGithubPackagesTokenForInstall.sh
+  assert_success
+}
+
+@test "passes when deprecated GITHUB_PACKAGES_TOKEN is set even if GITHUB_TOKEN is ghs_" {
   GITHUB_PACKAGES_TOKEN=ghp_packages GITHUB_TOKEN=ghs_minted \
     run assertGithubPackagesTokenForInstall.sh
   assert_success
@@ -22,14 +30,15 @@ teardown() {
 }
 
 @test "passes when no GitHub credentials are configured" {
-  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN -u GITHUB_APP_ID \
-    -u GITHUB_APP_PRIVATE_KEY -u GITHUB_APP_INSTALLATION_ID \
+  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN -u GITHUB_PACKAGES_READ_TOKEN \
+    -u GITHUB_APP_ID -u GITHUB_APP_PRIVATE_KEY -u GITHUB_APP_INSTALLATION_ID \
     assertGithubPackagesTokenForInstall.sh
   assert_success
 }
 
-@test "fails when GITHUB_TOKEN is an installation token without GITHUB_PACKAGES_TOKEN" {
-  run env -u GITHUB_PACKAGES_TOKEN GITHUB_TOKEN=ghs_minted_only assertGithubPackagesTokenForInstall.sh
+@test "fails when GITHUB_TOKEN is an installation token without packages-read env" {
+  run env -u GITHUB_PACKAGES_TOKEN -u GITHUB_PACKAGES_READ_TOKEN \
+    GITHUB_TOKEN=ghs_minted_only assertGithubPackagesTokenForInstall.sh
   assert_failure
   assert_output --partial 'installation token'
   assert_output --partial 'packages-read token is required'
@@ -37,7 +46,7 @@ teardown() {
 }
 
 @test "fails when app credentials are set without a packages-read token" {
-  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN \
+  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN -u GITHUB_PACKAGES_READ_TOKEN \
     GITHUB_APP_ID=1 GITHUB_APP_PRIVATE_KEY=key GITHUB_APP_INSTALLATION_ID=2 \
     assertGithubPackagesTokenForInstall.sh
   assert_failure

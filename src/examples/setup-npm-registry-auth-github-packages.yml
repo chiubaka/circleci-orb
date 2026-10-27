@@ -1,6 +1,8 @@
 description: >
-  Route @chiubaka scoped packages to GitHub Packages using GITHUB_TOKEN (read:packages for install;
-  add write:packages for publish). Public packages still use the default npm registry.
+  Route @chiubaka scoped packages to GitHub Packages using GITHUB_PACKAGES_READ_TOKEN
+  from a github-packages-read context (read:packages for install). Public packages still
+  use the default npm registry. GITHUB_PACKAGES_TOKEN and GITHUB_TOKEN remain legacy
+  fallbacks for one release window.
 
 usage:
   version: 2.1

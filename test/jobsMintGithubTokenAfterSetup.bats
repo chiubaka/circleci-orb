@@ -47,7 +47,7 @@ PY
   assert_success
 }
 
-@test "setup install prefers GITHUB_PACKAGES_TOKEN via override-ci-command" {
+@test "setup install prefers GITHUB_PACKAGES_READ_TOKEN via override-ci-command" {
   run python3 - "$PROJECT_ROOT" <<'PY'
 from pathlib import Path
 import sys
@@ -55,6 +55,7 @@ import sys
 text = (Path(sys.argv[1]) / "src" / "commands" / "setup.yml").read_text()
 required = [
     "assertGithubPackagesTokenForInstall.sh",
+    "GITHUB_PACKAGES_READ_TOKEN",
     "GITHUB_PACKAGES_TOKEN",
     "override-ci-command",
     "pnpm install --frozen-lockfile",

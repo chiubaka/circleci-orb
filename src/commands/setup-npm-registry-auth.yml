@@ -2,8 +2,10 @@ description: >
   Append npm authentication lines to the user npmrc for registry.npmjs.org and/or
   GitHub Packages (npm.pkg.github.com). For GitHub Packages, only the configured
   scope (default @chiubaka) is routed to npm.pkg.github.com; public packages still
-  resolve from the default registry. Use a CircleCI context whose token has
-  read:packages for installs and write:packages (plus contents:read where needed) for publish.
+  resolve from the default registry. Prefer a CircleCI context named
+  github-packages-read that exposes GITHUB_PACKAGES_READ_TOKEN (read:packages for
+  installs). write:packages (plus contents:read where needed) remains a separate
+  publish credential concern.
 
 parameters:
   registry-backend:
@@ -15,7 +17,8 @@ parameters:
     description: >
       npmjs: append //registry.npmjs.org/:_authToken using NPM_TOKEN.
       github-packages: map @<owner> to npm.pkg.github.com and authenticate with
-      GITHUB_PACKAGES_TOKEN when set, otherwise GITHUB_TOKEN.
+      GITHUB_PACKAGES_READ_TOKEN (preferred), deprecated GITHUB_PACKAGES_TOKEN, or
+      legacy GITHUB_TOKEN.
   owner:
     type: string
     default: chiubaka

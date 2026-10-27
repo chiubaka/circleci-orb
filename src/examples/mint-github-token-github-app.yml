@@ -3,9 +3,10 @@ description: >
   chiubaka/circleci-orb with post-install mint (changesets-release-pr,
   changesets-gated-publish, and promote-prod-release mint after setup by default).
   Store GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID in a
-  CircleCI context (client-owned app). Provide a packages-read GITHUB_TOKEN via a
-  second context listed last so pnpm install can read private GitHub Packages before
-  mint replaces GITHUB_TOKEN. A pre-steps mint is unnecessary for those jobs.
+  CircleCI context (client-owned app). Provide GITHUB_PACKAGES_READ_TOKEN via a
+  github-packages-read context so pnpm install can read private GitHub Packages
+  without colliding with minted GITHUB_TOKEN. A pre-steps mint is unnecessary for
+  those jobs.
 
 usage:
   version: 2.1

@@ -1,7 +1,8 @@
 description: >
   PR check that Changesets are valid (pnpm exec changeset status). If pnpm install pulls private
   @chiubaka packages from GitHub Packages, pass pre-install-steps with setup-npm-registry-auth and
-  a context providing GITHUB_TOKEN (read:packages). Hybrid monorepos: org ADR 0027.
+  a github-packages-read context providing GITHUB_PACKAGES_READ_TOKEN (read:packages).
+  Hybrid monorepos: org ADR 0027.
 
 usage:
   version: 2.1
