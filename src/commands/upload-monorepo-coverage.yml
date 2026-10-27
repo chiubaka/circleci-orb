@@ -1,11 +1,17 @@
 description: >
   Uploads Codecov coverage for each pnpm workspace package that has a matching directory under
-  the coverage path (for example reports/coverage/<packagePath>). The workspace root package
-  is skipped: there is no separate upload for the entire tree under the coverage root, so the
-  root `package.json` name is not used as a Codecov flag. Leaf packages under the workspace
-  continue to receive one upload each when their per-package coverage directory exists. Package
-  names are normalized to Codecov-safe flags (for example `@chiubaka/lint` becomes
-  `lint`) before upload.
+  the coverage path (for example reports/coverage/<packagePath>). Empty, stub, and zero-hit
+  reports are skipped so carryforward flags are not poisoned by stale or untested packages.
+  The workspace root package is skipped: there is no separate upload for the entire tree under
+  the coverage root, so the root `package.json` name is not used as a Codecov flag. Leaf
+  packages continue to receive one upload each when their per-package coverage directory
+  contains a meaningful report. Package names are normalized to Codecov-safe flags (for
+  example `@chiubaka/lint` becomes `lint`) before upload.
+
+  Turbo tip: declare per-package coverage outputs (for example
+  `reports/coverage/<packagePath>/**` from that package only). Do not claim a shared
+  `$TURBO_ROOT$/reports/coverage/**` output on every `test` task — cache restore can resurrect
+  sibling coverage trees that this command would otherwise treat as fresh uploads.
 
 parameters:
   app-dir:
@@ -46,6 +52,12 @@ parameters:
     type: string
     default: ""
     description: Comma-separated list of additional Codecov flags for this upload.
+  skip-zero-hit:
+    type: boolean
+    default: true
+    description: >
+      Skip LCOV / coverage-final.json reports whose recorded hit counts are all zero.
+      Set false only when you intentionally want zero-hit reports uploaded.
   codecov-version:
     type: string
     default: latest
@@ -73,6 +85,7 @@ steps:
         CODECOV_REQUIRE_UPLOADS: << parameters.require-uploads >>
         CODECOV_FILES: << parameters.files >>
         CODECOV_FLAGS: << parameters.flags >>
+        CODECOV_SKIP_ZERO_HIT: << parameters.skip-zero-hit >>
         CODECOV_VERSION: << parameters.codecov-version >>
         CODECOV_SKIP_VALIDATION: << parameters.skip-codecov-cli-validation >>
         CODECOV_CLI_URL: << parameters.codecov-cli-base-url >>

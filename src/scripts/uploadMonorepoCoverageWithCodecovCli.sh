@@ -182,6 +182,180 @@ fi
 IFS=',' read -r -a configured_files <<< "${CODECOV_FILES:-}"
 IFS=',' read -r -a configured_flags <<< "${CODECOV_FLAGS:-}"
 
+if [[ "${CODECOV_SKIP_ZERO_HIT:-true}" == "true" ]] || [[ "${CODECOV_SKIP_ZERO_HIT:-1}" == "1" ]]; then
+  skip_zero_hit=true
+else
+  skip_zero_hit=false
+fi
+
+# Trim leading/trailing whitespace from a string value.
+trim_whitespace() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+# Collect coverage report paths under a package coverage directory.
+# When CODECOV_FILES lists non-empty entries, only those basenames/relative paths
+# are considered. Otherwise look for common report filenames Codecov would discover.
+collect_coverage_report_files() {
+  local package_coverage_dir="$1"
+  local -n _out_files=$2
+  local candidate trimmed has_configured_files=false
+
+  _out_files=()
+
+  for candidate in "${configured_files[@]+"${configured_files[@]}"}"; do
+    trimmed="$(trim_whitespace "$candidate")"
+    if [[ -n "$trimmed" ]]; then
+      has_configured_files=true
+      break
+    fi
+  done
+
+  if [[ "$has_configured_files" == "true" ]]; then
+    for candidate in "${configured_files[@]}"; do
+      trimmed="$(trim_whitespace "$candidate")"
+      [[ -z "$trimmed" ]] && continue
+      if [[ -f "$package_coverage_dir/$trimmed" ]]; then
+        _out_files+=("$package_coverage_dir/$trimmed")
+      elif [[ -f "$trimmed" ]]; then
+        _out_files+=("$trimmed")
+      fi
+    done
+    return
+  fi
+
+  for candidate in \
+    lcov.info \
+    coverage/lcov.info \
+    coverage-final.json \
+    coverage/coverage-final.json \
+    coverage.xml \
+    coverage/coverage.xml \
+    cobertura-coverage.xml \
+    clover.xml; do
+    if [[ -f "$package_coverage_dir/$candidate" ]]; then
+      _out_files+=("$package_coverage_dir/$candidate")
+    fi
+  done
+}
+
+# True when an LCOV file has at least one SF: source record.
+lcov_has_source_files() {
+  local report_file="$1"
+  grep -qE '^SF:' "$report_file"
+}
+
+# True when an LCOV file records at least one executed line or branch hit.
+lcov_has_nonzero_hits() {
+  local report_file="$1"
+  # DA:<line>,<hits> — hits may be followed by optional checksum fields.
+  if grep -qE '^DA:[0-9]+,([1-9][0-9]*)(,|$)' "$report_file"; then
+    return 0
+  fi
+  # BRDA:<line>,<block>,<branch>,<taken> — taken is '-' or a count.
+  if grep -qE '^BRDA:[0-9]+,[0-9]+,[^,]*,([1-9][0-9]*)$' "$report_file"; then
+    return 0
+  fi
+  return 1
+}
+
+# True when a coverage-final.json (Istanbul) report includes any non-zero hit counts.
+istanbul_json_has_nonzero_hits() {
+  local report_file="$1"
+  if ! command -v jq >/dev/null 2>&1; then
+    # Without jq, treat non-empty JSON as meaningful rather than risk false skips.
+    [[ -s "$report_file" ]]
+    return
+  fi
+  jq -e '
+    type == "object" and (
+      to_entries
+      | map(.value)
+      | map(
+          ((.s // {}) | to_entries | map(.value) | add // 0)
+          + ((.f // {}) | to_entries | map(.value) | add // 0)
+          + ((.b // {}) | to_entries | map(.value | if type == "array" then (add // 0) else . end) | add // 0)
+        )
+      | add // 0
+    ) > 0
+  ' "$report_file" >/dev/null 2>&1
+}
+
+# True when a Cobertura/Clover-style XML report looks non-empty (has class/file nodes or positive rates).
+coverage_xml_looks_meaningful() {
+  local report_file="$1"
+  if ! [[ -s "$report_file" ]]; then
+    return 1
+  fi
+  if grep -qE '<(class|file)[ >]' "$report_file"; then
+    return 0
+  fi
+  if grep -qE '(line-rate|branch-rate|lines-covered)="(0\.[1-9]|[1-9])' "$report_file"; then
+    return 0
+  fi
+  return 1
+}
+
+# Decide whether a single report file represents meaningful new coverage.
+coverage_report_file_is_meaningful() {
+  local report_file="$1"
+  local base
+  base="$(basename "$report_file")"
+
+  if ! [[ -f "$report_file" ]] || ! [[ -s "$report_file" ]]; then
+    return 1
+  fi
+
+  case "$base" in
+    *.info)
+      if ! lcov_has_source_files "$report_file"; then
+        return 1
+      fi
+      if [[ "$skip_zero_hit" == "true" ]] && ! lcov_has_nonzero_hits "$report_file"; then
+        return 1
+      fi
+      return 0
+      ;;
+    coverage-final.json)
+      if [[ "$skip_zero_hit" == "true" ]]; then
+        istanbul_json_has_nonzero_hits "$report_file"
+        return
+      fi
+      return 0
+      ;;
+    *.xml)
+      coverage_xml_looks_meaningful "$report_file"
+      return
+      ;;
+    *)
+      # Unknown formats: require non-empty content only.
+      return 0
+      ;;
+  esac
+}
+
+# True when the package coverage directory has at least one meaningful report to upload.
+package_coverage_is_meaningful() {
+  local package_coverage_dir="$1"
+  local report_files=()
+  local report_file
+
+  collect_coverage_report_files "$package_coverage_dir" report_files
+  if ((${#report_files[@]} == 0)); then
+    return 1
+  fi
+
+  for report_file in "${report_files[@]}"; do
+    if coverage_report_file_is_meaningful "$report_file"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 sanitize_package_flag() {
   local raw_name="$1"
   local sanitized
@@ -254,6 +428,11 @@ while IFS=$'\t' read -r package_name package_abs_path; do
 
   if [[ ! -d "$package_coverage_dir" ]]; then
     echo "Skipping coverage upload for $package_name because $package_coverage_dir does not exist"
+    continue
+  fi
+
+  if ! package_coverage_is_meaningful "$package_coverage_dir"; then
+    echo "Skipping coverage upload for $package_name because $package_coverage_dir has no meaningful coverage report (empty, stub, or zero-hit)"
     continue
   fi
 
