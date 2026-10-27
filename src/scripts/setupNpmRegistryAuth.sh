@@ -45,17 +45,25 @@ case "$registry_backend" in
     fi
     ;;
   github-packages)
-    # Prefer GITHUB_PACKAGES_TOKEN when mint-github-token replaced GITHUB_TOKEN with ghs_….
-    packages_token="${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}"
+    # Install (read): prefer GITHUB_PACKAGES_READ_TOKEN, then deprecated GITHUB_PACKAGES_TOKEN,
+    # then legacy GITHUB_TOKEN. Publish: prefer write-capable GITHUB_PACKAGES_TOKEN / GITHUB_TOKEN
+    # so a read-only GITHUB_PACKAGES_READ_TOKEN does not poison the npmrc used for publish.
+    registry_access=${REGISTRY_ACCESS:-read}
+    access_lower=$(printf '%s' "$registry_access" | tr '[:upper:]' '[:lower:]')
+    if [[ "$access_lower" == "publish" ]]; then
+      packages_token="${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-${GITHUB_PACKAGES_READ_TOKEN:-}}}"
+    else
+      packages_token="${GITHUB_PACKAGES_READ_TOKEN:-${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}}"
+    fi
     if [[ -z "$packages_token" ]]; then
-      echo "setupNpmRegistryAuth: GITHUB_TOKEN (or GITHUB_PACKAGES_TOKEN) must be set when registry-backend is github-packages." >&2
+      echo "setupNpmRegistryAuth: GITHUB_PACKAGES_READ_TOKEN must be set when registry-backend is github-packages (GITHUB_PACKAGES_TOKEN and GITHUB_TOKEN remain legacy fallbacks)." >&2
       echo "Grant read:packages for install-only jobs; add write:packages (and repo scope as needed) for publishing." >&2
-      echo "GitHub App installation tokens (ghs_…) are not a packages-read credential; mint after install or preserve the pre-mint token as GITHUB_PACKAGES_TOKEN." >&2
+      echo "GitHub App installation tokens (ghs_…) are not a packages-read credential; mint after install or preserve the pre-mint token as GITHUB_PACKAGES_READ_TOKEN." >&2
       exit 1
     fi
-    if [[ "$packages_token" == ghs_* && -z "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
+    if [[ "$packages_token" == ghs_* && -z "${GITHUB_PACKAGES_READ_TOKEN:-}" && -z "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
       echo "setupNpmRegistryAuth: GITHUB_TOKEN is a GitHub App installation token (ghs_…), which cannot download private packages owned by another org." >&2
-      echo "Provide a packages-read token as GITHUB_TOKEN at job start (e.g. github-packages-read context, listed last), or set GITHUB_PACKAGES_TOKEN. Prefer minting after install." >&2
+      echo "Provide a packages-read token as GITHUB_PACKAGES_READ_TOKEN (e.g. github-packages-read context), or set GITHUB_PACKAGES_TOKEN / GITHUB_TOKEN as a legacy fallback. Prefer minting after install." >&2
       exit 1
     fi
     {

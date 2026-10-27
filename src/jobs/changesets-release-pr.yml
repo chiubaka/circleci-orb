@@ -4,8 +4,9 @@ description: >
   Skips cleanly when there are no bumps (e.g. empty or verification-only changesets). Filter the
   workflow to primary-branch only on the client side. By default mints GITHUB_TOKEN after
   setup/install (mint-github-token: true) so packages-read auth survives pnpm install; a
-  pre-steps mint is unnecessary. Requires packages-read GITHUB_TOKEN for private GitHub
-  Packages plus app credentials or a write-capable token for the release PR.
+  pre-steps mint is unnecessary. Requires GITHUB_PACKAGES_READ_TOKEN (github-packages-read
+  context) for private GitHub Packages plus app credentials or a write-capable token for
+  the release PR.
 
 executor:
   name: docker-node
@@ -132,8 +133,9 @@ parameters:
     default: true
     description: >
       When true (default), mint or resolve GITHUB_TOKEN after setup/install and before
-      git/gh steps. Prefer this over a pre-steps mint so pnpm install keeps the
-      packages-read GITHUB_TOKEN. A pre-step mint is unnecessary.
+      git/gh steps. Prefer this over a pre-steps mint so pnpm install keeps
+      GITHUB_PACKAGES_READ_TOKEN (or legacy packages-read fallbacks). A pre-step mint
+      is unnecessary.
   always-auth:
     type: boolean
     default: true

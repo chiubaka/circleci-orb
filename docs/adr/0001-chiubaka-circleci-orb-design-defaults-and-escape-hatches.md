@@ -92,7 +92,7 @@ Chosen option: **Layered defaults with explicit parameters, shared scripts in th
 - Provide **`setup-npm-registry-auth`** (or equivalent) supporting:
   - **`npmjs`** — public or npmjs-hosted publishing (`registry.npmjs.org`).
   - **`github-packages`** — GitHub Packages (`npm.pkg.github.com`) for `@chiubaka/*` per org [ADR 0034](../../org/docs/adr/0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md).
-- Standardize on **`GITHUB_TOKEN`** in documentation and examples for GitHub Packages auth in CircleCI (subject to least-privilege tokens in contexts).
+- Standardize on **`GITHUB_PACKAGES_READ_TOKEN`** in documentation and examples for GitHub Packages *install* auth in CircleCI (e.g. `github-packages-read` context; subject to least-privilege tokens). Keep **`GITHUB_PACKAGES_TOKEN`** as a deprecated alias and **`GITHUB_TOKEN`** as a legacy fallback for one release window; reserve **`GITHUB_TOKEN`** for `gh` / App mint flows and publish credentials separately.
 
 ### 6. Encoding org release patterns
 
