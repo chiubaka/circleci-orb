@@ -108,6 +108,12 @@ preserve_github_packages_token() {
   if [[ -z "$previous_token" ]]; then
     return 0
   fi
+  # Installation tokens are not packages-read credentials. Copying a prior ghs_…
+  # (e.g. from an earlier mint) would make assertGithubPackagesTokenForInstall and
+  # setupNpmRegistryAuth treat it as a valid packages token.
+  if [[ "$previous_token" == ghs_* ]]; then
+    return 0
+  fi
   if [[ -n "${GITHUB_PACKAGES_TOKEN:-}" ]]; then
     return 0
   fi

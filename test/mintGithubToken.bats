@@ -179,6 +179,22 @@ _run_mint_github_token_main() {
   assert_equal "ghp_already_set" "$GITHUB_PACKAGES_TOKEN"
 }
 
+@test "mint_github_token_main does not preserve a previous installation token as GITHUB_PACKAGES_TOKEN" {
+  curl_mock="$(mock_create)"
+  mock_set_output "${curl_mock}" '{"token":"ghs_second_mint","expires_at":"2099-01-01T00:00:00Z"}'
+  bindir=$(mktemp -d)
+  ln -sf "$curl_mock" "${bindir}/curl"
+
+  GITHUB_TOKEN=ghs_from_earlier_mint
+  GITHUB_APP_ID=12345
+  GITHUB_APP_PRIVATE_KEY="$TEST_APP_PRIVATE_KEY"
+  GITHUB_APP_INSTALLATION_ID=98765
+  PATH="${bindir}:$PATH" _run_mint_github_token_main >/dev/null
+
+  assert_equal "ghs_second_mint" "$GITHUB_TOKEN"
+  [[ -z "${GITHUB_PACKAGES_TOKEN:-}" ]]
+}
+
 @test "mint_github_token_main does not set GITHUB_PACKAGES_TOKEN when passing GITHUB_TOKEN through" {
   GITHUB_TOKEN=ghp_direct
   _run_mint_github_token_main >/dev/null
