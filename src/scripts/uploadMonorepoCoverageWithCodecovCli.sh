@@ -227,19 +227,20 @@ collect_coverage_report_files() {
     return
   fi
 
-  for candidate in \
-    lcov.info \
-    coverage/lcov.info \
-    coverage-final.json \
-    coverage/coverage-final.json \
-    coverage.xml \
-    coverage/coverage.xml \
-    cobertura-coverage.xml \
-    clover.xml; do
-    if [[ -f "$package_coverage_dir/$candidate" ]]; then
-      _out_files+=("$package_coverage_dir/$candidate")
-    fi
-  done
+  # Recurse like Codecov's --dir search so nested reports (e.g. coverage/nested/lcov.info)
+  # are not skipped while Codecov would still discover them.
+  local found
+  while IFS= read -r -d '' found; do
+    _out_files+=("$found")
+  done < <(
+    find "$package_coverage_dir" -type f \( \
+      -name 'lcov.info' -o \
+      -name 'coverage-final.json' -o \
+      -name 'coverage.xml' -o \
+      -name 'cobertura-coverage.xml' -o \
+      -name 'clover.xml' \
+    \) -print0 2>/dev/null | sort -z
+  )
 }
 
 # True when an LCOV file has at least one SF: source record.
@@ -299,6 +300,18 @@ coverage_xml_looks_meaningful() {
   return 1
 }
 
+# True when Cobertura (hits=) or Clover (count=) XML records at least one positive hit.
+coverage_xml_has_nonzero_hits() {
+  local report_file="$1"
+  if grep -qE 'hits="([1-9][0-9]*)"' "$report_file"; then
+    return 0
+  fi
+  if grep -qE '<line[^>]*[[:space:]]count="([1-9][0-9]*)"' "$report_file"; then
+    return 0
+  fi
+  return 1
+}
+
 # Decide whether a single report file represents meaningful new coverage.
 coverage_report_file_is_meaningful() {
   local report_file="$1"
@@ -327,8 +340,13 @@ coverage_report_file_is_meaningful() {
       return 0
       ;;
     *.xml)
-      coverage_xml_looks_meaningful "$report_file"
-      return
+      if ! coverage_xml_looks_meaningful "$report_file"; then
+        return 1
+      fi
+      if [[ "$skip_zero_hit" == "true" ]] && ! coverage_xml_has_nonzero_hits "$report_file"; then
+        return 1
+      fi
+      return 0
       ;;
     *)
       # Unknown formats: require non-empty content only.
@@ -337,23 +355,31 @@ coverage_report_file_is_meaningful() {
   esac
 }
 
-# True when the package coverage directory has at least one meaningful report to upload.
-package_coverage_is_meaningful() {
+# Collect report paths under a package coverage directory that pass meaningfulness checks.
+collect_meaningful_coverage_report_files() {
   local package_coverage_dir="$1"
+  local -n _out_meaningful=$2
   local report_files=()
   local report_file
 
+  _out_meaningful=()
   collect_coverage_report_files "$package_coverage_dir" report_files
-  if ((${#report_files[@]} == 0)); then
-    return 1
-  fi
-
-  for report_file in "${report_files[@]}"; do
+  for report_file in "${report_files[@]+"${report_files[@]}"}"; do
     if coverage_report_file_is_meaningful "$report_file"; then
-      return 0
+      _out_meaningful+=("$report_file")
     fi
   done
-  return 1
+}
+
+# Path suitable for Codecov --file: relative to the package coverage dir when possible.
+coverage_report_upload_path() {
+  local report_file="$1"
+  local package_coverage_dir="$2"
+  if [[ "$report_file" == "$package_coverage_dir/"* ]]; then
+    printf '%s' "${report_file#"$package_coverage_dir/"}"
+  else
+    printf '%s' "$report_file"
+  fi
 }
 
 sanitize_package_flag() {
@@ -431,7 +457,9 @@ while IFS=$'\t' read -r package_name package_abs_path; do
     continue
   fi
 
-  if ! package_coverage_is_meaningful "$package_coverage_dir"; then
+  meaningful_files=()
+  collect_meaningful_coverage_report_files "$package_coverage_dir" meaningful_files
+  if ((${#meaningful_files[@]} == 0)); then
     echo "Skipping coverage upload for $package_name because $package_coverage_dir has no meaningful coverage report (empty, stub, or zero-hit)"
     continue
   fi
@@ -461,12 +489,20 @@ while IFS=$'\t' read -r package_name package_abs_path; do
   )
   upload_args+=("${common_args[@]}")
 
-  for coverage_file in "${configured_files[@]}"; do
-    trimmed_file="${coverage_file#"${coverage_file%%[![:space:]]*}"}"
-    trimmed_file="${trimmed_file%"${trimmed_file##*[![:space:]]}"}"
-    if [[ -n "$trimmed_file" ]]; then
-      upload_args+=(--file "$trimmed_file")
+  # Upload only validated paths; disable search so rejected sibling reports are not discovered.
+  has_disable_search=false
+  for common_arg in "${common_args[@]+"${common_args[@]}"}"; do
+    if [[ "$common_arg" == "--disable-search" ]]; then
+      has_disable_search=true
+      break
     fi
+  done
+  if [[ "$has_disable_search" == "false" ]]; then
+    upload_args+=(--disable-search)
+  fi
+
+  for report_file in "${meaningful_files[@]}"; do
+    upload_args+=(--file "$(coverage_report_upload_path "$report_file" "$package_coverage_dir")")
   done
 
   for coverage_flag in "${configured_flags[@]}"; do

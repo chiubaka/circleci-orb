@@ -56,8 +56,9 @@ parameters:
     type: boolean
     default: true
     description: >
-      Skip LCOV / coverage-final.json reports whose recorded hit counts are all zero.
-      Set false only when you intentionally want zero-hit reports uploaded.
+      Skip LCOV, coverage-final.json, and Cobertura/Clover XML reports whose recorded
+      hit counts are all zero. Set false only when you intentionally want zero-hit
+      reports uploaded.
   codecov-version:
     type: string
     default: latest
