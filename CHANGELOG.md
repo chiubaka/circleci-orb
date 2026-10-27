@@ -1,5 +1,18 @@
 # @chiubaka/circleci-orb
 
+## 0.26.0
+
+### Improvements
+
+- Prefer `GITHUB_PACKAGES_READ_TOKEN` for GitHub Packages install auth; when `registry-access` is `publish`, prefer write-capable `GITHUB_PACKAGES_TOKEN` / `GITHUB_TOKEN` so a read-only install token does not block publish.
+
+  Expose `GITHUB_PACKAGES_READ_TOKEN` from the `github-packages-read` CircleCI context. `mint-github-token` preserves a pre-mint packages-read credential under the new name (and the deprecated alias) so install still works after App mint.
+
+### Bug Fixes
+
+- Keep packages-read `GITHUB_TOKEN` available for `pnpm install` when minting a GitHub App token for release jobs.
+- Skip empty, stub, and zero-hit monorepo coverage reports in `upload-monorepo-coverage` so Codecov carryforward flags are not poisoned by stale sibling uploads.
+
 ## 0.25.4
 
 ### Bug Fixes
