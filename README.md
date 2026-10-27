@@ -53,6 +53,19 @@ After:
     flags: "unit,monorepo"
 ```
 
+
+## Monorepo coverage uploads
+
+`upload-monorepo-coverage` uploads one Codecov flag per pnpm workspace package when
+`reports/coverage/<packagePath>` (or your configured coverage dir) contains a **meaningful**
+report. Empty directories, stub LCOV (no `SF:` records), and zero-hit reports are skipped by
+default so carryforward flags are not replaced with 0% baselines on unrelated PRs.
+
+When using Turborepo, prefer **per-package** coverage task outputs rather than a shared
+`$TURBO_ROOT$/reports/coverage/**` claim on every `test` task. A shared output tree lets cache
+restore resurrect sibling package coverage dirs; the upload command then treats those dirs as
+fresh for the current commit. Declare outputs scoped to the package that produced them.
+
 ## Resources
 
 [CircleCI Orb Registry Page](https://circleci.com/orbs/registry/orb/chiubaka/circleci-orb) - The official registry page of this orb for all versions, executors, commands, and jobs described.
