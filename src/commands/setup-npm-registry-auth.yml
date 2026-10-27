@@ -37,9 +37,11 @@ parameters:
       - publish
     default: read
     description: >
-      Controls tokenless npmjs behavior when NPM_TOKEN is not set and documents intended CI token capability.
-      read: allow npmjs public installs without writing auth lines; use GitHub read:packages for GitHub Packages installs.
-      publish: require auth for npmjs (NPM_TOKEN) and use GitHub write:packages plus any repo scopes your publish flow needs.
+      Controls tokenless npmjs behavior when NPM_TOKEN is not set and GitHub Packages token selection.
+      read: allow npmjs public installs without writing auth lines; prefer GITHUB_PACKAGES_READ_TOKEN for
+      GitHub Packages installs.
+      publish: require auth for npmjs (NPM_TOKEN); for GitHub Packages prefer GITHUB_PACKAGES_TOKEN or
+      GITHUB_TOKEN (write:packages) over a read-only GITHUB_PACKAGES_READ_TOKEN so the same npmrc can publish.
   npmrc-path:
     type: string
     default: ""

@@ -45,9 +45,16 @@ case "$registry_backend" in
     fi
     ;;
   github-packages)
-    # Prefer GITHUB_PACKAGES_READ_TOKEN; GITHUB_PACKAGES_TOKEN is a deprecated alias;
-    # GITHUB_TOKEN is the legacy fallback (collides with gh / App mint flows).
-    packages_token="${GITHUB_PACKAGES_READ_TOKEN:-${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}}"
+    # Install (read): prefer GITHUB_PACKAGES_READ_TOKEN, then deprecated GITHUB_PACKAGES_TOKEN,
+    # then legacy GITHUB_TOKEN. Publish: prefer write-capable GITHUB_PACKAGES_TOKEN / GITHUB_TOKEN
+    # so a read-only GITHUB_PACKAGES_READ_TOKEN does not poison the npmrc used for publish.
+    registry_access=${REGISTRY_ACCESS:-read}
+    access_lower=$(printf '%s' "$registry_access" | tr '[:upper:]' '[:lower:]')
+    if [[ "$access_lower" == "publish" ]]; then
+      packages_token="${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-${GITHUB_PACKAGES_READ_TOKEN:-}}}"
+    else
+      packages_token="${GITHUB_PACKAGES_READ_TOKEN:-${GITHUB_PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}}"
+    fi
     if [[ -z "$packages_token" ]]; then
       echo "setupNpmRegistryAuth: GITHUB_PACKAGES_READ_TOKEN must be set when registry-backend is github-packages (GITHUB_PACKAGES_TOKEN and GITHUB_TOKEN remain legacy fallbacks)." >&2
       echo "Grant read:packages for install-only jobs; add write:packages (and repo scope as needed) for publishing." >&2

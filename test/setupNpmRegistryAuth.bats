@@ -84,6 +84,50 @@ teardown() {
   assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_read'
 }
 
+@test "github-packages read access prefers GITHUB_PACKAGES_READ_TOKEN over write-capable fallbacks" {
+  NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages REGISTRY_ACCESS=read \
+    GITHUB_TOKEN=ghp_write GITHUB_PACKAGES_TOKEN=ghp_deprecated \
+    GITHUB_PACKAGES_READ_TOKEN=ghp_read \
+    run setupNpmRegistryAuth.sh
+
+  assert_success
+  run cat "$NPMRC_PATH"
+  assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_read'
+}
+
+@test "github-packages publish access prefers write-capable token over GITHUB_PACKAGES_READ_TOKEN" {
+  NPMRC_PATH=$NPMRC_PATH REGISTRY_BACKEND=github-packages REGISTRY_ACCESS=publish \
+    GITHUB_TOKEN=ghp_write GITHUB_PACKAGES_TOKEN=ghp_publish \
+    GITHUB_PACKAGES_READ_TOKEN=ghp_read \
+    run setupNpmRegistryAuth.sh
+
+  assert_success
+  run cat "$NPMRC_PATH"
+  assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_publish'
+}
+
+@test "github-packages publish access falls back to GITHUB_TOKEN before GITHUB_PACKAGES_READ_TOKEN" {
+  run env -u GITHUB_PACKAGES_TOKEN \
+    NPMRC_PATH="$NPMRC_PATH" REGISTRY_BACKEND=github-packages REGISTRY_ACCESS=publish \
+    GITHUB_TOKEN=ghp_write GITHUB_PACKAGES_READ_TOKEN=ghp_read \
+    setupNpmRegistryAuth.sh
+
+  assert_success
+  run cat "$NPMRC_PATH"
+  assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_write'
+}
+
+@test "github-packages publish access can still use GITHUB_PACKAGES_READ_TOKEN alone" {
+  run env -u GITHUB_TOKEN -u GITHUB_PACKAGES_TOKEN \
+    NPMRC_PATH="$NPMRC_PATH" REGISTRY_BACKEND=github-packages REGISTRY_ACCESS=publish \
+    GITHUB_PACKAGES_READ_TOKEN=ghp_read \
+    setupNpmRegistryAuth.sh
+
+  assert_success
+  run cat "$NPMRC_PATH"
+  assert_line --index 1 '//npm.pkg.github.com/:_authToken=ghp_read'
+}
+
 @test "github-packages prefers deprecated GITHUB_PACKAGES_TOKEN over GITHUB_TOKEN" {
   run env -u GITHUB_PACKAGES_READ_TOKEN \
     NPMRC_PATH="$NPMRC_PATH" REGISTRY_BACKEND=github-packages \
