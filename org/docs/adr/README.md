@@ -46,7 +46,7 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0032-monorepo-package-taxonomy-naming-and-domain-contracts.md`
 - `0033-frontend-package-split-application-of-adr-0032-and-adr-0016.md`
 - `0034-use-github-packages-with-single-chiubaka-scope-for-private-package-distribution.md`
-- `0035-trial-adoption-of-conventional-commits.md`
+- `0035-trial-adoption-of-conventional-commits.md` (superseded by `0046`; retained for history)
 - `0036-standardize-package-naming-under-chiubaka-scope-with-ecosystem-prefixes.md`
 - `0037-domain-temporal-values-as-canonical-iso-strings.md`
 - `0038-release-train-identifiers-and-github-releases.md`
@@ -54,7 +54,12 @@ Keep each decision at the narrowest level that still reflects who should follow 
 - `0040-standardize-on-playwright-for-web-end-to-end-testing.md`
 - `0041-release-train-review-artifacts-for-deployable-applications.md`
 - `0042-release-cycles-rc-identifiers-and-manifest-directories.md`
-- `0043-prerelease-until-production-for-application-release-cycles.md`
+- `0043-authenticate-at-application-boundary-authorize-in-feature-services.md`
+- `0043-prerelease-until-production-for-application-release-cycles.md` (number collides with the authz ADR above; renumber before upstream export)
+- `0044-enforce-authorization-in-application-feature-services.md`
+- `0045-expose-application-owned-authorization-state-to-clients.md`
+- `0046-adopt-conventional-commits-for-commits-and-pr-titles.md`
+- `0047-in-repo-git-worktrees.md`
 
 If your repository has a contributor or agent guide, link it to this ADR set for concise day-to-day pointers.
 

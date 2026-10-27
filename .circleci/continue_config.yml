@@ -84,6 +84,7 @@ workflows:
           # Match scripts/run-shellcheck.sh: org-managed scripts are not first-party orb bash.
           ignore-dirs: |
             ./.git
+            ./.worktrees
             ./org/agents/scripts
           filters: *filters
       - orb-tools/publish:

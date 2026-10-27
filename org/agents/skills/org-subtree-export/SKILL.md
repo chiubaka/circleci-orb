@@ -192,4 +192,4 @@ Re-run projection/bootstrap scripts and validation checks.
 - `org-subtree-status` — compare local prefix to upstream and summarize pull/push needs.
 - `org-subtree-sync` — pull upstream org onto default branch before export.
 - `create-adr` — scope and portability rules for new ADRs in the org prefix.
-- `commit-message` — Conventional Commits for org repository commits.
+- `commit-message` — Conventional Commits for org repository commits and PR titles.

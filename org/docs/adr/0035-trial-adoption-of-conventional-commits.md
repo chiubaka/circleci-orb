@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: superseded-by-ADR-0046
 date: 2026-04-07
 decision-makers: Daniel Chiu
 ---
 
 # ADR 0035: Trial adoption of Conventional Commits as a commit message standard
+
+> **Superseded:** Normative Conventional Commits requirements for commit messages and PR titles are defined by [ADR 0046](0046-adopt-conventional-commits-for-commits-and-pr-titles.md) (accepted 2026-09-03). This ADR remains useful for **historical context** on the trial framing and options considered before full adoption.
 
 ## Context and Problem Statement
 

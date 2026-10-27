@@ -17,8 +17,9 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - For pure helpers and decoders inside a feature module, use the **Placement decision procedure** in `org/docs/adr/0016-frontend-responsibility-areas-and-layered-boundaries.md` (module **`lib/`** for cross-layer domain-agnostic helpers; role-named **`domain/`** for selectors/predicates/policies; **`infrastructure/`** for adapter/wire mappers). Do not use generic catch-all names (`helpers.ts`, `values.ts`, `utils/`).
 - When shared infrastructure is concrete and vendor-specific, prefer `infrastructure/<vendor>` over generic names such as `persistence`; do not imply an abstraction that the code does not actually provide.
 - Default to classes for orchestration-heavy or domain-driven behavior; keep class-specific helpers private.
-- Prefer module-level functions for pure transformations and interfaces only when substitutability is real.
-- For class-named modules (for example, `*Service.ts`, `*Evaluator.ts`), treat the class as the default boundary.
+- Prefer module-level functions for pure, reusable transforms that are not class-local; use interfaces only when substitutability is real.
+- For class-named modules (for example, `*Service.ts`, `*Evaluator.ts`, `*Repository.ts`), treat the class as the default boundary.
+- In class-named repository/store/queue/adapter modules, keep colocated record↔domain mappers as `private static toDomain` / `fromDomain` (ADR 0012 / 0013); purity alone does not justify module-level mappers there.
 - Do not export production helpers solely for tests; test class internals through public APIs unless helpers are genuinely shared utilities.
 - If ADR 0012 and ADR 0013 both seem applicable, prefer ADR 0012 defaults for class-owned orchestration modules.
 
@@ -51,7 +52,8 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - When a repository uses **Atlassian Changesets** (a `.changeset/` config and `@changesets/cli` in the workspace), **do not** hand-edit the root or package `version` fields in `package.json` to release user-facing changes, and **do not** hand-edit `CHANGELOG.md` to add release notes for those changes. Release automation applies those updates when maintainers run `changeset version` (or the organization’s release pipeline does).
 - Use **`pnpm changeset` / `changeset add`**, or add a new tracked markdown file under **`.changeset/`** with the correct `patch` / `minor` / `major` frontmatter, so the intended semver bump and changelog line are generated at release time.
 - Follow `org/agents/skills/changesets-hygiene/SKILL.md` when introducing or changing releasable work, and `org/agents/skills/changeset/SKILL.md` when authoring `.changeset/*.md` summaries (required category prefix, voice by monorepo type).
-- **Exceptions — no Changeset:** Do **not** add a `.changeset/` entry for **documentation-only** work that does not alter shipped package behavior, including **new or updated ADRs** (`**/docs/adr/**/*.md`, `org/docs/adr/**/*.md`) and **agent or contributor guidance** (for example `AGENTS.md`, `org/agents/AGENTS.org.md`, `REVIEW-CHECKLIST.md`, `org/agents/skills/**/*.md`, `.agents/skills/**`, Cursor rules/skills mirroring those). Ship those edits without a semver bump driven by Changesets unless the repository owner explicitly asks to version a doc-only policy as a patch.
+- Changesets describe the **PR / branch merge delta** (base…HEAD), not individual commits or agent tasks. Before handoff, **reconcile** `.changeset/*` on the branch: rewrite to non-redundant **single-headline** notes for the PR’s net consumer impact; do not amalgamate task diaries into one file or add notes for fixing unreleased regressions introduced on the same branch. Details: `org/agents/skills/changeset/SKILL.md` and `org/agents/skills/changesets-hygiene/SKILL.md`.
+- **Exceptions — no Changeset:** Do **not** add a `.changeset/` entry for **documentation-only** work that does not alter shipped package behavior, including **new or updated ADRs** (`**/docs/adr/**/*.md`, `org/docs/adr/**/*.md`) and **agent or contributor guidance** (for example `AGENTS.md`, `org/agents/AGENTS.org.md`, `REVIEW-CHECKLIST.md`, `org/agents/skills/**/*.md`, `org/agents/rules/**/*.md`, `.agents/skills/**`, Cursor/Claude rules/skills mirroring those). Ship those edits without a semver bump driven by Changesets unless the repository owner explicitly asks to version a doc-only policy as a patch.
 
 ## Org subtree safety
 
@@ -61,10 +63,21 @@ Repository-specific guidance in the local override section of `AGENTS.md` takes 
 - Do not rewrite away subtree ancestry on active branches (for example via history surgery that drops prior subtree integration commits) unless explicitly requested.
 - If subtree sync fails with unrelated history, prefer non-destructive recovery steps first (verify remote/branch/prefix consistency and subtree history markers) before reinitializing.
 
+## Agent behavior
+
+Apply the always-on coding-discipline baseline in `org/agents/rules/coding-discipline.md` (bootstrapped into `.cursor/rules/coding-discipline.mdc` and `.claude/rules/coding-discipline.md` in consuming repos). For expanded workflows and examples, use `org/agents/skills/coding-discipline/SKILL.md`.
+
+- Before inventing utilities, dependencies, or integrations, use `org/agents/skills/search-first/SKILL.md`.
+- For broad or parallel exploration, use `org/agents/skills/agent-orchestration/SKILL.md`.
+- When changing authentication, authorization, or client authz state, use `org/agents/skills/application-authz/SKILL.md` (ADRs 0043–0045).
+- When writing commit messages or pull request titles, use Conventional Commits per `org/agents/skills/commit-message/SKILL.md` (ADR 0046).
+- To capture repeated session lessons as instincts and evolve them into versioned guidance, use `org/agents/skills/session-learning/SKILL.md` (human-gated; do not auto-rewrite org standards).
+
 ## Style and readability
 
-- **Documentation (generation-time):** Follow `org/docs/adr/0004-self-documenting-code-and-documentation-expectations.md` (code-first, purposeful docs). When adding, editing, or reviewing JSDoc—or satisfying JSDoc lint—use `org/agents/skills/jsdoc/SKILL.md`.
+- **Documentation (generation-time):** Follow `org/docs/adr/0004-self-documenting-code-and-documentation-expectations.md` (code-first, purposeful docs). When adding, editing, or reviewing JSDoc—or satisfying JSDoc lint—use `org/agents/skills/jsdoc/SKILL.md`. **No ADR leakage:** do not cite `ADR NNNN` (or ADR paths) in consumer-facing artifacts such as changesets or public/shipped package JSDoc; do not reuse ADR-local comparison labels (“Model B”, “Option 1”, etc.) in consumer-facing artifacts or code comments/JSDoc—name the underlying concept succinctly instead. Intentional contributor/agent guidance that discusses a decision may use ADR ids and ADR-local labels (`changeset` and `jsdoc` skills).
 - **Open string unions (`@typescript-eslint/no-redundant-type-constituents`):** Do not “fix” `literal | string` by widening to plain `string`—that erases documented allowed values with no type benefit (`literal | string` already collapses to `string`). For intentionally open domains (built-ins plus arbitrary names), use `as const` + derived built-in type + `Type | (string & {})`, or a closed union only when the set is actually closed.
 - Keep `org/agents/AGENTS.org.md` focused on structural and generation-time constraints.
 - **Review before handoff (mandatory default):** Before concluding work, telling the user a task is finished, opening a PR, or pushing, run the checklist in `org/agents/skills/review/SKILL.md` unless the change is trivial (for example typo-only or a single obvious one-line fix). Treat it as part of the same completion bar as repo-root verification—lint and tests do not replace it. Run it after each meaningful slice of implementation, not only at the end of large tasks or when explicitly asked.
 - During planning for major behavior changes, consult `org/agents/skills/test-driven-development/SKILL.md` to drive a test-first implementation loop.
+- For new web E2E suites, use Playwright per ADR 0040 and `org/agents/skills/playwright-e2e/SKILL.md`.

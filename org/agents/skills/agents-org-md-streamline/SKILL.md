@@ -177,6 +177,7 @@ When any of the following appear in `org/agents/AGENTS.org.md`, move them out un
 - Closed-vocabulary TypeScript preference -> move to review skill.
 - TDD methodology guidance -> remove from org guidance and rely on `test-driven-development` skill.
 - Final verification workflow details -> keep in review skill; org guidance should only require a post-implementation review pass.
+- Meta-behavioral always-on principle sets (clarify / simplify / surgical diffs / verify) -> author under `org/agents/rules/` and keep only a short pointer in `AGENTS.org.md`; do not paste full principle bodies into org guidance. Expanded workflows stay in skills (for example `coding-discipline`).
 
 If uncertain, prefer moving to review skill and leaving a short org-level handoff pointer.
 
@@ -269,5 +270,6 @@ Before finishing:
 When uncertain:
 
 - Structural and generation-time constraints -> `org/agents/AGENTS.org.md`
+- Meta-behavioral always-on baselines -> `org/agents/rules/` (+ short AGENTS pointer only)
 - Style and review-time checks -> `org/agents/skills/review/SKILL.md`
 - Rationale and tradeoffs -> ADR

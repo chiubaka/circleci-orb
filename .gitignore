@@ -6,3 +6,6 @@ node_modules
 
 # Generated in CI by mergeContinueWithInlineOrb.py (inline orb + continue_config.yml).
 .circleci/continue_merged.yml
+
+# In-repo git worktrees (see org ADR 0047)
+.worktrees/

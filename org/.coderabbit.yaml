@@ -1,0 +1,5 @@
+# Disable automatic PR reviews to control costs.
+# Trigger manually with: @coderabbitai review (or @coderabbitai full review)
+reviews:
+  auto_review:
+    enabled: false

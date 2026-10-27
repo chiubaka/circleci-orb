@@ -23,7 +23,7 @@ Keep **transport and wire-format concerns** in a dedicated **API client** layer,
   place client implementations in `infrastructure/` and orchestration/ports in `application/`.
 - `org/docs/adr/0012-classes-as-primary-responsibility-boundaries.md` and
   `org/docs/adr/0013-use-of-classes-vs-module-level-functions-and-interfaces.md`:
-  use classes for orchestration-heavy ownership boundaries; keep pure transforms as module-level helpers.
+  use classes for orchestration-heavy ownership boundaries; keep class-local record↔domain mappers as `private static toDomain` / `fromDomain` on the owning class; reserve module-level pure helpers for genuinely shared utilities.
 - `org/docs/adr/0009-prefer-small-focused-files.md`:
   keep API client and service files focused with one primary export where practical.
 

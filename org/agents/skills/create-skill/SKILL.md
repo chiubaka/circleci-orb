@@ -36,16 +36,16 @@ If answers are mostly “yes” to portability, use org-level. If mostly “yes�
 
 Use kebab-case for `<skill-name>` and keep names action-oriented (for example, `create-skill`, `external-api-integration`).
 
-## Self-contained org skills (no `.cursor/` in the org repo)
+## Self-contained org skills (no `.cursor/` / `.claude/` authorship in the org repo)
 
 Org-level skills must bundle everything they need under `org/agents/skills/<skill-name>/`:
 
-- **Do not** add files under `.cursor/` in the **org repository** — no `.cursor/rules/`, no `.cursor/skills/`, and no other `.cursor/` projections for new skills.
-- **Consuming repos** discover org skills via `org/agents/scripts/bootstrap-skills.sh`, which links each org skill into `.agents/skills/<skill-name>/`. Tool-facing paths (`.cursor/skills`, `.claude/skills`) are symlinks managed by `org/agents/scripts/bootstrap.sh` in consuming repos — see [ADR 0003](../../../docs/adr/0003-agent-skills-canonical-location-and-symlinks.md).
-- For **commit-time** or **always-apply** behavior, encode triggers in the skill itself:
+- **Do not** add files under `.cursor/` or `.claude/` in the **org repository** — no `.cursor/rules/`, no `.cursor/skills/`, no `.claude/rules/`, and no other tool-native projections as authored sources.
+- **Consuming repos** discover org skills via `org/agents/scripts/bootstrap-skills.sh`, which links each org skill into `.agents/skills/<skill-name>/`. Tool-facing skill paths (`.cursor/skills`, `.claude/skills`) are symlinks managed by `org/agents/scripts/bootstrap.sh` in consuming repos — see [ADR 0003](../../../docs/adr/0003-agent-skills-canonical-location-and-symlinks.md).
+- For **on-demand** workflows (including commit-time checklists), encode triggers in the skill itself:
   - Put strong trigger terms in the YAML `description` (for example `before any git commit`, `when the user asks to commit`).
   - Add an explicit section in the skill body (for example **Before every commit**) with the mandatory steps.
-  - Do **not** create a separate Cursor rule in the org repo as a stand-in for skill content.
+- For **always-on behavioral baselines** (meta-guidance that should load every turn in Cursor/Claude), author under `org/agents/rules/<name>.md` and project with `org/agents/scripts/bootstrap-rules.sh` into `.cursor/rules/` and `.claude/rules/` in consuming repos. Keep only a short pointer in `AGENTS.org.md`. Do **not** paste full always-on principle sets into skill bodies as a substitute for rules projection, and do **not** hand-author rule files under `.cursor/` or `.claude/` in the org repo.
 
 ## Required portability rule for org-level skills
 

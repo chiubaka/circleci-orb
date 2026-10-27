@@ -8,6 +8,8 @@ Usage: bootstrap.sh [--check]
 Delegates to org bootstrap scripts:
   1) bootstrap-skills.sh
   2) bootstrap-agents-md.sh
+  3) bootstrap-rules.sh
+  4) bootstrap-worktrees.sh
 
 Options:
   --check     Run delegated scripts in read-only validation mode.
@@ -174,6 +176,8 @@ create_claude_md_link() {
 
 "$SCRIPT_DIR/bootstrap-skills.sh" $CHECK_ARG
 "$SCRIPT_DIR/bootstrap-agents-md.sh" $CHECK_ARG
+"$SCRIPT_DIR/bootstrap-rules.sh" $CHECK_ARG
+"$SCRIPT_DIR/bootstrap-worktrees.sh" $CHECK_ARG
 
 if ! ensure_tool_links; then
   exit 1

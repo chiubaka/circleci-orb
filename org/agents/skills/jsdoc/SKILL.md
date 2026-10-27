@@ -33,6 +33,24 @@ Run the **Review checklist** section before handoff when the change touches JSDo
 - JSDoc should add **behavior**, **domain meaning**, **preconditions**, or **hazards** that types and signatures do not carry.
 - Satisfying `jsdoc/require-jsdoc` means **adding or improving** docs on required surfaces—not deleting substantive docs elsewhere to “clean up.”
 
+### No ADR leakage in documentation
+
+Seeing `ADR 0032` (or similar) in JSDoc or a comment is meaningless to readers who are not holding that ADR open.
+
+**Scope of the ban**
+
+- **Consumer-facing artifacts** (changesets, release notes, public/shipped package JSDoc): do **not** cite `ADR NNNN`, ADR file paths, or “per ADR …”, and do **not** reuse ADR-local comparison labels or shorthands (for example “Model A” / “Model B”, “Option 1”). Document the behavior or contract itself; name the underlying concept succinctly.
+- **Code comments and other non-guidance docs** (including internal JSDoc): do **not** reuse ADR-local nicknames—name the concept. Prefer not to cite ADR identifiers unless you are intentionally directing a reader to a decision (rare in code).
+
+**Exception (allowed):** ADRs themselves, and **contributor/agent guidance** (skills, `AGENTS.md`, review checklists, intentional contributor guides) that discusses or points at a decision, may use ADR identifiers and ADR-local comparison labels.
+
+| Pattern                                             | Verdict                       |
+| --------------------------------------------------- | ----------------------------- |
+| `Keeps assembly at the composition root.`           | **Good** — concept stated     |
+| `Aligned with Model B from ADR 0032.` (in JSDoc)    | **Avoid** — ADR id + nickname |
+| `Follows Model B.` (in a code comment)              | **Avoid** — nickname only     |
+| `See ADR 0032 (Model B) in create-adr skill prose.` | **OK** — intentional guidance |
+
 ## Preservation and edits
 
 - Preserve existing block comments, line comments, and JSDoc by default. Updating for clarity, correctness, or formatting is encouraged.
@@ -46,9 +64,47 @@ Before writing or rewriting JSDoc, read the **implementation**, surrounding modu
 
 Never add generic or useless JSDoc:
 
-- Placeholder parameter names (`@param param0`).
+- Placeholder or synthetic parameter names from lint autofix or codegen (see below).
 - Empty type echoes (`@param foo - foo`).
 - Vacuous returns (`@returns the return`, `@returns return value`).
+
+### No placeholder `@param` names
+
+Do **not** leave autofix / codegen placeholders as documented parameter names. Ban the whole family of indexed or synthetic roots—not only the common ones:
+
+| Banned (examples)                           | Why                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| `root0`, `root1`, `rootN`                   | Default `eslint-plugin-jsdoc` name for unnamed destructured objects |
+| `param0`, `param1`, `arg0`, `arg1`, `args0` | Indexed stand-ins with no domain meaning                            |
+| `obj0`, `object0`, `opts0`, `p0`, `a0`      | Same pattern under other prefixes                                   |
+
+If the name is only meaningful as “slot N from the fixer,” rename it. Nested tags must use the renamed root (`@param props.children`, not `@param root0.children`).
+
+### Destructured object parameters
+
+When the signature destructures an object (`({ children, className }: ScrollAreaProps)`), document the root with the name you would use if it were **not** destructured, then nest fields under that name.
+
+- **Role over type echo:** React/host components → `props`; option bags → `options` or `config`; otherwise the usual call-site noun. Prefer `props` over `scrollAreaProps` unless multiple object parameters need disambiguation.
+- **Keep nesting aligned:** once the root is `props`, use `@param props.children`, `@param props.className`, etc.
+
+```ts
+/**
+ * React Native host primitive leaf for Beskar’s portable `ScrollArea` contract.
+ *
+ * @param props - Portable scroll-area props.
+ * @param props.children - Scrollable content.
+ * @param props.className - Local NativeWind utilities merged onto the leaf.
+ * @returns A React Native scroll view.
+ */
+export function ScrollArea({ children, className }: ScrollAreaProps) { … }
+```
+
+| Pattern                                       | Verdict                         |
+| --------------------------------------------- | ------------------------------- |
+| `@param props - Portable scroll-area props.`  | **Good** — role name            |
+| `@param props.children - Scrollable content.` | **Good** — nested under role    |
+| `@param root0 - Portable scroll-area props.`  | **Avoid** — autofix placeholder |
+| `@param root0.children - …`                   | **Avoid** — placeholder nesting |
 
 When prose names another type, port, enum, or documented concept in the codebase, link it with `{@link SymbolName}` (or the appropriate module-qualified link) so hover and navigation resolve.
 
@@ -175,6 +231,8 @@ Run when the diff touches comments or JSDoc (including before handoff when `revi
 - [ ] Existing comments and JSDoc were not removed wholesale without a clear reason (obsolete, incorrect, or pure signature/type duplication with no lost behavior or domain context).
 - [ ] JSDoc edits fix or add documentation to satisfy lint; they do not delete substantive blocks on `private`, local, or legacy code merely because those surfaces are outside `require-jsdoc` contexts.
 - [ ] New or edited JSDoc adds real behavior or domain context—not placeholders, signature-only restatement, or vacuous `@returns` lines.
+- [ ] No placeholder `@param` roots (`root0`, `param0`, `arg0`, `obj0`, and similar indexed/synthetic names); destructured object params use a role name (`props`, `options`, …) with nested tags under that root.
+- [ ] Public/shipped API JSDoc and other consumer-facing docs do not cite `ADR NNNN` or ADR paths; code comments/JSDoc do not use ADR-local shorthands—concepts are named directly (ADR ids/labels remain OK in ADRs and intentional contributor/agent guidance).
 - [ ] Descriptions match the implementation and call-site expectations; when the diff alone is ambiguous, spot-check usages and tests.
 - [ ] Related symbols use `{@link …}` in **description** text, not in the first `{…}` type slot (`@returns`, `@throws`, `@yields`, `@param {type} …`, `@property`, etc.).
 - [ ] Every `@param` uses `name - description` (hyphen required), including when `{@link}` appears in the description.

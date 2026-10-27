@@ -1,1 +1,11 @@
 node_modules/
+
+# Tool-native projection targets (authored under agents/; materialize in consuming repos)
+/.cursor/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
+/.agents/
+
+# In-repo git worktrees (see org ADR 0047)
+.worktrees/
